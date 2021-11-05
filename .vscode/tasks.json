@@ -1,0 +1,127 @@
+{
+   "version": "2.0.0",
+   "tasks": [
+      {
+         "label": "Make & Build Debug",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-Cbuild/Debug"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "dependsOn": [
+            "Build Debug"
+         ],
+         "problemMatcher": []
+      },
+      {
+         "label": "Make & Build Release",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-Cbuild/Release"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "dependsOn": [
+            "Build Release"
+         ],
+         "problemMatcher": []
+      },
+      {
+         "label": "Build Debug",
+         "type": "shell",
+         "command": "cmake",
+         "args": [
+            "-S.",
+            "-Bbuild/Debug",
+            "-DCMAKE_BUILD_TYPE=Debug"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         }
+      },
+      {
+         "label": "Build Release",
+         "type": "shell",
+         "command": "cmake",
+         "args": [
+            "-S.",
+            "-Bbuild/Release",
+            "-DCMAKE_BUILD_TYPE=Release"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         }
+      },
+      {
+         "label": "Make & Build Debug All Options",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-Cbuild/Debug"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "dependsOn": [
+            "Build Debug All Options"
+         ],
+         "problemMatcher": []
+      },
+      {
+         "label": "Make & Build Release All Options",
+         "type": "shell",
+         "command": "make",
+         "args": [
+            "-Cbuild/Release"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         },
+         "dependsOn": [
+            "Build Release All Options"
+         ],
+         "problemMatcher": []
+      },
+      {
+         "label": "Build Debug All Options",
+         "type": "shell",
+         "command": "cmake",
+         "args": [
+            "-S.",
+            "-Bbuild/Debug",
+            "-DCMAKE_BUILD_TYPE=Debug",
+            "-DBUILD_NLSWIN_EXAMPLES=ON"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         }
+      },
+      {
+         "label": "Build Release All Options",
+         "type": "shell",
+         "command": "cmake",
+         "args": [
+            "-S.",
+            "-Bbuild/Release",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DBUILD_NLSWIN_EXAMPLES=ON"
+         ],
+         "group": {
+            "kind": "build",
+            "isDefault": true
+         }
+      }
+   ]
+}
