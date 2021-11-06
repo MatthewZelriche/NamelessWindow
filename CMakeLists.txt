@@ -5,6 +5,34 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TY
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/bin")
 
 option(BUILD_NLSWIN_EXAMPLES "ON if you want to build examples, OFF to just build the shared library" OFF)
+option(BUILD_NLSWIN_FOR_WAYLAND "ON if you wish the library to target Wayland, off if you want to target X11" OFF)
+
+
+set(NLSWIN_LIBRARIES_TO_LINK "")
+set(NLSWIN_THIRDPARTY_INCLUDES "")
+
+if (UNIX)
+   if (APPLE)
+      message(FATAL_ERROR "Apple systems not currently supported.")
+   else()
+      if (${BUILD_NLSWIN_FOR_WAYLAND})
+         # TODO: Wayland
+         set(NLSWIN_WAYLAND ON)
+      else()
+         include (${CMAKE_ROOT}/Modules/FindX11.cmake)
+         if (${X11_xcb_FOUND})
+            list(APPEND NLSWIN_LIBRARIES_TO_LINK ${X11_X11_xcb_LIB})
+            list(APPEND NLSWIN_THIRDPARTY_INCLUDES ${X11_xcb_INCLUDE_PATH})
+            set(NLSWIN_X11 ON)
+         else()
+            message(FATAL_ERROR "Could not find xcb library for X11!")
+         endif()
+      endif()
+   endif()
+elseif(WIN32)
+   # TODO: Windows
+   set(NLSWIN_WIN32)
+endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 

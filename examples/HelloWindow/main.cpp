@@ -1,8 +1,10 @@
 #include <iostream>
+#include <memory>
 
-#include "NamelessWindow/Test.hpp"
+#include "NamelessWindow/Window.hpp"
 
 int main() {
-   int result = Test(52);
+   std::unique_ptr<NLSWIN::Window> window = NLSWIN::Window::CreateWindow();
+   int result                             = window->SetSomething(5);
    std::cout << result << std::endl;
 }
