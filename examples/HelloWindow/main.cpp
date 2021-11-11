@@ -5,11 +5,17 @@
 #include "NamelessWindow/Window.hpp"
 
 int main() {
-   std::unique_ptr<NLSWIN::Window> window = NLSWIN::Window::CreateWindow();
-   std::vector<NLSWIN::Screen> screens    = NLSWIN::Window::EnumerateScreens();
-   for (auto screen: screens) {
-      std::cout << screen.name << std::endl;
-      std::cout << screen.verticalResolution << std::endl;
-      std::cout << screen.horzResolution << std::endl;
+   NLSWIN::WindowProperties properties {};
+   std::vector<NLSWIN::Monitor> monitors = NLSWIN::Window::EnumerateMonitors();
+   NLSWIN::Monitor monitor               = monitors.at(0);
+   properties.preferredMonitor           = monitor;
+
+   for (auto monitor: monitors) {
+      std::cout << monitor.name << std::endl;
+      std::cout << "Global Space: " << monitor.globalSpaceXCoord << ", " << monitor.globalSpaceYCoord
+                << std::endl;
+      std::cout << monitor.horzResolution << "x" << monitor.verticalResolution << std::endl;
    }
+
+   std::unique_ptr<NLSWIN::Window> window = NLSWIN::Window::CreateWindow(properties);
 }

@@ -4,10 +4,10 @@
 
 namespace NLSWIN {
 
-class BadScreenException : public std::exception {
+class BadMonitorException : public std::exception {
    public:
    virtual const char* what() const noexcept override {
-      return "Attempted to construct window with bad screen argument.";
+      return "Attempted to construct window with bad monitor argument.";
    }
 };
 
