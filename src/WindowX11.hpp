@@ -1,15 +1,17 @@
 #pragma once
+#include <xcb/xcb.h>
+
 #include <vector>
 
 #include "NamelessWindow/Window.hpp"
 
-class xcb_connection_t;
-class xcb_screen_t;
-
 namespace NLSWIN {
 class NLSWIN_API_PRIVATE WindowX11 : public Window {
    private:
-   xcb_connection_t *m_xServerConnection = nullptr;
+   static xcb_connection_t *m_xServerConnection;
+   int m_preferredScreenNum   = 0;
+   xcb_window_t m_x11WindowID = 0;
+
    xcb_screen_t *GetScreenFromMonitor(Monitor monitor);
 
    public:

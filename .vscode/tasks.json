@@ -8,10 +8,7 @@
          "args": [
             "-Cbuild/Debug"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         },
+         "group": "build",
          "dependsOn": [
             "Build Debug"
          ],
@@ -24,10 +21,7 @@
          "args": [
             "-Cbuild/Release"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         },
+         "group": "build",
          "dependsOn": [
             "Build Release"
          ],
@@ -42,10 +36,7 @@
             "-Bbuild/Debug",
             "-DCMAKE_BUILD_TYPE=Debug"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         }
+         "group": "build"
       },
       {
          "label": "Build Release",
@@ -56,10 +47,7 @@
             "-Bbuild/Release",
             "-DCMAKE_BUILD_TYPE=Release"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         }
+         "group": "build"
       },
       {
          "label": "Make & Build Debug All Options",
@@ -68,10 +56,7 @@
          "args": [
             "-Cbuild/Debug"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         },
+         "group": "build",
          "dependsOn": [
             "Build Debug All Options"
          ],
@@ -84,10 +69,7 @@
          "args": [
             "-Cbuild/Release"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         },
+         "group": "build",
          "dependsOn": [
             "Build Release All Options"
          ],
@@ -103,10 +85,7 @@
             "-DCMAKE_BUILD_TYPE=Debug",
             "-DBUILD_NLSWIN_EXAMPLES=ON"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         }
+         "group": "build"
       },
       {
          "label": "Build Release All Options",
@@ -118,10 +97,7 @@
             "-DCMAKE_BUILD_TYPE=Release",
             "-DBUILD_NLSWIN_EXAMPLES=ON"
          ],
-         "group": {
-            "kind": "build",
-            "isDefault": true
-         }
-      }
+         "group": "build"
+      },
    ]
 }

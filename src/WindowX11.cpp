@@ -1,7 +1,6 @@
 #include "WindowX11.hpp"
 
 #include <xcb/randr.h>
-#include <xcb/xcb.h>
 
 #include <memory>
 
@@ -9,17 +8,21 @@
 
 using namespace NLSWIN;
 
+xcb_connection_t *WindowX11::m_xServerConnection = nullptr;
+
 std::unique_ptr<Window> Window::CreateWindow(WindowProperties properties) {
    return std::make_unique<WindowX11>(properties);
 }
 
-#include <iostream>
 WindowX11::WindowX11(WindowProperties properties) {
-   int preferredScreenNum = 0;
-   m_xServerConnection    = xcb_connect(nullptr, &preferredScreenNum);
-   int result             = xcb_connection_has_error(m_xServerConnection);
-   if (result != 0) {
-      throw std::runtime_error("Unspecified error attempting to establish display server connection");
+   // If we haven't opened a connection, do so now.
+   if (!m_xServerConnection) {
+      m_preferredScreenNum = 0;
+      m_xServerConnection  = xcb_connect(nullptr, &m_preferredScreenNum);
+      int result           = xcb_connection_has_error(m_xServerConnection);
+      if (result != 0) {
+         throw std::runtime_error("Unspecified error attempting to establish display server connection");
+      }
    }
 
    // Get the correct screen.
@@ -33,7 +36,7 @@ WindowX11::WindowX11(WindowProperties properties) {
       }
    } else {
       auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(m_xServerConnection));
-      for (int i = 0; i < preferredScreenNum; i++) { xcb_screen_next(&screenIter); }
+      for (int i = 0; i < m_preferredScreenNum; i++) { xcb_screen_next(&screenIter); }
       preferredScreen = screenIter.data;
    }
    if (!preferredScreen) {
@@ -56,7 +59,25 @@ WindowX11::WindowX11(WindowProperties properties) {
       windowYCoord = properties.yCoordinate;
    }
 
-   // TODO: Fetch a new window from X11.
+   uint16_t borderWidth = 0;
+   // Set border width for windowed applications
+   if (properties.mode == WindowMode::WINDOWED) {
+      borderWidth = properties.borderWidth;
+   }
+
+   std::array<uint32_t, 1> valueMaskArray;
+   valueMaskArray[0] = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
+   // Fetch a new window from X11.
+   m_x11WindowID = xcb_generate_id(m_xServerConnection);
+   // TODO: Look into visual. Look into masks.
+   xcb_create_window(m_xServerConnection, XCB_COPY_FROM_PARENT, m_x11WindowID, preferredScreen->root,
+                     windowXCoord, windowYCoord, properties.horzResolution, properties.vertResolution,
+                     borderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCB_COPY_FROM_PARENT, XCB_CW_EVENT_MASK,
+                     valueMaskArray.data());
+
+   // Present
+   xcb_map_window(m_xServerConnection, m_x11WindowID);
+   xcb_flush(m_xServerConnection);
 }
 
 xcb_screen_t *WindowX11::GetScreenFromMonitor(Monitor monitor) {

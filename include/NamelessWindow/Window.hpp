@@ -19,10 +19,11 @@ struct NLSWIN_API_PUBLIC Monitor {
 };
 
 struct NLSWIN_API_PUBLIC WindowProperties {
-   unsigned int horzResolution = 0;
-   unsigned int vertResolution = 0;
+   unsigned int horzResolution = 860;
+   unsigned int vertResolution = 480;
    unsigned int xCoordinate    = 0;
    unsigned int yCoordinate    = 0;
+   unsigned int borderWidth    = 0;
    WindowMode mode             = WindowMode::NO_PREFERENCE;
    std::optional<Monitor> preferredMonitor;
 };
