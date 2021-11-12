@@ -75,6 +75,12 @@ WindowX11::WindowX11(WindowProperties properties) {
                      borderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCB_COPY_FROM_PARENT, XCB_CW_EVENT_MASK,
                      valueMaskArray.data());
 
+   // Set window name if we were given one.
+   if (!properties.windowName.empty()) {
+      xcb_change_property(m_xServerConnection, XCB_PROP_MODE_REPLACE, m_x11WindowID, XCB_ATOM_WM_NAME,
+                          XCB_ATOM_STRING, 8, properties.windowName.length(), properties.windowName.c_str());
+   }
+
    // Present
    xcb_map_window(m_xServerConnection, m_x11WindowID);
    xcb_flush(m_xServerConnection);

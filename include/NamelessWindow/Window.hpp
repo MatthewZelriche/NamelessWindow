@@ -24,7 +24,8 @@ struct NLSWIN_API_PUBLIC WindowProperties {
    unsigned int xCoordinate    = 0;
    unsigned int yCoordinate    = 0;
    unsigned int borderWidth    = 0;
-   WindowMode mode             = WindowMode::NO_PREFERENCE;
+   std::string windowName;
+   WindowMode mode = WindowMode::NO_PREFERENCE;
    std::optional<Monitor> preferredMonitor;
 };
 

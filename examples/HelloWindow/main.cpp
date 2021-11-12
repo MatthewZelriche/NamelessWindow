@@ -9,6 +9,7 @@ int main() {
    std::vector<NLSWIN::Monitor> monitors = NLSWIN::Window::EnumerateMonitors();
    NLSWIN::Monitor monitor               = monitors.at(0);
    properties.preferredMonitor           = monitor;
+   properties.windowName                 = "Example window!";
 
    for (auto monitor: monitors) {
       std::cout << monitor.name << std::endl;
