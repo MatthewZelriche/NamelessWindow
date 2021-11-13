@@ -10,6 +10,7 @@ int main() {
    NLSWIN::Monitor monitor               = monitors.at(0);
    properties.preferredMonitor           = monitor;
    properties.windowName                 = "Example window!";
+   properties.mode                       = NLSWIN::WindowMode::WINDOWED;
 
    for (auto monitor: monitors) {
       std::cout << monitor.name << std::endl;
@@ -19,4 +20,7 @@ int main() {
    }
 
    std::unique_ptr<NLSWIN::Window> window = NLSWIN::Window::CreateWindow(properties);
+
+   while (true)
+      ;
 }

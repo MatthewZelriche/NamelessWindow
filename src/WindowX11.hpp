@@ -13,9 +13,11 @@ class NLSWIN_API_PRIVATE WindowX11 : public Window {
    xcb_window_t m_x11WindowID = 0;
 
    xcb_screen_t *GetScreenFromMonitor(Monitor monitor);
+   void ToggleFullscreen();
 
    public:
    WindowX11(WindowProperties properties);
-   virtual int SetSomething(int value) override;
+   virtual void SetFullscreen(bool borderless) override;
+   virtual void SetWindowed() override;
 };
 }  // namespace NLSWIN

@@ -2,6 +2,7 @@
 
 #include <xcb/randr.h>
 
+#include <cstring>
 #include <memory>
 
 #include "NamelessWindow/exceptions.hpp"
@@ -83,7 +84,76 @@ WindowX11::WindowX11(WindowProperties properties) {
 
    // Present
    xcb_map_window(m_xServerConnection, m_x11WindowID);
+
+   if (properties.mode == WindowMode::FULLSCREEN) {
+      SetFullscreen(false);
+   } else if (properties.mode == WindowMode::WINDOWED) {
+      SetWindowed();
+   } else {
+      SetFullscreen(true);
+   }
+
+   // Flush
    xcb_flush(m_xServerConnection);
+}
+
+void WindowX11::SetFullscreen(bool borderless) {
+   if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
+      return;
+   }
+
+   ToggleFullscreen();
+
+   if (borderless) {
+      m_currentWindowMode = WindowMode::BORDERLESS;
+   } else {
+      m_currentWindowMode = WindowMode::FULLSCREEN;
+   }
+}
+
+void WindowX11::SetWindowed() {
+   if (m_currentWindowMode == WindowMode::WINDOWED) {
+      return;
+   }
+
+   ToggleFullscreen();
+
+   m_currentWindowMode = WindowMode::WINDOWED;
+}
+
+void WindowX11::ToggleFullscreen() {
+   bool fullScreen = 0;
+   if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
+      fullScreen = 1;
+   } else {
+      fullScreen = 0;
+   }
+
+   xcb_intern_atom_cookie_t stateCookie =
+      xcb_intern_atom(m_xServerConnection, 1, std::strlen("_NET_WM_STATE"), "_NET_WM_STATE");
+   xcb_intern_atom_cookie_t fullscreenCookie = xcb_intern_atom(
+      m_xServerConnection, 1, std::strlen("_NET_WM_STATE_FULLSCREEN"), "_NET_WM_STATE_FULLSCREEN");
+
+   xcb_client_message_event_t message {0};
+   message.response_type = XCB_CLIENT_MESSAGE;
+
+   xcb_intern_atom_reply_t *stateReply = xcb_intern_atom_reply(m_xServerConnection, stateCookie, nullptr);
+   xcb_intern_atom_reply_t *fullscreenReply =
+      xcb_intern_atom_reply(m_xServerConnection, fullscreenCookie, nullptr);
+
+   message.type           = stateReply->atom;
+   message.format         = 32;
+   message.window         = m_x11WindowID;
+   message.data.data32[0] = fullScreen;
+   message.data.data32[1] = fullscreenReply->atom;
+   message.data.data32[2] = 0;
+
+   xcb_send_event(m_xServerConnection, true, m_x11WindowID,
+                  XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                  (const char *)&message);
+
+   free(stateReply);
+   free(fullscreenReply);
 }
 
 xcb_screen_t *WindowX11::GetScreenFromMonitor(Monitor monitor) {
@@ -151,8 +221,4 @@ std::vector<Monitor> Window::EnumerateMonitors() {
 
    xcb_disconnect(connection);
    return listOfMonitors;
-}
-
-int WindowX11::SetSomething(int value) {
-   return value * 3;
 }
