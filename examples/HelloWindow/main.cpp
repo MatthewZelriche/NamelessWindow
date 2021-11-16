@@ -19,7 +19,7 @@ int main() {
       std::cout << monitor.horzResolution << "x" << monitor.verticalResolution << std::endl;
    }
 
-   std::unique_ptr<NLSWIN::Window> window = NLSWIN::Window::CreateWindow(properties);
+   NLSWIN::Window window(properties);
 
    while (true)
       ;

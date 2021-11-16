@@ -1,5 +1,5 @@
 if (${NLSWIN_X11})
-   set(NLSWIN_SOURCE_FILES "WindowX11.cpp")
+   set(NLSWIN_SOURCE_FILES "Window.x11.cpp")
 elseif(${NLSWIN_WAYLAND})
 
 elseif(${NLSWIN_WIN32})

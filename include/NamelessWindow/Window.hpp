@@ -30,14 +30,18 @@ struct NLSWIN_API_PUBLIC WindowProperties {
 };
 
 class NLSWIN_API_PUBLIC Window {
-   protected:
-   WindowMode m_currentWindowMode = WindowMode::NO_PREFERENCE;
+   private:
+   class WindowImpl;
+   std::unique_ptr<WindowImpl> m_pImpl {nullptr};
 
    public:
-   static std::unique_ptr<Window> CreateWindow(WindowProperties properties);
+   Window();
+   ~Window();
+   Window(WindowProperties properties);
    static std::vector<Monitor> EnumerateMonitors();
+   void SetFullscreen(bool borderless = true);
+   void SetWindowed();
 
-   virtual void SetFullscreen(bool borderless = true) = 0;
-   virtual void SetWindowed()                         = 0;
+   WindowMode GetWindowMode() const;
 };
 }  // namespace NLSWIN

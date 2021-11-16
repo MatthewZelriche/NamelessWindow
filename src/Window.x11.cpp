@@ -1,4 +1,4 @@
-#include "WindowX11.hpp"
+#include "Window.x11.hpp"
 
 #include <xcb/randr.h>
 
@@ -9,13 +9,9 @@
 
 using namespace NLSWIN;
 
-xcb_connection_t *WindowX11::m_xServerConnection = nullptr;
+xcb_connection_t *Window::WindowImpl::m_xServerConnection = nullptr;
 
-std::unique_ptr<Window> Window::CreateWindow(WindowProperties properties) {
-   return std::make_unique<WindowX11>(properties);
-}
-
-WindowX11::WindowX11(WindowProperties properties) {
+Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window) : self(window) {
    // If we haven't opened a connection, do so now.
    if (!m_xServerConnection) {
       m_preferredScreenNum = 0;
@@ -97,7 +93,7 @@ WindowX11::WindowX11(WindowProperties properties) {
    xcb_flush(m_xServerConnection);
 }
 
-void WindowX11::SetFullscreen(bool borderless) {
+void Window::WindowImpl::SetFullscreen(bool borderless) {
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       return;
    }
@@ -111,7 +107,7 @@ void WindowX11::SetFullscreen(bool borderless) {
    }
 }
 
-void WindowX11::SetWindowed() {
+void Window::WindowImpl::SetWindowed() {
    if (m_currentWindowMode == WindowMode::WINDOWED) {
       return;
    }
@@ -121,7 +117,7 @@ void WindowX11::SetWindowed() {
    m_currentWindowMode = WindowMode::WINDOWED;
 }
 
-void WindowX11::ToggleFullscreen() {
+void Window::WindowImpl::ToggleFullscreen() {
    bool fullScreen = 0;
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       fullScreen = 1;
@@ -156,7 +152,7 @@ void WindowX11::ToggleFullscreen() {
    free(fullscreenReply);
 }
 
-xcb_screen_t *WindowX11::GetScreenFromMonitor(Monitor monitor) {
+xcb_screen_t *Window::WindowImpl::GetScreenFromMonitor(Monitor monitor) {
    auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(m_xServerConnection));
    do {
       auto monitorsReply = xcb_randr_get_monitors_reply(
@@ -222,3 +218,11 @@ std::vector<Monitor> Window::EnumerateMonitors() {
    xcb_disconnect(connection);
    return listOfMonitors;
 }
+
+Window::Window() : m_pImpl(std::make_unique<WindowImpl>(WindowProperties {}, *this)) {
+}
+
+Window::Window(WindowProperties properties) : m_pImpl(std::make_unique<WindowImpl>(properties, *this)) {
+}
+
+Window::~Window() = default;
