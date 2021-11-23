@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "InputDevice.hpp"
 #include "NLSAPI.h"
 
 namespace NLSWIN {
@@ -39,6 +40,7 @@ class NLSWIN_API_PUBLIC Window {
    ~Window();
    Window(WindowProperties properties);
    static std::vector<Monitor> EnumerateMonitors();
+   static std::vector<KeyboardDeviceInfo> EnumerateKeyboards();
    void SetFullscreen(bool borderless = true);
    void SetWindowed();
 

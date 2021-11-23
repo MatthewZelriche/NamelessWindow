@@ -5,6 +5,12 @@
 #include "NamelessWindow/Window.hpp"
 
 int main() {
+   std::vector<NLSWIN::KeyboardDeviceInfo> keyboards = NLSWIN::Window::EnumerateKeyboards();
+
+   for (auto keyboardInfo: keyboards) {
+      std::cout << keyboardInfo.name << " " << keyboardInfo.platformSpecificIdentifier << std::endl;
+   }
+
    NLSWIN::WindowProperties properties {};
    std::vector<NLSWIN::Monitor> monitors = NLSWIN::Window::EnumerateMonitors();
    NLSWIN::Monitor monitor               = monitors.at(0);
