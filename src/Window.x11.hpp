@@ -21,5 +21,7 @@ class NLSWIN_API_PRIVATE Window::WindowImpl {
    WindowImpl(WindowProperties properties, const Window &window);
    void SetFullscreen(bool borderless);
    void SetWindowed();
+
+   inline WindowMode GetWindowMode() const { return m_currentWindowMode; }
 };
 }  // namespace NLSWIN

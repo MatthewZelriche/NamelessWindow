@@ -120,12 +120,13 @@ Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window
    // Present
    xcb_map_window(m_xServerConnection, m_x11WindowID);
 
+   // X defaults to windowed, so if we want to initialize as fullscreen, just toggle.
    if (properties.mode == WindowMode::FULLSCREEN) {
-      SetFullscreen(false);
-   } else if (properties.mode == WindowMode::WINDOWED) {
-      SetWindowed();
-   } else {
-      SetFullscreen(true);
+      ToggleFullscreen();
+      m_currentWindowMode == WindowMode::FULLSCREEN;
+   } else if (properties.mode == WindowMode::BORDERLESS) {
+      ToggleFullscreen();
+      m_currentWindowMode == WindowMode::BORDERLESS;
    }
 
    // Flush
@@ -265,3 +266,15 @@ Window::Window(WindowProperties properties) : m_pImpl(std::make_unique<WindowImp
 }
 
 Window::~Window() = default;
+
+void Window::SetFullscreen(bool borderless) {
+   m_pImpl->SetFullscreen(borderless);
+}
+
+void Window::SetWindowed() {
+   m_pImpl->SetWindowed();
+}
+
+WindowMode Window::GetWindowMode() const {
+   return m_pImpl->GetWindowMode();
+}
