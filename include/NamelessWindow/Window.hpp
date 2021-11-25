@@ -43,6 +43,8 @@ class NLSWIN_API_PUBLIC Window {
    static std::vector<KeyboardDeviceInfo> EnumerateKeyboards();
    void SetFullscreen(bool borderless = true);
    void SetWindowed();
+   void Close();
+   bool RequestedClose() const;
 
    WindowMode GetWindowMode() const;
 };

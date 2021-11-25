@@ -27,6 +27,5 @@ int main() {
 
    NLSWIN::Window window(properties);
 
-   while (true)
-      ;
+   while (!window.RequestedClose()) {}
 }

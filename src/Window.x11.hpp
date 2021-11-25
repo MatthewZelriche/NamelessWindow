@@ -16,12 +16,15 @@ class NLSWIN_API_PRIVATE Window::WindowImpl {
    xcb_screen_t *GetScreenFromMonitor(Monitor monitor);
    void ToggleFullscreen();
    WindowMode m_currentWindowMode;
+   bool receivedTerminateSignal {false};
 
    public:
    WindowImpl(WindowProperties properties, const Window &window);
    void SetFullscreen(bool borderless);
    void SetWindowed();
+   void Close();
 
+   inline bool RequestedClose() const { return receivedTerminateSignal; }
    inline WindowMode GetWindowMode() const { return m_currentWindowMode; }
 };
 }  // namespace NLSWIN

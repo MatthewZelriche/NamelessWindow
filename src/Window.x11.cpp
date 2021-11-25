@@ -117,6 +117,18 @@ Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window
                           XCB_ATOM_STRING, 8, properties.windowName.length(), properties.windowName.c_str());
    }
 
+   // Redirect window close events to the application.
+   xcb_intern_atom_cookie_t protocolsCookie =
+      xcb_intern_atom(m_xServerConnection, false, std::strlen("WM_PROTOCOLS"), "WM_PROTOCOLS");
+   xcb_intern_atom_cookie_t deleteWindowCookie =
+      xcb_intern_atom(m_xServerConnection, false, std::strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
+   xcb_intern_atom_reply_t *protocolsAtomReply =
+      xcb_intern_atom_reply(m_xServerConnection, protocolsCookie, nullptr);
+   xcb_intern_atom_reply_t *deleteWindowAtomReply =
+      xcb_intern_atom_reply(m_xServerConnection, deleteWindowCookie, nullptr);
+   xcb_change_property(m_xServerConnection, XCB_PROP_MODE_REPLACE, m_x11WindowID, protocolsAtomReply->atom,
+                       XCB_ATOM_ATOM, 32, 1, &(deleteWindowAtomReply->atom));
+
    // Present
    xcb_map_window(m_xServerConnection, m_x11WindowID);
 
@@ -155,6 +167,10 @@ void Window::WindowImpl::SetWindowed() {
    ToggleFullscreen();
 
    m_currentWindowMode = WindowMode::WINDOWED;
+}
+
+void Window::WindowImpl::Close() {
+   receivedTerminateSignal = true;
 }
 
 void Window::WindowImpl::ToggleFullscreen() {
@@ -277,4 +293,12 @@ void Window::SetWindowed() {
 
 WindowMode Window::GetWindowMode() const {
    return m_pImpl->GetWindowMode();
+}
+
+void Window::Close() {
+   return m_pImpl->Close();
+}
+
+bool Window::RequestedClose() const {
+   return m_pImpl->RequestedClose();
 }
