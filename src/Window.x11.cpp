@@ -216,9 +216,12 @@ xcb_screen_t *Window::WindowImpl::GetScreenFromMonitor(Monitor monitor) {
          nullptr);
       auto monitorIter = xcb_randr_get_monitors_monitors_iterator(monitorsReply);
       do {
-         char *monitorName = xcb_get_atom_name_name(xcb_get_atom_name_reply(
-            m_xServerConnection, xcb_get_atom_name(m_xServerConnection, monitorIter.data->name), nullptr));
-         if (monitor.name.compare(monitorName) == 0) {
+         auto nameReply = xcb_get_atom_name_reply(
+            m_xServerConnection, xcb_get_atom_name(m_xServerConnection, monitorIter.data->name), nullptr);
+         char *monitorName = xcb_get_atom_name_name(nameReply);
+         auto nameLen      = xcb_get_atom_name_name_length(nameReply);
+
+         if (std::strncmp(monitor.name.c_str(), monitorName, nameLen) == 0) {
             return screenIter.data;
          }
          xcb_randr_monitor_info_next(&monitorIter);
