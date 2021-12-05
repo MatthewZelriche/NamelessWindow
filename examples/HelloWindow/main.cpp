@@ -4,10 +4,11 @@
 
 #include "NamelessWindow/Event.hpp"
 #include "NamelessWindow/EventQueue.hpp"
+#include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/Window.hpp"
 
 int main() {
-   std::vector<NLSWIN::KeyboardDeviceInfo> keyboards = NLSWIN::Window::EnumerateKeyboards();
+   std::vector<NLSWIN::KeyboardDeviceInfo> keyboards = NLSWIN::Keyboard::EnumerateKeyboards();
 
    for (auto keyboardInfo: keyboards) {
       std::cout << keyboardInfo.name << " " << keyboardInfo.platformSpecificIdentifier << std::endl;
