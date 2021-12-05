@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "NamelessWindow/exceptions.hpp"
+#include "XConnection.h"
 
 using namespace NLSWIN;
 
@@ -11,10 +12,8 @@ std::map<std::weak_ptr<EventListenerX11>, std::unordered_set<std::type_index>, s
 xcb_connection_t *EventQueueX11::m_connection = nullptr;
 
 void EventQueueX11::GetOSEvents() {
-   // If a call to this function is made prior to successfully constructing a window.
-   if (!m_connection) {
-      throw InvalidEventDispatcherException();
-   }
+   XConnection::CreateConnection();
+   m_connection = XConnection::GetConnection();
 
    xcb_generic_event_t *event = nullptr;
    while (event = xcb_poll_for_event(m_connection)) {

@@ -10,6 +10,7 @@
 #include "NamelessWindow/Event.hpp"
 #include "NamelessWindow/InputDevice.hpp"
 #include "NamelessWindow/exceptions.hpp"
+#include "XConnection.h"
 
 using namespace NLSWIN;
 
@@ -53,17 +54,8 @@ std::vector<KeyboardDeviceInfo> Window::EnumerateKeyboards() {
 }
 
 Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window) {
-   // If we haven't opened a connection, do so now.
-   if (!m_xServerConnection) {
-      m_preferredScreenNum = 0;
-      m_xServerConnection  = xcb_connect(nullptr, &m_preferredScreenNum);
-      int result           = xcb_connection_has_error(m_xServerConnection);
-      if (result != 0) {
-         throw std::runtime_error("Unspecified error attempting to establish display server connection");
-      }
-      // Register the connection weve opened with our event dispatcher.
-      EventQueueX11::RegisterXConnection(m_xServerConnection);
-   }
+   XConnection::CreateConnection();
+   m_xServerConnection = XConnection::GetConnection();
 
    // Get the correct screen.
    xcb_screen_t *preferredScreen = nullptr;

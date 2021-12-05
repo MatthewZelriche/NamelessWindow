@@ -1,7 +1,7 @@
 if (${NLSWIN_X11})
    set(NLSWIN_SOURCE_FILES "Window.x11.cpp"
                            "EventListener.x11.cpp"
-                           "EventQueue.x11.cpp")
+                           "XConnection.cpp"
 elseif(${NLSWIN_WAYLAND})
 
 elseif(${NLSWIN_WIN32})
