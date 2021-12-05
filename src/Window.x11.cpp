@@ -6,6 +6,8 @@
 #include <cstring>
 #include <memory>
 
+#include "EventQueue.x11.hpp"
+#include "NamelessWindow/Event.hpp"
 #include "NamelessWindow/InputDevice.hpp"
 #include "NamelessWindow/exceptions.hpp"
 
@@ -50,7 +52,7 @@ std::vector<KeyboardDeviceInfo> Window::EnumerateKeyboards() {
    return keyboards;
 }
 
-Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window) : self(window) {
+Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window) {
    // If we haven't opened a connection, do so now.
    if (!m_xServerConnection) {
       m_preferredScreenNum = 0;
@@ -59,6 +61,8 @@ Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window
       if (result != 0) {
          throw std::runtime_error("Unspecified error attempting to establish display server connection");
       }
+      // Register the connection weve opened with our event dispatcher.
+      EventQueueX11::RegisterXConnection(m_xServerConnection);
    }
 
    // Get the correct screen.
@@ -110,6 +114,8 @@ Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window
                      windowXCoord, windowYCoord, properties.horzResolution, properties.vertResolution,
                      borderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCB_COPY_FROM_PARENT, XCB_CW_EVENT_MASK,
                      valueMaskArray.data());
+
+   m_windows.insert(m_x11WindowID);
 
    // Set window name if we were given one.
    if (!properties.windowName.empty()) {
@@ -278,13 +284,38 @@ std::vector<Monitor> Window::EnumerateMonitors() {
    return listOfMonitors;
 }
 
-Window::Window() : m_pImpl(std::make_unique<WindowImpl>(WindowProperties {}, *this)) {
+void Window::WindowImpl::EventRecieved(Event event) {
+   // Intercept a window close event - its only meant to be used internally.
+   if (auto closeEvent = std::get_if<WindowCloseEvent>(&event)) {
+      Close();
+      return;
+   }
+   EventListenerX11::EventRecieved(event);
 }
 
-Window::Window(WindowProperties properties) : m_pImpl(std::make_unique<WindowImpl>(properties, *this)) {
+void Window::RegisterForEvent(EventType type) {
+   EventQueueX11::RegisterForEvent(m_pImpl, type);
+}
+
+bool Window::UnregisterForEvent(EventType type) {
+   return EventQueueX11::UnregisterForEvent(m_pImpl, type);
+}
+
+Window::Window() : m_pImpl(std::make_shared<WindowImpl>(WindowProperties {}, *this)) {
+}
+
+Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<WindowImpl>(properties, *this)) {
 }
 
 Window::~Window() = default;
+
+bool Window::HasEvent() {
+   return m_pImpl->HasEvent();
+}
+
+Event Window::GetNextEvent() {
+   return m_pImpl->GetNextEvent();
+}
 
 void Window::SetFullscreen(bool borderless) {
    m_pImpl->SetFullscreen(borderless);

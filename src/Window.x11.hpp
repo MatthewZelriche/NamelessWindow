@@ -3,12 +3,13 @@
 
 #include <vector>
 
+#include "EventListener.x11.hpp"
+#include "NamelessWindow/Event.hpp"
 #include "NamelessWindow/Window.hpp"
 
 namespace NLSWIN {
-class NLSWIN_API_PRIVATE Window::WindowImpl {
+class NLSWIN_API_PRIVATE Window::WindowImpl : public EventListenerX11 {
    private:
-   const Window &self;
    static xcb_connection_t *m_xServerConnection;
    int m_preferredScreenNum {0};
    xcb_window_t m_x11WindowID {0};
@@ -24,7 +25,11 @@ class NLSWIN_API_PRIVATE Window::WindowImpl {
    void SetWindowed();
    void Close();
 
+   inline xcb_connection_t *GetConnection() const { return m_xServerConnection; }
+
    inline bool RequestedClose() const { return receivedTerminateSignal; }
    inline WindowMode GetWindowMode() const { return m_currentWindowMode; }
+
+   virtual void EventRecieved(Event event) override;
 };
 }  // namespace NLSWIN

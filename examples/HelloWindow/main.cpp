@@ -2,6 +2,8 @@
 #include <memory>
 #include <vector>
 
+#include "NamelessWindow/Event.hpp"
+#include "NamelessWindow/EventQueue.hpp"
 #include "NamelessWindow/Window.hpp"
 
 int main() {
@@ -27,5 +29,9 @@ int main() {
 
    NLSWIN::Window window(properties);
 
-   while (!window.RequestedClose()) {}
+   window.RegisterForEvent(NLSWIN::KeyEvent::type);
+   while (!window.RequestedClose()) {
+      NLSWIN::EventQueue::GetOSEvents();
+      while (window.HasEvent()) { std::cout << window.HasEvent() << std::endl; }
+   }
 }

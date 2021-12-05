@@ -33,7 +33,7 @@ struct NLSWIN_API_PUBLIC WindowProperties {
 class NLSWIN_API_PUBLIC Window {
    private:
    class WindowImpl;
-   std::unique_ptr<WindowImpl> m_pImpl {nullptr};
+   std::shared_ptr<WindowImpl> m_pImpl {nullptr};
 
    public:
    Window();
@@ -45,6 +45,10 @@ class NLSWIN_API_PUBLIC Window {
    void SetWindowed();
    void Close();
    bool RequestedClose() const;
+   void RegisterForEvent(EventType type);
+   bool UnregisterForEvent(EventType type);
+   bool HasEvent();
+   Event GetNextEvent();
 
    WindowMode GetWindowMode() const;
 };
