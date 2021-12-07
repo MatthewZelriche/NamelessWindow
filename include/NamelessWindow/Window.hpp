@@ -8,6 +8,8 @@
 
 namespace NLSWIN {
 
+class Keyboard;
+
 enum class NLSWIN_API_PUBLIC WindowMode { FULLSCREEN = 0, BORDERLESS = 1, WINDOWED = 2, NO_PREFERENCE = 3 };
 
 struct NLSWIN_API_PUBLIC Monitor {
@@ -32,6 +34,7 @@ struct NLSWIN_API_PUBLIC WindowProperties {
 class NLSWIN_API_PUBLIC Window {
    private:
    class WindowImpl;
+   friend class Keyboard;
    std::shared_ptr<WindowImpl> m_pImpl {nullptr};
 
    public:
@@ -43,8 +46,6 @@ class NLSWIN_API_PUBLIC Window {
    void SetWindowed();
    void Close();
    bool RequestedClose() const;
-   void RegisterForEvent(EventType type);
-   bool UnregisterForEvent(EventType type);
    bool HasEvent();
    Event GetNextEvent();
 

@@ -4,7 +4,11 @@
 #include <string>
 #include <vector>
 
+#include "Event.hpp"
+
 namespace NLSWIN {
+
+class Window;
 
 struct KeyboardDeviceInfo {
    std::string name;
@@ -17,9 +21,11 @@ class Keyboard {
    std::shared_ptr<KeyboardImpl> m_pImpl {nullptr};
 
    public:
-   Keyboard();
+   Keyboard(const Window &window);
    ~Keyboard();
    static std::vector<KeyboardDeviceInfo> EnumerateKeyboards();
+   bool HasEvent();
+   Event GetNextEvent();
 };
 
 }  // namespace NLSWIN

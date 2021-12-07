@@ -59,7 +59,7 @@ Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window
    }
 
    std::array<uint32_t, 1> valueMaskArray;
-   valueMaskArray[0] = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE;
+   valueMaskArray[0] = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_FOCUS_CHANGE;
    // Fetch a new window from X11.
    m_x11WindowID = xcb_generate_id(m_xServerConnection);
    // TODO: Look into visual. Look into masks.
@@ -246,18 +246,13 @@ void Window::WindowImpl::EventRecieved(Event event) {
    EventListenerX11::EventRecieved(event);
 }
 
-void Window::RegisterForEvent(EventType type) {
-   EventQueueX11::RegisterForEvent(m_pImpl, type);
-}
-
-bool Window::UnregisterForEvent(EventType type) {
-   return EventQueueX11::UnregisterForEvent(m_pImpl, type);
-}
-
-Window::Window() : m_pImpl(std::make_shared<WindowImpl>(WindowProperties {}, *this)) {
+Window::Window() {
+   Window(WindowProperties());
 }
 
 Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<WindowImpl>(properties, *this)) {
+   EventQueueX11::RegisterForEvent(m_pImpl, WindowCloseEvent::type);
+   EventQueueX11::RegisterForEvent(m_pImpl, WindowFocusedEvent::type);
 }
 
 Window::~Window() = default;

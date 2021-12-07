@@ -18,7 +18,11 @@ struct NLSWIN_API_PUBLIC WindowCloseEvent {
    static std::type_index type;
 };
 
-using Event     = std::variant<KeyEvent, WindowCloseEvent>;
+struct NLSWIN_API_PUBLIC WindowFocusedEvent {
+   static std::type_index type;
+};
+
+using Event     = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent>;
 using EventType = std::type_index;
 
 }  // namespace NLSWIN

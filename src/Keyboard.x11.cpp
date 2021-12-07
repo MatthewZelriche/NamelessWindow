@@ -4,6 +4,9 @@
 
 #include <cstring>
 
+#include "EventQueue.x11.hpp"
+#include "NamelessWindow/Event.hpp"
+#include "NamelessWindow/Window.hpp"
 #include "Window.x11.hpp"
 #include "XConnection.h"
 
@@ -47,12 +50,25 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() {
    return keyboards;
 }
 
-Keyboard::KeyboardImpl::KeyboardImpl() {
+Keyboard::KeyboardImpl::KeyboardImpl(const Window &window) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
+
+   m_windows.insert(window.m_pImpl->GetWindowID());
 }
 
-Keyboard::Keyboard() : m_pImpl(std::make_shared<Keyboard::KeyboardImpl>()) {
+Keyboard::Keyboard(const Window &window) : m_pImpl(std::make_shared<Keyboard::KeyboardImpl>(window)) {
+   // After weve constructed the impl, register all events it is interested in.
+   EventQueueX11::RegisterForEvent(m_pImpl, KeyEvent::type);
 }
+
+bool Keyboard::HasEvent() {
+   return m_pImpl->HasEvent();
+}
+
+Event Keyboard::GetNextEvent() {
+   return m_pImpl->GetNextEvent();
+}
+
 Keyboard::~Keyboard() {
 }

@@ -18,7 +18,33 @@ void EventQueueX11::GetOSEvents() {
    xcb_generic_event_t *event = nullptr;
    while (event = xcb_poll_for_event(m_connection)) {
       switch (event->response_type & ~0x80) {
-      case XCB_CLIENT_MESSAGE:
+      case XCB_FOCUS_IN: {
+         xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
+         for (auto listener: m_listeners) {
+            auto listenerSharedPtr = listener.first.lock();
+            auto &windows          = listenerSharedPtr->GetWindows();
+            if (windows.find(focusEvent->event) != windows.end()) {
+               listenerSharedPtr->EventRecieved(WindowFocusedEvent());
+            }
+         }
+         break;
+      }
+      // TODO: Use Xinput, implement keypresses properly (will be a huge pain)
+      case XCB_KEY_PRESS: {
+         xcb_key_press_event_t *keyPress = reinterpret_cast<xcb_key_press_event_t *>(event);
+         KeyEvent keyEvent;
+         for (auto listener: m_listeners) {
+            if (!listener.first.expired()) {
+               auto listenerSharedPtr = listener.first.lock();
+               auto &windows          = listenerSharedPtr->GetWindows();
+               if (windows.find(keyPress->event) != windows.end()) {
+                  listenerSharedPtr->EventRecieved(KeyEvent());
+               }
+            }
+         }
+         break;
+      }
+      case XCB_CLIENT_MESSAGE: {
          xcb_client_message_event_t *clientEvent = reinterpret_cast<xcb_client_message_event_t *>(event);
          xcb_intern_atom_cookie_t deleteWindowCookie =
             xcb_intern_atom(m_connection, false, std::strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
@@ -35,6 +61,7 @@ void EventQueueX11::GetOSEvents() {
                }
             }
          }
+      }
       }
    }
 }

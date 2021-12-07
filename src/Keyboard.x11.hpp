@@ -7,11 +7,12 @@
 #include "NamelessWindow/NLSAPI.h"
 
 namespace NLSWIN {
+class Window;
 class NLSWIN_API_PRIVATE Keyboard::KeyboardImpl : public EventListenerX11 {
    private:
    static xcb_connection_t *m_connection;
 
    public:
-   KeyboardImpl();
+   KeyboardImpl(const Window &window);
 };
 }  // namespace NLSWIN

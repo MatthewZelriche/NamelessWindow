@@ -26,10 +26,12 @@ class NLSWIN_API_PRIVATE Window::WindowImpl : public EventListenerX11 {
    void Close();
 
    inline xcb_connection_t *GetConnection() const { return m_xServerConnection; }
+   inline xcb_window_t GetWindowID() const { return m_x11WindowID; }
 
    inline bool RequestedClose() const { return receivedTerminateSignal; }
    inline WindowMode GetWindowMode() const { return m_currentWindowMode; }
 
-   virtual void EventRecieved(Event event) override;
+   // We override EventRecieved because we need a way to process window close events internally.
+   void EventRecieved(Event event) override;
 };
 }  // namespace NLSWIN
