@@ -36,14 +36,18 @@ int main() {
       while (keyboard.HasEvent()) {
          NLSWIN::Event nextEvent = keyboard.GetNextEvent();
          if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&nextEvent)) {
-            std::cout << "Key event occured!" << std::endl;
+            if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {
+               std::cout << "Key pressed!" << std::endl;
+            } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
+               std::cout << "Key released!" << std::endl;
+            }
          }
       }
 
       while (window.HasEvent()) {
          NLSWIN::Event nextEvent = window.GetNextEvent();
 
-         if (auto closeEvent = std::get_if<NLSWIN::WindowFocusedEvent>(&nextEvent)) {
+         if (auto focusEvent = std::get_if<NLSWIN::WindowFocusedEvent>(&nextEvent)) {
             std::cout << "Focused!" << std::endl;
          }
       }

@@ -22,6 +22,7 @@ class Keyboard {
 
    public:
    Keyboard(const Window &window);
+   Keyboard(const Window &window, KeyboardDeviceInfo device);
    ~Keyboard();
    static std::vector<KeyboardDeviceInfo> EnumerateKeyboards();
    bool HasEvent();

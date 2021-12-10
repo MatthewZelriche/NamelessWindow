@@ -1,7 +1,11 @@
 #include "EventQueue.x11.hpp"
 
+#include <X11/extensions/XInput2.h>
+#include <xcb/xinput.h>
+
 #include <cstring>
 
+#include "NamelessWindow/Key.hpp"
 #include "NamelessWindow/exceptions.hpp"
 #include "XConnection.h"
 
@@ -11,12 +15,45 @@ std::map<std::weak_ptr<EventListenerX11>, std::unordered_set<std::type_index>, s
    EventQueueX11::m_listeners;
 xcb_connection_t *EventQueueX11::m_connection = nullptr;
 
+#include <iostream>
 void EventQueueX11::GetOSEvents() {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
 
    xcb_generic_event_t *event = nullptr;
    while (event = xcb_poll_for_event(m_connection)) {
+      if ((event->response_type & ~80) == XCB_GE_GENERIC) {
+         switch (((xcb_ge_event_t *)event)->event_type) {
+         // TODO: Handle repeats.
+         case XCB_INPUT_KEY_PRESS: {
+            xcb_input_key_press_event_t *keyPress = (xcb_input_key_press_event_t *)event;
+            for (auto listener: m_listeners) {
+               auto listenerSharedPtr = listener.first.lock();
+               auto &windows          = listenerSharedPtr->GetWindows();
+               if (windows.find(keyPress->event) != windows.end()) {
+                  KeyEvent keyEvent;
+                  keyEvent.pressType = KeyPressType::PRESSED;
+                  listenerSharedPtr->EventRecieved(keyEvent);
+               }
+            }
+            break;
+         }
+         case XCB_INPUT_KEY_RELEASE: {
+            xcb_input_key_release_event_t *keyRelease = (xcb_input_key_release_event_t *)event;
+            for (auto listener: m_listeners) {
+               auto listenerSharedPtr = listener.first.lock();
+               auto &windows          = listenerSharedPtr->GetWindows();
+               if (windows.find(keyRelease->event) != windows.end()) {
+                  KeyEvent keyEvent;
+                  keyEvent.pressType = KeyPressType::RELEASED;
+                  listenerSharedPtr->EventRecieved(keyEvent);
+               }
+            }
+            break;
+         }
+         }
+      }
+
       switch (event->response_type & ~0x80) {
       case XCB_FOCUS_IN: {
          xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
@@ -25,21 +62,6 @@ void EventQueueX11::GetOSEvents() {
             auto &windows          = listenerSharedPtr->GetWindows();
             if (windows.find(focusEvent->event) != windows.end()) {
                listenerSharedPtr->EventRecieved(WindowFocusedEvent());
-            }
-         }
-         break;
-      }
-      // TODO: Use Xinput, implement keypresses properly (will be a huge pain)
-      case XCB_KEY_PRESS: {
-         xcb_key_press_event_t *keyPress = reinterpret_cast<xcb_key_press_event_t *>(event);
-         KeyEvent keyEvent;
-         for (auto listener: m_listeners) {
-            if (!listener.first.expired()) {
-               auto listenerSharedPtr = listener.first.lock();
-               auto &windows          = listenerSharedPtr->GetWindows();
-               if (windows.find(keyPress->event) != windows.end()) {
-                  listenerSharedPtr->EventRecieved(KeyEvent());
-               }
             }
          }
          break;

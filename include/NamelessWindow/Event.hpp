@@ -11,6 +11,7 @@ namespace NLSWIN {
 struct NLSWIN_API_PUBLIC KeyEvent {
    static std::type_index type;
    KeyCode code;
+   KeyPressType pressType;
 };
 
 // Currently for internal use only.

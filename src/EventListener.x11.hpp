@@ -1,6 +1,7 @@
 #pragma once
 
 #include <xcb/xcb.h>
+#include <xcb/xinput.h>
 
 #include <queue>
 #include <unordered_set>
@@ -15,6 +16,7 @@ class EventListenerX11 {
 
    protected:
    std::unordered_set<xcb_window_t> m_windows;
+   xcb_input_device_id_t m_deviceID = XCB_INPUT_DEVICE_ALL_MASTER;
 
    public:
    virtual void EventRecieved(Event event);

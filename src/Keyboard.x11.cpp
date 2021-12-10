@@ -1,7 +1,5 @@
 #include "Keyboard.x11.hpp"
 
-#include <xcb/xinput.h>
-
 #include <cstring>
 
 #include "EventQueue.x11.hpp"
@@ -50,14 +48,37 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() {
    return keyboards;
 }
 
-Keyboard::KeyboardImpl::KeyboardImpl(const Window &window) {
+void Keyboard::KeyboardImpl::Init(const Window &window) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
 
    m_windows.insert(window.m_pImpl->GetWindowID());
+
+   XI2EventMask mask;
+   mask.head.deviceid = m_deviceID;
+   mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
+   mask.mask =
+      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE);
+   xcb_input_xi_select_events(m_connection, window.m_pImpl->GetWindowID(), 1, &mask.head);
+   xcb_flush(m_connection);
+}
+
+Keyboard::KeyboardImpl::KeyboardImpl(const Window &window) {
+   Init(window);
+}
+
+Keyboard::KeyboardImpl::KeyboardImpl(const Window &window, KeyboardDeviceInfo device) {
+   m_deviceID = device.platformSpecificIdentifier;
+   Init(window);
 }
 
 Keyboard::Keyboard(const Window &window) : m_pImpl(std::make_shared<Keyboard::KeyboardImpl>(window)) {
+   // After weve constructed the impl, register all events it is interested in.
+   EventQueueX11::RegisterForEvent(m_pImpl, KeyEvent::type);
+}
+
+Keyboard::Keyboard(const Window &window, KeyboardDeviceInfo device) :
+   m_pImpl(std::make_shared<Keyboard::KeyboardImpl>(window, device)) {
    // After weve constructed the impl, register all events it is interested in.
    EventQueueX11::RegisterForEvent(m_pImpl, KeyEvent::type);
 }
