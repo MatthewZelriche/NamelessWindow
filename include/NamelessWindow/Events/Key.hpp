@@ -1,16 +1,16 @@
 #pragma once
 
-#include "NLSAPI.h"
+#include "../NLSAPI.h"
 
 namespace NLSWIN {
 
 enum class NLSWIN_API_PUBLIC KeyPressType { PRESSED = 0, RELEASED = 1, REPEAT = 2 };
 
 enum class NLSWIN_API_PUBLIC KeyModifierState {
-   CTRL    = 1 << 1,
-   SUPER   = 1 << 2,
-   ALT     = 1 << 3,
-   SHIFT   = 1 << 4,
+   CTRL = 1 << 1,
+   SUPER = 1 << 2,
+   ALT = 1 << 3,
+   SHIFT = 1 << 4,
    CAPSLCK = 1 << 5
 
 };

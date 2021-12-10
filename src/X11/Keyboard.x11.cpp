@@ -3,20 +3,20 @@
 #include <cstring>
 
 #include "EventQueue.x11.hpp"
-#include "NamelessWindow/Event.hpp"
+#include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Window.hpp"
 #include "Window.x11.hpp"
 #include "XConnection.h"
 
 using namespace NLSWIN;
 
-xcb_connection_t *Keyboard::KeyboardImpl::m_connection = nullptr;
+xcb_connection_t *Keyboard::Impl::m_connection = nullptr;
 
-std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() {
+std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
    std::vector<KeyboardDeviceInfo> keyboards;
    // Open a brief temporary connection to get the screens
    xcb_connection_t *connection = xcb_connect(nullptr, nullptr);
-   int result                   = xcb_connection_has_error(connection);
+   int result = xcb_connection_has_error(connection);
    if (result != 0) {
       xcb_disconnect(connection);
       return {};
@@ -36,7 +36,7 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() {
             const char *name = xcb_input_xi_device_info_name(element);
             if (!std::strstr(name, "XTEST")) {
                KeyboardDeviceInfo dev {};
-               dev.name                       = name;
+               dev.name = name;
                dev.platformSpecificIdentifier = element->deviceid;
                keyboards.push_back(dev);
             }
@@ -48,7 +48,7 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() {
    return keyboards;
 }
 
-void Keyboard::KeyboardImpl::Init(const Window &window) {
+void Keyboard::Impl::Init(const Window &window) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
 
@@ -57,33 +57,32 @@ void Keyboard::KeyboardImpl::Init(const Window &window) {
    XI2EventMask mask;
    mask.head.deviceid = m_deviceID;
    mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
-   mask.mask =
-      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE);
+   mask.mask = m_subscribedMasks;
    xcb_input_xi_select_events(m_connection, window.m_pImpl->GetWindowID(), 1, &mask.head);
-   xcb_flush(m_connection);
+   xcb_flush(m_connection);  // To ensure the X server definitely gets the request.
 }
 
-Keyboard::KeyboardImpl::KeyboardImpl(const Window &window) {
+Keyboard::Impl::Impl(const Window &window) {
    Init(window);
 }
 
-Keyboard::KeyboardImpl::KeyboardImpl(const Window &window, KeyboardDeviceInfo device) {
+Keyboard::Impl::Impl(const Window &window, KeyboardDeviceInfo device) {
    m_deviceID = device.platformSpecificIdentifier;
    Init(window);
 }
 
-Keyboard::Keyboard(const Window &window) : m_pImpl(std::make_shared<Keyboard::KeyboardImpl>(window)) {
+Keyboard::Keyboard(const Window &window) : m_pImpl(std::make_shared<Keyboard::Impl>(window)) {
    // After weve constructed the impl, register all events it is interested in.
    EventQueueX11::RegisterForEvent(m_pImpl, KeyEvent::type);
 }
 
 Keyboard::Keyboard(const Window &window, KeyboardDeviceInfo device) :
-   m_pImpl(std::make_shared<Keyboard::KeyboardImpl>(window, device)) {
+   m_pImpl(std::make_shared<Keyboard::Impl>(window, device)) {
    // After weve constructed the impl, register all events it is interested in.
    EventQueueX11::RegisterForEvent(m_pImpl, KeyEvent::type);
 }
 
-bool Keyboard::HasEvent() {
+bool Keyboard::HasEvent() const noexcept {
    return m_pImpl->HasEvent();
 }
 

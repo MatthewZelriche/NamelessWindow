@@ -3,27 +3,28 @@
 #include <typeindex>
 #include <variant>
 
+#include "../NLSAPI.h"
 #include "Key.hpp"
-#include "NLSAPI.h"
 
 namespace NLSWIN {
 
+using EventType = std::type_index;
+
 struct NLSWIN_API_PUBLIC KeyEvent {
-   static std::type_index type;
+   static EventType type;
    KeyCode code;
    KeyPressType pressType;
 };
 
 // Currently for internal use only.
 struct NLSWIN_API_PUBLIC WindowCloseEvent {
-   static std::type_index type;
+   static EventType type;
 };
 
 struct NLSWIN_API_PUBLIC WindowFocusedEvent {
-   static std::type_index type;
+   static EventType type;
 };
 
-using Event     = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent>;
-using EventType = std::type_index;
+using Event = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent>;
 
 }  // namespace NLSWIN

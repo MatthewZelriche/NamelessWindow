@@ -3,11 +3,11 @@ BasedOnStyle: Google
 AccessModifierOffset: '0'
 AlignAfterOpenBracket: Align
 AlignConsecutiveMacros: 'true'
-AlignConsecutiveAssignments: 'true'
+AlignConsecutiveAssignments: 'false'
 AlignConsecutiveDeclarations: 'false'
 AlignEscapedNewlines: Left
 AllowShortBlocksOnASingleLine: 'true'
-AllowShortCaseLabelsOnASingleLine: 'true'
+AllowShortCaseLabelsOnASingleLine: 'false'
 AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortIfStatementsOnASingleLine: Never
 AlwaysBreakAfterReturnType: None
@@ -23,7 +23,7 @@ ConstructorInitializerIndentWidth: '3'
 ContinuationIndentWidth: '3'
 Cpp11BracedListStyle: 'true'
 FixNamespaceComments: 'true'
-IndentCaseLabels: 'false'
+IndentCaseLabels: 'true'
 IndentPPDirectives: AfterHash
 IndentWidth: '3'
 IndentWrappedFunctionNames: 'true'

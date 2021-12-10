@@ -11,6 +11,6 @@ class NLSWIN_API_PRIVATE XConnection {
 
    public:
    static void CreateConnection();
-   inline static xcb_connection_t* GetConnection() { return m_xServerConnection; }
+   [[nodiscard]] inline static xcb_connection_t* GetConnection() noexcept { return m_xServerConnection; }
 };
 }  // namespace NLSWIN

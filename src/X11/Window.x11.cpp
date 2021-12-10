@@ -6,15 +6,15 @@
 #include <memory>
 
 #include "EventQueue.x11.hpp"
-#include "NamelessWindow/Event.hpp"
-#include "NamelessWindow/exceptions.hpp"
+#include "NamelessWindow/Events/Event.hpp"
+#include "NamelessWindow/Exceptions.hpp"
 #include "XConnection.h"
 
 using namespace NLSWIN;
 
-xcb_connection_t *Window::WindowImpl::m_xServerConnection = nullptr;
+xcb_connection_t *Window::Impl::m_xServerConnection = nullptr;
 
-Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window) {
+Window::Impl::Impl(WindowProperties properties, const Window &window) {
    XConnection::CreateConnection();
    m_xServerConnection = XConnection::GetConnection();
 
@@ -59,7 +59,7 @@ Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window
    }
 
    std::array<uint32_t, 1> valueMaskArray;
-   valueMaskArray[0] = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_FOCUS_CHANGE;
+   valueMaskArray[0] = m_eventMask;
    // Fetch a new window from X11.
    m_x11WindowID = xcb_generate_id(m_xServerConnection);
    // TODO: Look into visual. Look into masks.
@@ -100,11 +100,10 @@ Window::WindowImpl::WindowImpl(WindowProperties properties, const Window &window
       m_currentWindowMode == WindowMode::BORDERLESS;
    }
 
-   // Flush
    xcb_flush(m_xServerConnection);
 }
 
-void Window::WindowImpl::SetFullscreen(bool borderless) {
+void Window::Impl::SetFullscreen(bool borderless) noexcept {
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       return;
    }
@@ -118,7 +117,7 @@ void Window::WindowImpl::SetFullscreen(bool borderless) {
    }
 }
 
-void Window::WindowImpl::SetWindowed() {
+void Window::Impl::SetWindowed() noexcept {
    if (m_currentWindowMode == WindowMode::WINDOWED) {
       return;
    }
@@ -128,11 +127,11 @@ void Window::WindowImpl::SetWindowed() {
    m_currentWindowMode = WindowMode::WINDOWED;
 }
 
-void Window::WindowImpl::Close() {
+void Window::Impl::Close() noexcept {
    receivedTerminateSignal = true;
 }
 
-void Window::WindowImpl::ToggleFullscreen() {
+void Window::Impl::ToggleFullscreen() noexcept {
    bool fullScreen = 0;
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       fullScreen = 1;
@@ -152,9 +151,9 @@ void Window::WindowImpl::ToggleFullscreen() {
    xcb_intern_atom_reply_t *fullscreenReply =
       xcb_intern_atom_reply(m_xServerConnection, fullscreenCookie, nullptr);
 
-   message.type           = stateReply->atom;
-   message.format         = 32;
-   message.window         = m_x11WindowID;
+   message.type = stateReply->atom;
+   message.format = 32;
+   message.window = m_x11WindowID;
    message.data.data32[0] = fullScreen;
    message.data.data32[1] = fullscreenReply->atom;
    message.data.data32[2] = 0;
@@ -167,7 +166,7 @@ void Window::WindowImpl::ToggleFullscreen() {
    free(fullscreenReply);
 }
 
-xcb_screen_t *Window::WindowImpl::GetScreenFromMonitor(Monitor monitor) {
+xcb_screen_t *Window::Impl::GetScreenFromMonitor(Monitor monitor) const {
    auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(m_xServerConnection));
    do {
       auto monitorsReply = xcb_randr_get_monitors_reply(
@@ -178,7 +177,7 @@ xcb_screen_t *Window::WindowImpl::GetScreenFromMonitor(Monitor monitor) {
          auto nameReply = xcb_get_atom_name_reply(
             m_xServerConnection, xcb_get_atom_name(m_xServerConnection, monitorIter.data->name), nullptr);
          char *monitorName = xcb_get_atom_name_name(nameReply);
-         auto nameLen      = xcb_get_atom_name_name_length(nameReply);
+         auto nameLen = xcb_get_atom_name_name_length(nameReply);
 
          if (std::strncmp(monitor.name.c_str(), monitorName, nameLen) == 0) {
             return screenIter.data;
@@ -193,11 +192,11 @@ xcb_screen_t *Window::WindowImpl::GetScreenFromMonitor(Monitor monitor) {
    return nullptr;
 }
 
-std::vector<Monitor> Window::EnumerateMonitors() {
+std::vector<Monitor> Window::EnumerateMonitors() noexcept {
    std::vector<Monitor> listOfMonitors;
    // Open a brief temporary connection to get the screens
    xcb_connection_t *connection = xcb_connect(nullptr, nullptr);
-   int result                   = xcb_connection_has_error(connection);
+   int result = xcb_connection_has_error(connection);
    if (result != 0) {
       xcb_disconnect(connection);
       return {};
@@ -215,12 +214,12 @@ std::vector<Monitor> Window::EnumerateMonitors() {
       auto monitorIter = xcb_randr_get_monitors_monitors_iterator(monitorsReply);
       do {
          // Get name of the current monitor.
-         char *monitorName          = xcb_get_atom_name_name(xcb_get_atom_name_reply(
+         char *monitorName = xcb_get_atom_name_name(xcb_get_atom_name_reply(
             connection, xcb_get_atom_name(connection, monitorIter.data->name), nullptr));
-         monitor.name               = monitorName;
-         monitor.globalSpaceXCoord  = monitorIter.data->x;
-         monitor.globalSpaceYCoord  = monitorIter.data->y;
-         monitor.horzResolution     = monitorIter.data->width;
+         monitor.name = monitorName;
+         monitor.globalSpaceXCoord = monitorIter.data->x;
+         monitor.globalSpaceYCoord = monitorIter.data->y;
+         monitor.horzResolution = monitorIter.data->width;
          monitor.verticalResolution = monitorIter.data->height;
 
          // Copying a new screen struct into the vector for each different monitor.
@@ -237,27 +236,27 @@ std::vector<Monitor> Window::EnumerateMonitors() {
    return listOfMonitors;
 }
 
-void Window::WindowImpl::EventRecieved(Event event) {
+void Window::Impl::EventRecieved(Event event) {
    // Intercept a window close event - its only meant to be used internally.
    if (auto closeEvent = std::get_if<WindowCloseEvent>(&event)) {
       Close();
       return;
    }
+   // Otherwise, just pass it on.
    EventListenerX11::EventRecieved(event);
 }
 
-Window::Window() {
-   Window(WindowProperties());
+Window::Window() : Window(WindowProperties()) {
 }
 
-Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<WindowImpl>(properties, *this)) {
+Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<Impl>(properties, *this)) {
    EventQueueX11::RegisterForEvent(m_pImpl, WindowCloseEvent::type);
    EventQueueX11::RegisterForEvent(m_pImpl, WindowFocusedEvent::type);
 }
 
 Window::~Window() = default;
 
-bool Window::HasEvent() {
+bool Window::HasEvent() const noexcept {
    return m_pImpl->HasEvent();
 }
 
@@ -265,22 +264,22 @@ Event Window::GetNextEvent() {
    return m_pImpl->GetNextEvent();
 }
 
-void Window::SetFullscreen(bool borderless) {
+void Window::SetFullscreen(bool borderless) noexcept {
    m_pImpl->SetFullscreen(borderless);
 }
 
-void Window::SetWindowed() {
+void Window::SetWindowed() noexcept {
    m_pImpl->SetWindowed();
 }
 
-WindowMode Window::GetWindowMode() const {
+WindowMode Window::GetWindowMode() const noexcept {
    return m_pImpl->GetWindowMode();
 }
 
-void Window::Close() {
+void Window::Close() noexcept {
    return m_pImpl->Close();
 }
 
-bool Window::RequestedClose() const {
+bool Window::RequestedClose() const noexcept {
    return m_pImpl->RequestedClose();
 }

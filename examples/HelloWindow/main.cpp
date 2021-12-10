@@ -2,8 +2,8 @@
 #include <memory>
 #include <vector>
 
-#include "NamelessWindow/Event.hpp"
-#include "NamelessWindow/EventQueue.hpp"
+#include "NamelessWindow/Events/Event.hpp"
+#include "NamelessWindow/Events/EventQueue.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/Window.hpp"
 
@@ -16,10 +16,10 @@ int main() {
 
    NLSWIN::WindowProperties properties {};
    std::vector<NLSWIN::Monitor> monitors = NLSWIN::Window::EnumerateMonitors();
-   NLSWIN::Monitor monitor               = monitors.at(0);
-   properties.preferredMonitor           = monitor;
-   properties.windowName                 = "Example window!";
-   properties.mode                       = NLSWIN::WindowMode::WINDOWED;
+   NLSWIN::Monitor monitor = monitors.at(0);
+   properties.preferredMonitor = monitor;
+   properties.windowName = "Example window!";
+   properties.mode = NLSWIN::WindowMode::WINDOWED;
 
    for (auto monitor: monitors) {
       std::cout << monitor.name << std::endl;
