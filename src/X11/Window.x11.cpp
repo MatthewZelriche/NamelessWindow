@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "EventQueue.x11.hpp"
+#include "Keyboard.x11.hpp"
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Exceptions.hpp"
 #include "XConnection.h"
@@ -67,8 +68,6 @@ Window::Impl::Impl(WindowProperties properties, const Window &window) {
                      windowXCoord, windowYCoord, properties.horzResolution, properties.vertResolution,
                      borderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCB_COPY_FROM_PARENT, XCB_CW_EVENT_MASK,
                      valueMaskArray.data());
-
-   m_windows.insert(m_x11WindowID);
 
    // Set window name if we were given one.
    if (!properties.windowName.empty()) {
@@ -236,22 +235,85 @@ std::vector<Monitor> Window::EnumerateMonitors() noexcept {
    return listOfMonitors;
 }
 
-void Window::Impl::EventRecieved(Event event) {
-   // Intercept a window close event - its only meant to be used internally.
-   if (auto closeEvent = std::get_if<WindowCloseEvent>(&event)) {
-      Close();
-      return;
+void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
+   switch (event->response_type & ~0x80) {
+      // Handle Xinput2 events.
+      case XCB_GE_GENERIC: {
+         xcb_ge_event_t *genericEvent = reinterpret_cast<xcb_ge_event_t *>(event);
+         switch (genericEvent->event_type) {
+            case XCB_INPUT_KEY_PRESS: {
+               xcb_input_key_press_event_t *keyPress = reinterpret_cast<xcb_input_key_press_event_t *>(event);
+               for (auto &keyboard: m_keyboards) {
+                  if (keyboard.m_pImpl->GetDeviceID() == keyPress->deviceid ||
+                      keyboard.m_pImpl->GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+                     if (keyPress->event == m_x11WindowID) {
+                        // TODO: Handle repeats.
+                        KeyEvent event;
+                        event.pressType = KeyPressType::PRESSED;
+                        m_Queue.push(event);
+                     }
+                  }
+               }
+               break;
+            }
+            case XCB_INPUT_KEY_RELEASE: {
+               xcb_input_key_release_event_t *keyRelease =
+                  reinterpret_cast<xcb_input_key_release_event_t *>(event);
+               for (auto &keyboard: m_keyboards) {
+                  if (keyboard.m_pImpl->GetDeviceID() == keyRelease->deviceid ||
+                      keyboard.m_pImpl->GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+                     if (keyRelease->event == m_x11WindowID) {
+                        KeyEvent event;
+                        event.pressType = KeyPressType::RELEASED;
+                        m_Queue.push(event);
+                     }
+                  }
+               }
+               break;
+            }
+         }
+         break;
+      }
+      case XCB_FOCUS_IN: {
+         xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
+         if (focusEvent->event == m_x11WindowID) {
+            WindowFocusedEvent windowFocusEvent;
+            m_Queue.push(windowFocusEvent);
+         }
+         break;
+      }
+      case XCB_CLIENT_MESSAGE: {
+         // XCB_CLIENT_MESSAGE is currently only used for overriding the X11 window manager and handling a
+         // close event directly. The close event is not sent to the API user, it is only handled
+         // internally.
+         xcb_client_message_event_t *clientEvent = reinterpret_cast<xcb_client_message_event_t *>(event);
+         xcb_intern_atom_cookie_t deleteWindowCookie =
+            xcb_intern_atom(m_xServerConnection, false, std::strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
+         xcb_intern_atom_reply_t *deleteWindowAtomReply =
+            xcb_intern_atom_reply(m_xServerConnection, deleteWindowCookie, nullptr);
+
+         // Test if this is actually a close event.
+         if (clientEvent->data.data32[0] == deleteWindowAtomReply->atom) {
+            // No need to push anything. Just handle it internally!
+            if (clientEvent->window == m_x11WindowID) {
+               Close();
+            }
+            break;
+         }
+      }
    }
-   // Otherwise, just pass it on.
-   EventListenerX11::EventRecieved(event);
+}
+
+void Window::Impl::AddKeyboard(const Keyboard &keyboard) {
+   m_keyboards.emplace_back(keyboard);
+   keyboard.m_pImpl->SubscribeToWindow(m_x11WindowID);
 }
 
 Window::Window() : Window(WindowProperties()) {
 }
 
 Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<Impl>(properties, *this)) {
-   EventQueueX11::RegisterForEvent(m_pImpl, WindowCloseEvent::type);
-   EventQueueX11::RegisterForEvent(m_pImpl, WindowFocusedEvent::type);
+   EventQueueX11::RegisterListener(m_pImpl);
 }
 
 Window::~Window() = default;
@@ -282,4 +344,8 @@ void Window::Close() noexcept {
 
 bool Window::RequestedClose() const noexcept {
    return m_pImpl->RequestedClose();
+}
+
+void Window::AddKeyboard(const Keyboard &keyboard) {
+   m_pImpl->AddKeyboard(keyboard);
 }

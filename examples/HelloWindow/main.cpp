@@ -29,26 +29,21 @@ int main() {
    }
 
    NLSWIN::Window window(properties);
-   NLSWIN::Keyboard keyboard(window);
-
+   NLSWIN::Keyboard keyboard;
+   window.AddKeyboard(keyboard);
    while (!window.RequestedClose()) {
       NLSWIN::EventQueue::GetOSEvents();
-      while (keyboard.HasEvent()) {
-         NLSWIN::Event nextEvent = keyboard.GetNextEvent();
-         if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&nextEvent)) {
-            if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {
-               std::cout << "Key pressed!" << std::endl;
-            } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
-               std::cout << "Key released!" << std::endl;
-            }
-         }
-      }
-
       while (window.HasEvent()) {
          NLSWIN::Event nextEvent = window.GetNextEvent();
 
          if (auto focusEvent = std::get_if<NLSWIN::WindowFocusedEvent>(&nextEvent)) {
             std::cout << "Focused!" << std::endl;
+         } else if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&nextEvent)) {
+            if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {
+               std::cout << "Key Pressed!" << std::endl;
+            } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
+               std::cout << "Key Released!" << std::endl;
+            }
          }
       }
    }

@@ -36,7 +36,6 @@ class NLSWIN_API_PUBLIC Window {
    private:
    class Impl;
    std::shared_ptr<Impl> m_pImpl {nullptr};
-   friend class Keyboard;
 
    public:
    Window();
@@ -45,6 +44,7 @@ class NLSWIN_API_PUBLIC Window {
    void SetFullscreen(bool borderless = true) noexcept;
    void SetWindowed() noexcept;
    void Close() noexcept;
+   void AddKeyboard(const Keyboard &keyboard);
    [[nodiscard]] bool RequestedClose() const noexcept;
    [[nodiscard]] bool HasEvent() const noexcept;
    Event GetNextEvent();

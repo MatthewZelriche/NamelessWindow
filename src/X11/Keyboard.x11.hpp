@@ -9,17 +9,21 @@
 
 namespace NLSWIN {
 class Window;
-class NLSWIN_API_PRIVATE Keyboard::Impl : public EventListenerX11 {
+class NLSWIN_API_PRIVATE Keyboard::Impl {
    private:
    static xcb_connection_t *m_connection;
    const xcb_input_xi_event_mask_t m_subscribedMasks {
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE)};
+   xcb_input_device_id_t m_deviceID {XCB_INPUT_DEVICE_ALL_MASTER};
    // Private init method to avoid code duplication in overloaded constructors.
-   void Init(const Window &window);
+   void Init();
 
    public:
-   Impl(const Window &window);
-   Impl(const Window &window, KeyboardDeviceInfo device);
+   Impl();
+   Impl(KeyboardDeviceInfo device);
+   void SubscribeToWindow(xcb_window_t windowID);
+
+   xcb_input_device_id_t GetDeviceID() { return m_deviceID; }
 };
 
 struct NLSWIN_API_PRIVATE XI2EventMask {

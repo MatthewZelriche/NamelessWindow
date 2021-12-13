@@ -19,10 +19,11 @@ class NLSWIN_API_PUBLIC Keyboard {
    private:
    class Impl;
    std::shared_ptr<Impl> m_pImpl {nullptr};
+   friend class Window;
 
    public:
-   Keyboard(const Window &window);
-   Keyboard(const Window &window, KeyboardDeviceInfo device);
+   Keyboard();
+   Keyboard(KeyboardDeviceInfo device);
    ~Keyboard();
    [[nodiscard]] bool HasEvent() const noexcept;
    Event GetNextEvent();

@@ -48,46 +48,32 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
    return keyboards;
 }
 
-void Keyboard::Impl::Init(const Window &window) {
+void Keyboard::Impl::SubscribeToWindow(xcb_window_t windowID) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
-
-   m_windows.insert(window.m_pImpl->GetWindowID());
 
    XI2EventMask mask;
    mask.head.deviceid = m_deviceID;
    mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
    mask.mask = m_subscribedMasks;
-   xcb_input_xi_select_events(m_connection, window.m_pImpl->GetWindowID(), 1, &mask.head);
+   xcb_input_xi_select_events(m_connection, windowID, 1, &mask.head);
    xcb_flush(m_connection);  // To ensure the X server definitely gets the request.
 }
 
-Keyboard::Impl::Impl(const Window &window) {
-   Init(window);
+Keyboard::Impl::Impl() {
+   // Init();
 }
 
-Keyboard::Impl::Impl(const Window &window, KeyboardDeviceInfo device) {
+Keyboard::Impl::Impl(KeyboardDeviceInfo device) {
    m_deviceID = device.platformSpecificIdentifier;
-   Init(window);
+   // Init();
 }
 
-Keyboard::Keyboard(const Window &window) : m_pImpl(std::make_shared<Keyboard::Impl>(window)) {
+Keyboard::Keyboard() : m_pImpl(std::make_shared<Keyboard::Impl>()) {
    // After weve constructed the impl, register all events it is interested in.
-   EventQueueX11::RegisterForEvent(m_pImpl, KeyEvent::type);
 }
 
-Keyboard::Keyboard(const Window &window, KeyboardDeviceInfo device) :
-   m_pImpl(std::make_shared<Keyboard::Impl>(window, device)) {
-   // After weve constructed the impl, register all events it is interested in.
-   EventQueueX11::RegisterForEvent(m_pImpl, KeyEvent::type);
-}
-
-bool Keyboard::HasEvent() const noexcept {
-   return m_pImpl->HasEvent();
-}
-
-Event Keyboard::GetNextEvent() {
-   return m_pImpl->GetNextEvent();
+Keyboard::Keyboard(KeyboardDeviceInfo device) : m_pImpl(std::make_shared<Keyboard::Impl>(device)) {
 }
 
 Keyboard::~Keyboard() {

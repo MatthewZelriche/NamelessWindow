@@ -12,20 +12,13 @@
 namespace NLSWIN {
 
 class NLSWIN_API_PRIVATE EventListenerX11 {
-   private:
-   std::queue<Event> m_Queue;
-
    protected:
-   std::unordered_set<xcb_window_t> m_windows;
-   xcb_input_device_id_t m_deviceID = XCB_INPUT_DEVICE_ALL_MASTER;
+   std::queue<Event> m_Queue;
 
    public:
    [[nodiscard]] bool HasEvent() const noexcept;
    Event GetNextEvent();
-   virtual void EventRecieved(Event event);
-
-   [[nodiscard]] inline const std::unordered_set<xcb_window_t> &GetWindows() const { return m_windows; }
-   [[nodiscard]] inline xcb_input_device_id_t GetDeviceID() const { return m_deviceID; }
+   virtual void ProcessGenericEvent(xcb_generic_event_t *event) = 0;
 };
 
 }  // namespace NLSWIN
