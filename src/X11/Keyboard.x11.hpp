@@ -3,6 +3,9 @@
 #include <xcb/xcb.h>
 #include <xcb/xinput.h>
 
+#include <MagicEnum/magic_enum.hpp>
+#include <array>
+
 #include "EventListener.x11.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/NLSAPI.h"
@@ -17,11 +20,14 @@ class NLSWIN_API_PRIVATE Keyboard::Impl {
    xcb_input_device_id_t m_deviceID {XCB_INPUT_DEVICE_ALL_MASTER};
    // Private init method to avoid code duplication in overloaded constructors.
    void Init();
+   static constexpr std::size_t m_NumKeys = magic_enum::enum_count<KeyValue>();
+   std::array<bool, m_NumKeys> m_InternalKeyState;
 
    public:
    Impl();
    Impl(KeyboardDeviceInfo device);
    void SubscribeToWindow(xcb_window_t windowID);
+   [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
 
    xcb_input_device_id_t GetDeviceID() { return m_deviceID; }
 };

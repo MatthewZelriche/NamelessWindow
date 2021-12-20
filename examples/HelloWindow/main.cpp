@@ -43,6 +43,8 @@ int main() {
                std::cout << "Key Pressed!" << std::endl;
             } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
                std::cout << "Key Released!" << std::endl;
+            } else if (keyEvent->pressType == NLSWIN::KeyPressType::REPEAT) {
+               std::cout << "Key Repeat!" << std::endl;
             }
          }
       }

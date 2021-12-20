@@ -60,6 +60,33 @@ void Keyboard::Impl::SubscribeToWindow(xcb_window_t windowID) {
    xcb_flush(m_connection);  // To ensure the X server definitely gets the request.
 }
 
+Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
+   KeyEvent keyEvent;
+   switch (event->event_type) {
+      case XCB_INPUT_KEY_PRESS: {
+         xcb_input_key_press_event_t *pressEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
+         std::cout << "PRESSZ!" << std::endl;
+         // TODO: Translate detail.
+         if (m_InternalKeyState[pressEvent->detail] == true) {
+            keyEvent.pressType = KeyPressType::REPEAT;
+         } else {
+            keyEvent.pressType = KeyPressType::PRESSED;
+            m_InternalKeyState[pressEvent->detail] = true;
+         }
+         break;
+      }
+      case XCB_INPUT_KEY_RELEASE: {
+         std::cout << "RELEASEZ!" << std::endl;
+         xcb_input_key_release_event_t *releaseEvent =
+            reinterpret_cast<xcb_input_key_release_event_t *>(event);
+         keyEvent.pressType = KeyPressType::RELEASED;
+         m_InternalKeyState[releaseEvent->detail] = false;
+         break;
+      }
+   }
+   return keyEvent;
+}
+
 Keyboard::Impl::Impl() {
    // Init();
 }

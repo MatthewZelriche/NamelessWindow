@@ -239,40 +239,23 @@ void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       // Handle Xinput2 events.
       case XCB_GE_GENERIC: {
-         xcb_ge_event_t *genericEvent = reinterpret_cast<xcb_ge_event_t *>(event);
+         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
          switch (genericEvent->event_type) {
+            case XCB_INPUT_KEY_RELEASE:
             case XCB_INPUT_KEY_PRESS: {
-               xcb_input_key_press_event_t *keyPress = reinterpret_cast<xcb_input_key_press_event_t *>(event);
+               xcb_input_key_press_event_t *keyEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
                for (auto &keyboard: m_keyboards) {
-                  if (keyboard.m_pImpl->GetDeviceID() == keyPress->deviceid ||
+                  if (keyEvent->event != m_x11WindowID) {
+                     return;
+                  }
+                  if (keyboard.m_pImpl->GetDeviceID() == keyEvent->deviceid ||
                       keyboard.m_pImpl->GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
-                     if (keyPress->event == m_x11WindowID) {
-                        // TODO: Handle repeats.
-                        KeyEvent event;
-                        event.pressType = KeyPressType::PRESSED;
-                        m_Queue.push(event);
-                     }
+                     Event processedEvent = keyboard.m_pImpl->ProcessKeyEvent(genericEvent);
+                     m_Queue.push(processedEvent);
                   }
                }
-               break;
-            }
-            case XCB_INPUT_KEY_RELEASE: {
-               xcb_input_key_release_event_t *keyRelease =
-                  reinterpret_cast<xcb_input_key_release_event_t *>(event);
-               for (auto &keyboard: m_keyboards) {
-                  if (keyboard.m_pImpl->GetDeviceID() == keyRelease->deviceid ||
-                      keyboard.m_pImpl->GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
-                     if (keyRelease->event == m_x11WindowID) {
-                        KeyEvent event;
-                        event.pressType = KeyPressType::RELEASED;
-                        m_Queue.push(event);
-                     }
-                  }
-               }
-               break;
             }
          }
-         break;
       }
       case XCB_FOCUS_IN: {
          xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
@@ -283,8 +266,8 @@ void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
          break;
       }
       case XCB_CLIENT_MESSAGE: {
-         // XCB_CLIENT_MESSAGE is currently only used for overriding the X11 window manager and handling a
-         // close event directly. The close event is not sent to the API user, it is only handled
+         // XCB_CLIENT_MESSAGE is currently only used for overriding the X11 window manager and handling
+         // a close event directly. The close event is not sent to the API user, it is only handled
          // internally.
          xcb_client_message_event_t *clientEvent = reinterpret_cast<xcb_client_message_event_t *>(event);
          xcb_intern_atom_cookie_t deleteWindowCookie =
