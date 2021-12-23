@@ -12,13 +12,15 @@ namespace NLSWIN {
 class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    private:
    static xcb_connection_t *m_xServerConnection;
-   const uint32_t m_eventMask =
-      XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_FOCUS_CHANGE;
+   const uint32_t m_eventMask = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE |
+                                XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
    int m_preferredScreenNum {0};
    xcb_window_t m_x11WindowID {0};
    bool receivedTerminateSignal {false};
    WindowMode m_currentWindowMode;
    std::vector<Keyboard> m_keyboards;
+   int m_width = 0;
+   int m_height = 0;
 
    [[nodiscard]] xcb_screen_t *GetScreenFromMonitor(Monitor monitor) const;
    void ToggleFullscreen() noexcept;

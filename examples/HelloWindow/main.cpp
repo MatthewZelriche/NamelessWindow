@@ -50,6 +50,9 @@ int main() {
             if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED && keyEvent->code.modifiers.shift) {
                std::cout << keyEvent->keyName << " Pressed with modifier shift!" << std::endl;
             }
+         } else if (auto resizeEvent = std::get_if<NLSWIN::WindowResizeEvent>(&nextEvent)) {
+            std::cout << "Window resized! Width: " << resizeEvent->newWidth
+                      << ", Height: " << resizeEvent->newHeight << std::endl;
          }
       }
    }

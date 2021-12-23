@@ -27,6 +27,11 @@ struct NLSWIN_API_PUBLIC WindowFocusedEvent {
    static EventType type;
 };
 
-using Event = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent>;
+struct NLSWIN_API_PUBLIC WindowResizeEvent {
+   int newWidth;
+   int newHeight;
+};
+
+using Event = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent, WindowResizeEvent>;
 
 }  // namespace NLSWIN

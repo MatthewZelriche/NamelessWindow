@@ -69,6 +69,8 @@ Window::Impl::Impl(WindowProperties properties, const Window &window) {
                      borderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCB_COPY_FROM_PARENT, XCB_CW_EVENT_MASK,
                      valueMaskArray.data());
 
+   auto geomCookie = xcb_get_geometry(m_xServerConnection, m_x11WindowID);
+
    // Set window name if we were given one.
    if (!properties.windowName.empty()) {
       xcb_change_property(m_xServerConnection, XCB_PROP_MODE_REPLACE, m_x11WindowID, XCB_ATOM_WM_NAME,
@@ -98,6 +100,13 @@ Window::Impl::Impl(WindowProperties properties, const Window &window) {
       ToggleFullscreen();
       m_currentWindowMode == WindowMode::BORDERLESS;
    }
+
+   // We need to get the actual width and height, not what we preferably would set it to, since
+   // our preferred resolution may not have been respected.
+   auto geomCookieReply = xcb_get_geometry_reply(m_xServerConnection, geomCookie, nullptr);
+   m_width = geomCookieReply->width;
+   m_height = geomCookieReply->height;
+   free(geomCookieReply);
 
    xcb_flush(m_xServerConnection);
 }
@@ -237,6 +246,21 @@ std::vector<Monitor> Window::EnumerateMonitors() noexcept {
 
 void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
+      // Handle resize events.
+      case XCB_CONFIGURE_NOTIFY: {
+         xcb_configure_notify_event_t *notifyEvent = reinterpret_cast<xcb_configure_notify_event_t *>(event);
+         if (notifyEvent->window == m_x11WindowID) {
+            // Has the window size changed?
+            if (notifyEvent->width != m_width || notifyEvent->height != m_height) {
+               m_width = notifyEvent->width;
+               m_height = notifyEvent->height;
+               WindowResizeEvent resizeEvent;
+               resizeEvent.newWidth = m_width;
+               resizeEvent.newHeight = m_height;
+               m_Queue.push(resizeEvent);
+            }
+         }
+      }
       // Handle Xinput2 events.
       case XCB_GE_GENERIC: {
          xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
