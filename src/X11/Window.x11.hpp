@@ -17,7 +17,7 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    int m_preferredScreenNum {0};
    xcb_window_t m_x11WindowID {0};
    bool receivedTerminateSignal {false};
-   WindowMode m_currentWindowMode;
+   WindowMode m_currentWindowMode {WindowMode::WINDOWED};
    std::vector<Keyboard> m_keyboards;
    int m_width = 0;
    int m_height = 0;

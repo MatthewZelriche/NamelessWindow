@@ -95,10 +95,10 @@ Window::Impl::Impl(WindowProperties properties, const Window &window) {
    // X defaults to windowed, so if we want to initialize as fullscreen, just toggle.
    if (properties.mode == WindowMode::FULLSCREEN) {
       ToggleFullscreen();
-      m_currentWindowMode == WindowMode::FULLSCREEN;
+      m_currentWindowMode = WindowMode::FULLSCREEN;
    } else if (properties.mode == WindowMode::BORDERLESS) {
       ToggleFullscreen();
-      m_currentWindowMode == WindowMode::BORDERLESS;
+      m_currentWindowMode = WindowMode::BORDERLESS;
    }
 
    // We need to get the actual width and height, not what we preferably would set it to, since
@@ -142,9 +142,9 @@ void Window::Impl::Close() noexcept {
 void Window::Impl::ToggleFullscreen() noexcept {
    bool fullScreen = 0;
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
-      fullScreen = 1;
-   } else {
       fullScreen = 0;
+   } else {
+      fullScreen = 1;
    }
 
    xcb_intern_atom_cookie_t stateCookie =
@@ -170,6 +170,7 @@ void Window::Impl::ToggleFullscreen() noexcept {
                   XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
                   (const char *)&message);
 
+   xcb_flush(m_xServerConnection);
    free(stateReply);
    free(fullscreenReply);
 }
