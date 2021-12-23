@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "EventQueue.x11.hpp"
+#include "KeyMapper.x11.hpp"
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Window.hpp"
 #include "Window.x11.hpp"
@@ -21,7 +22,6 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
       xcb_disconnect(connection);
       return {};
    }
-
    xcb_input_xi_query_device_cookie_t queryCookie =
       xcb_input_xi_query_device(connection, XCB_INPUT_DEVICE_ALL);
    xcb_input_xi_query_device_reply_t *reply =
@@ -65,8 +65,8 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    switch (event->event_type) {
       case XCB_INPUT_KEY_PRESS: {
          xcb_input_key_press_event_t *pressEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
-         std::cout << "PRESSZ!" << std::endl;
-         // TODO: Translate detail.
+         keyEvent.code.value = X11KeyMapper::TranslateKey(GetSymFromKeyCode(pressEvent->detail));
+         keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          if (m_InternalKeyState[pressEvent->detail] == true) {
             keyEvent.pressType = KeyPressType::REPEAT;
          } else {
@@ -76,9 +76,10 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          break;
       }
       case XCB_INPUT_KEY_RELEASE: {
-         std::cout << "RELEASEZ!" << std::endl;
          xcb_input_key_release_event_t *releaseEvent =
             reinterpret_cast<xcb_input_key_release_event_t *>(event);
+         keyEvent.code.value = X11KeyMapper::TranslateKey(GetSymFromKeyCode(releaseEvent->detail));
+         keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          keyEvent.pressType = KeyPressType::RELEASED;
          m_InternalKeyState[releaseEvent->detail] = false;
          break;
@@ -87,13 +88,33 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    return keyEvent;
 }
 
+xkb_keysym_t Keyboard::Impl::GetSymFromKeyCode(unsigned int keycode) {
+   // TODO: Consider somehow converting this to xcb even though xcb's lack of documentation makes me weep.
+   return xkb_state_key_get_one_sym(m_KeyboardState, keycode);
+}
+
 Keyboard::Impl::Impl() {
-   // Init();
+   XConnection::CreateConnection();
+   m_connection = XConnection::GetConnection();
+   m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+   xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
+                               XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
+   m_deviceID = xkb_x11_get_core_keyboard_device_id(m_connection);
+   auto deviceKeymap = xkb_x11_keymap_new_from_device(m_keyboardContext, m_connection, m_deviceID,
+                                                      XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+   m_KeyboardState = xkb_x11_state_new_from_device(deviceKeymap, m_connection, m_deviceID);
 }
 
 Keyboard::Impl::Impl(KeyboardDeviceInfo device) {
+   XConnection::CreateConnection();
+   m_connection = XConnection::GetConnection();
+   m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+   xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
+                               XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
    m_deviceID = device.platformSpecificIdentifier;
-   // Init();
+   auto deviceKeymap = xkb_x11_keymap_new_from_device(m_keyboardContext, m_connection, m_deviceID,
+                                                      XKB_KEYMAP_COMPILE_NO_FLAGS);
 }
 
 Keyboard::Keyboard() : m_pImpl(std::make_shared<Keyboard::Impl>()) {

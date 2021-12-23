@@ -2,6 +2,10 @@
 
 #include <xcb/xcb.h>
 #include <xcb/xinput.h>
+#define explicit explicit_
+#include <xcb/xkb.h>
+#include <xkbcommon/xkbcommon-x11.h>
+#undef explicit
 
 #include <MagicEnum/magic_enum.hpp>
 #include <array>
@@ -17,17 +21,18 @@ class NLSWIN_API_PRIVATE Keyboard::Impl {
    static xcb_connection_t *m_connection;
    const xcb_input_xi_event_mask_t m_subscribedMasks {
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE)};
-   xcb_input_device_id_t m_deviceID {XCB_INPUT_DEVICE_ALL_MASTER};
-   // Private init method to avoid code duplication in overloaded constructors.
-   void Init();
+   xcb_input_device_id_t m_deviceID;
    static constexpr std::size_t m_NumKeys = magic_enum::enum_count<KeyValue>();
    std::array<bool, m_NumKeys> m_InternalKeyState;
+   xkb_context *m_keyboardContext;
+   xkb_state *m_KeyboardState;
 
    public:
    Impl();
    Impl(KeyboardDeviceInfo device);
    void SubscribeToWindow(xcb_window_t windowID);
    [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
+   [[nodiscard]] xkb_keysym_t GetSymFromKeyCode(unsigned int keycode);
 
    xcb_input_device_id_t GetDeviceID() { return m_deviceID; }
 };

@@ -15,6 +15,7 @@ enum class NLSWIN_API_PUBLIC KeyModifierState {
 
 };
 
+// TODO: Support more keys.
 enum class NLSWIN_API_PUBLIC KeyValue {
    KEY_NULL = -1,
    KEY_0,

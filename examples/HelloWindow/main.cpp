@@ -40,11 +40,11 @@ int main() {
             std::cout << "Focused!" << std::endl;
          } else if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&nextEvent)) {
             if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {
-               std::cout << "Key Pressed!" << std::endl;
+               std::cout << keyEvent->keyName << " Pressed!" << std::endl;
             } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
-               std::cout << "Key Released!" << std::endl;
+               std::cout << keyEvent->keyName << " Released!" << std::endl;
             } else if (keyEvent->pressType == NLSWIN::KeyPressType::REPEAT) {
-               std::cout << "Key Repeat!" << std::endl;
+               std::cout << keyEvent->keyName << " Repeat!" << std::endl;
             }
          }
       }

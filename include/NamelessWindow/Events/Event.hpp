@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <typeindex>
 #include <variant>
 
@@ -12,6 +13,7 @@ using EventType = std::type_index;
 
 struct NLSWIN_API_PUBLIC KeyEvent {
    static EventType type;
+   std::string_view keyName;
    KeyCode code;
    KeyPressType pressType;
 };
