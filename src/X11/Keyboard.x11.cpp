@@ -35,9 +35,7 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
             // Ignore xtest devices
             const char *name = xcb_input_xi_device_info_name(element);
             if (!std::strstr(name, "XTEST")) {
-               KeyboardDeviceInfo dev {};
-               dev.name = name;
-               dev.platformSpecificIdentifier = element->deviceid;
+               KeyboardDeviceInfo dev {name, element->deviceid};
                keyboards.push_back(dev);
             }
          }

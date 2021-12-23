@@ -14,11 +14,11 @@ class Keyboard;
 enum class NLSWIN_API_PUBLIC WindowMode { FULLSCREEN = 0, BORDERLESS = 1, WINDOWED = 2, NO_PREFERENCE = 3 };
 
 struct NLSWIN_API_PUBLIC Monitor {
-   unsigned int horzResolution {0};
-   unsigned int verticalResolution {0};
-   unsigned int globalSpaceXCoord {0};
-   unsigned int globalSpaceYCoord {0};
-   std::string name;
+   const unsigned int horzResolution {0};
+   const unsigned int verticalResolution {0};
+   const int16_t globalSpaceXCoord {0};
+   const int16_t globalSpaceYCoord {0};
+   const std::string name {""};
 };
 
 struct NLSWIN_API_PUBLIC WindowProperties {

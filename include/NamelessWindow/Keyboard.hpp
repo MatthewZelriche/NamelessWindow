@@ -11,8 +11,8 @@ namespace NLSWIN {
 
 class Window;
 struct NLSWIN_API_PUBLIC KeyboardDeviceInfo {
-   std::string name;
-   uint32_t platformSpecificIdentifier {0};
+   const std::string_view name {""};
+   const uint32_t platformSpecificIdentifier {0};
 };
 
 class NLSWIN_API_PUBLIC Keyboard {

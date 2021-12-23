@@ -213,7 +213,6 @@ std::vector<Monitor> Window::EnumerateMonitors() noexcept {
 
    auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(connection));
    do {
-      Monitor monitor {};
       auto screenInfo = xcb_randr_get_screen_info_reply(
          connection, xcb_randr_get_screen_info_unchecked(connection, screenIter.data->root), nullptr);
 
@@ -225,11 +224,8 @@ std::vector<Monitor> Window::EnumerateMonitors() noexcept {
          // Get name of the current monitor.
          char *monitorName = xcb_get_atom_name_name(xcb_get_atom_name_reply(
             connection, xcb_get_atom_name(connection, monitorIter.data->name), nullptr));
-         monitor.name = monitorName;
-         monitor.globalSpaceXCoord = monitorIter.data->x;
-         monitor.globalSpaceYCoord = monitorIter.data->y;
-         monitor.horzResolution = monitorIter.data->width;
-         monitor.verticalResolution = monitorIter.data->height;
+         Monitor monitor {monitorIter.data->width, monitorIter.data->height, monitorIter.data->x,
+                          monitorIter.data->y, monitorName};
 
          // Copying a new screen struct into the vector for each different monitor.
          listOfMonitors.push_back(monitor);

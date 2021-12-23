@@ -17,7 +17,7 @@ int main() {
    NLSWIN::WindowProperties properties {};
    std::vector<NLSWIN::Monitor> monitors = NLSWIN::Window::EnumerateMonitors();
    NLSWIN::Monitor monitor = monitors.at(0);
-   properties.preferredMonitor = monitor;
+   properties.preferredMonitor.emplace(monitor);
    properties.windowName = "Example window!";
    properties.mode = NLSWIN::WindowMode::WINDOWED;
 
