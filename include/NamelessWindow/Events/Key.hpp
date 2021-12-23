@@ -85,10 +85,18 @@ enum class NLSWIN_API_PUBLIC KeyValue {
    KEY_NUMPAD_ENTER
 };
 
+struct NLSWIN_API_PUBLIC KeyModifiers {
+   bool ctrl : 1;
+   bool super : 1;
+   bool alt : 1;
+   bool shift : 1;
+   bool capslock : 1;
+};
+
 struct NLSWIN_API_PUBLIC KeyCode {
    KeyValue value;
    KeyPressType pressType;
-   unsigned int modifierState;
+   KeyModifiers modifiers;
 };
 
 }  // namespace NLSWIN

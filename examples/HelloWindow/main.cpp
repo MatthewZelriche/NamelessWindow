@@ -46,6 +46,10 @@ int main() {
             } else if (keyEvent->pressType == NLSWIN::KeyPressType::REPEAT) {
                std::cout << keyEvent->keyName << " Repeat!" << std::endl;
             }
+
+            if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED && keyEvent->code.modifiers.shift) {
+               std::cout << keyEvent->keyName << " Pressed with modifier shift!" << std::endl;
+            }
          }
       }
    }

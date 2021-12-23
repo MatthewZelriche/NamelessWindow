@@ -67,6 +67,7 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          xcb_input_key_press_event_t *pressEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
          keyEvent.code.value = X11KeyMapper::TranslateKey(GetSymFromKeyCode(pressEvent->detail));
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
+         keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.base);
          if (m_InternalKeyState[pressEvent->detail] == true) {
             keyEvent.pressType = KeyPressType::REPEAT;
          } else {
@@ -86,6 +87,26 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
       }
    }
    return keyEvent;
+}
+
+KeyModifiers Keyboard::Impl::ParseModifierState(uint32_t mods) {
+   KeyModifiers modifiers {false};
+   if ((mods & XCB_MOD_MASK_CONTROL)) {
+      modifiers.ctrl = true;
+   }
+   if (mods & XCB_MOD_MASK_4) {
+      modifiers.super = true;
+   }
+   if (mods & XCB_MOD_MASK_1) {
+      modifiers.alt = true;
+   }
+   if (mods & XCB_MOD_MASK_SHIFT) {
+      modifiers.shift = true;
+   }
+   if (mods & XCB_MOD_MASK_LOCK) {
+      modifiers.capslock = true;
+   }
+   return modifiers;
 }
 
 xkb_keysym_t Keyboard::Impl::GetSymFromKeyCode(unsigned int keycode) {

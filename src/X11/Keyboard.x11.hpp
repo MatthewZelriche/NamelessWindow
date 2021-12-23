@@ -33,6 +33,7 @@ class NLSWIN_API_PRIVATE Keyboard::Impl {
    void SubscribeToWindow(xcb_window_t windowID);
    [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
    [[nodiscard]] xkb_keysym_t GetSymFromKeyCode(unsigned int keycode);
+   [[nodiscard]] KeyModifiers ParseModifierState(uint32_t mods);
 
    xcb_input_device_id_t GetDeviceID() { return m_deviceID; }
 };
