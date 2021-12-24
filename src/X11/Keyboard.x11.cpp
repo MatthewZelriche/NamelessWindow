@@ -138,25 +138,23 @@ xkb_keysym_t Keyboard::Impl::GetSymFromKeyCode(unsigned int keycode) {
 Keyboard::Impl::Impl() {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
-   m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-   xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
-                               XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
-   m_deviceID = xkb_x11_get_core_keyboard_device_id(m_connection);
-   auto deviceKeymap = xkb_x11_keymap_new_from_device(m_keyboardContext, m_connection, m_deviceID,
-                                                      XKB_KEYMAP_COMPILE_NO_FLAGS);
-
-   m_KeyboardState = xkb_x11_state_new_from_device(deviceKeymap, m_connection, m_deviceID);
+   Init(xkb_x11_get_core_keyboard_device_id(m_connection));
 }
 
 Keyboard::Impl::Impl(KeyboardDeviceInfo device) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
+   Init(device.platformSpecificIdentifier);
+}
+
+void Keyboard::Impl::Init(xcb_input_device_id_t deviceID) {
    m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
    xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
                                XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
-   m_deviceID = device.platformSpecificIdentifier;
+   m_deviceID = deviceID;
    auto deviceKeymap = xkb_x11_keymap_new_from_device(m_keyboardContext, m_connection, m_deviceID,
                                                       XKB_KEYMAP_COMPILE_NO_FLAGS);
+   m_KeyboardState = xkb_x11_state_new_from_device(deviceKeymap, m_connection, m_deviceID);
 }
 
 Keyboard::Keyboard() : m_pImpl(std::make_shared<Keyboard::Impl>()) {

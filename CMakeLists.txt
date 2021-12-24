@@ -41,5 +41,5 @@ endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 if (${BUILD_NLSWIN_EXAMPLES})
-   add_subdirectory("${PROJECT_SOURCE_DIR}/examples/HelloWindow/")
+   add_subdirectory("${PROJECT_SOURCE_DIR}/examples/")
 endif()

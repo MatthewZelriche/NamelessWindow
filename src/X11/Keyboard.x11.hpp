@@ -29,6 +29,7 @@ class NLSWIN_API_PRIVATE Keyboard::Impl : public EventListenerX11 {
    xkb_state *m_KeyboardState;
    std::unordered_map<xcb_window_t, WindowID> m_SubscribedWindows;
    void ProcessGenericEvent(xcb_generic_event_t *event) override;
+   void Init(xcb_input_device_id_t deviceID);
 
    public:
    Impl();
