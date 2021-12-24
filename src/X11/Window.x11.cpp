@@ -254,27 +254,7 @@ void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
                WindowResizeEvent resizeEvent;
                resizeEvent.newWidth = m_width;
                resizeEvent.newHeight = m_height;
-               m_Queue.push(resizeEvent);
-            }
-         }
-      }
-      // Handle Xinput2 events.
-      case XCB_GE_GENERIC: {
-         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-         switch (genericEvent->event_type) {
-            case XCB_INPUT_KEY_RELEASE:
-            case XCB_INPUT_KEY_PRESS: {
-               xcb_input_key_press_event_t *keyEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
-               for (auto &keyboard: m_keyboards) {
-                  if (keyEvent->event != m_x11WindowID) {
-                     return;
-                  }
-                  if (keyboard.m_pImpl->GetDeviceID() == keyEvent->deviceid ||
-                      keyboard.m_pImpl->GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
-                     Event processedEvent = keyboard.m_pImpl->ProcessKeyEvent(genericEvent);
-                     m_Queue.push(processedEvent);
-                  }
-               }
+               PushEvent(resizeEvent);
             }
          }
       }
@@ -282,7 +262,7 @@ void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
          xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
          if (focusEvent->event == m_x11WindowID) {
             WindowFocusedEvent windowFocusEvent;
-            m_Queue.push(windowFocusEvent);
+            PushEvent(windowFocusEvent);
          }
          break;
       }
@@ -306,11 +286,6 @@ void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
          }
       }
    }
-}
-
-void Window::Impl::AddKeyboard(const Keyboard &keyboard) {
-   m_keyboards.emplace_back(keyboard);
-   keyboard.m_pImpl->SubscribeToWindow(m_x11WindowID);
 }
 
 Window::Window() : Window(WindowProperties()) {
@@ -342,14 +317,14 @@ WindowMode Window::GetWindowMode() const noexcept {
    return m_pImpl->GetWindowMode();
 }
 
+WindowID Window::GetWindowID() const noexcept {
+   return m_pImpl->GetWindowID();
+}
+
 void Window::Close() noexcept {
    return m_pImpl->Close();
 }
 
 bool Window::RequestedClose() const noexcept {
    return m_pImpl->RequestedClose();
-}
-
-void Window::AddKeyboard(const Keyboard &keyboard) {
-   m_pImpl->AddKeyboard(keyboard);
 }

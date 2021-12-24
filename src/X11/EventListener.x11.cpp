@@ -10,6 +10,10 @@ bool EventListenerX11::HasEvent() const noexcept {
    return !m_Queue.empty();
 }
 
+void EventListenerX11::PushEvent(Event event) {
+   m_Queue.push(event);
+}
+
 Event EventListenerX11::GetNextEvent() {
    if (!HasEvent()) {
       throw std::runtime_error("Attempted to get event from empty queue.");

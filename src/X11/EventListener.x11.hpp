@@ -12,12 +12,13 @@
 namespace NLSWIN {
 
 class NLSWIN_API_PRIVATE EventListenerX11 {
-   protected:
+   private:
    std::queue<Event> m_Queue;
 
    public:
    [[nodiscard]] bool HasEvent() const noexcept;
-   Event GetNextEvent();
+   [[nodiscard]] Event GetNextEvent();
+   void PushEvent(Event event);
    virtual void ProcessGenericEvent(xcb_generic_event_t *event) = 0;
 };
 

@@ -46,9 +46,9 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
    return keyboards;
 }
 
-void Keyboard::Impl::SubscribeToWindow(xcb_window_t windowID) {
-   XConnection::CreateConnection();
-   m_connection = XConnection::GetConnection();
+void Keyboard::Impl::SubscribeToWindow(const Window &window) {
+   xcb_window_t windowID = window.m_pImpl->GetX11WindowID();
+   m_SubscribedWindows.insert({windowID, window.m_pImpl->GetWindowID()});
 
    XI2EventMask mask;
    mask.head.deviceid = m_deviceID;
@@ -56,6 +56,27 @@ void Keyboard::Impl::SubscribeToWindow(xcb_window_t windowID) {
    mask.mask = m_subscribedMasks;
    xcb_input_xi_select_events(m_connection, windowID, 1, &mask.head);
    xcb_flush(m_connection);  // To ensure the X server definitely gets the request.
+}
+
+void Keyboard::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
+   switch (event->response_type & ~0x80) {
+         // Handle Xinput2 events.
+      case XCB_GE_GENERIC: {
+         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
+         switch (genericEvent->event_type) {
+            case XCB_INPUT_KEY_RELEASE:
+            case XCB_INPUT_KEY_PRESS: {
+               xcb_input_key_press_event_t *keyEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
+               if (m_SubscribedWindows.count(keyEvent->event)) {
+                  if (GetDeviceID() == keyEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+                     Event processedEvent = ProcessKeyEvent(genericEvent);
+                     PushEvent(processedEvent);
+                  }
+               }
+            }
+         }
+      }
+   }
 }
 
 Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
@@ -66,6 +87,7 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          keyEvent.code.value = X11KeyMapper::TranslateKey(GetSymFromKeyCode(pressEvent->detail));
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.base);
+         keyEvent.sourceWindow = m_SubscribedWindows[pressEvent->event];
          if (m_InternalKeyState[pressEvent->detail] == true) {
             keyEvent.pressType = KeyPressType::REPEAT;
          } else {
@@ -80,6 +102,7 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          keyEvent.code.value = X11KeyMapper::TranslateKey(GetSymFromKeyCode(releaseEvent->detail));
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          keyEvent.pressType = KeyPressType::RELEASED;
+         keyEvent.sourceWindow = m_SubscribedWindows[releaseEvent->event];
          m_InternalKeyState[releaseEvent->detail] = false;
          break;
       }
@@ -137,11 +160,24 @@ Keyboard::Impl::Impl(KeyboardDeviceInfo device) {
 }
 
 Keyboard::Keyboard() : m_pImpl(std::make_shared<Keyboard::Impl>()) {
-   // After weve constructed the impl, register all events it is interested in.
+   EventQueueX11::RegisterListener(m_pImpl);
 }
 
 Keyboard::Keyboard(KeyboardDeviceInfo device) : m_pImpl(std::make_shared<Keyboard::Impl>(device)) {
+   EventQueueX11::RegisterListener(m_pImpl);
 }
 
 Keyboard::~Keyboard() {
+}
+
+bool Keyboard::HasEvent() const noexcept {
+   return m_pImpl->HasEvent();
+}
+
+Event Keyboard::GetNextEvent() {
+   return m_pImpl->GetNextEvent();
+}
+
+void Keyboard::SubscribeToWindow(const Window &window) {
+   m_pImpl->SubscribeToWindow(window);
 }

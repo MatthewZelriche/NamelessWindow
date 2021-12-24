@@ -9,6 +9,8 @@
 
 namespace NLSWIN {
 
+using WindowID = uint32_t;
+class KeyboardDeviceInfo;
 class Keyboard;
 
 enum class NLSWIN_API_PUBLIC WindowMode { FULLSCREEN = 0, BORDERLESS = 1, WINDOWED = 2, NO_PREFERENCE = 3 };
@@ -33,10 +35,6 @@ struct NLSWIN_API_PUBLIC WindowProperties {
 };
 
 class NLSWIN_API_PUBLIC Window {
-   private:
-   class Impl;
-   std::shared_ptr<Impl> m_pImpl {nullptr};
-
    public:
    Window();
    Window(WindowProperties properties);
@@ -44,12 +42,17 @@ class NLSWIN_API_PUBLIC Window {
    void SetFullscreen(bool borderless = true) noexcept;
    void SetWindowed() noexcept;
    void Close() noexcept;
-   void AddKeyboard(const Keyboard &keyboard);
    [[nodiscard]] bool RequestedClose() const noexcept;
    [[nodiscard]] bool HasEvent() const noexcept;
    Event GetNextEvent();
    [[nodiscard]] WindowMode GetWindowMode() const noexcept;
+   [[nodiscard]] WindowID GetWindowID() const noexcept;
 
    [[nodiscard]] static std::vector<Monitor> EnumerateMonitors() noexcept;
+
+   private:
+   class Impl;
+   friend class Keyboard;
+   std::shared_ptr<Impl> m_pImpl {nullptr};
 };
 }  // namespace NLSWIN

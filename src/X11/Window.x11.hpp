@@ -22,7 +22,14 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    int m_width = 0;
    int m_height = 0;
 
+   inline static uint32_t NewGenericWindowID() {
+      static uint32_t newID;
+      return newID++;
+   }
+   WindowID m_genericWindowID = NewGenericWindowID();
+
    [[nodiscard]] xcb_screen_t *GetScreenFromMonitor(Monitor monitor) const;
+   void ProcessGenericEvent(xcb_generic_event_t *event) override;
    void ToggleFullscreen() noexcept;
 
    public:
@@ -30,12 +37,11 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    void SetFullscreen(bool borderless) noexcept;
    void SetWindowed() noexcept;
    void Close() noexcept;
-   void ProcessGenericEvent(xcb_generic_event_t *event) override;
-   void AddKeyboard(const Keyboard &keyboard);
 
    [[nodiscard]] inline xcb_connection_t *GetConnection() const noexcept { return m_xServerConnection; }
-   [[nodiscard]] inline xcb_window_t GetWindowID() const noexcept { return m_x11WindowID; }
+   [[nodiscard]] inline xcb_window_t GetX11WindowID() const noexcept { return m_x11WindowID; }
    [[nodiscard]] inline bool RequestedClose() const noexcept { return receivedTerminateSignal; }
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept { return m_currentWindowMode; }
+   [[nodiscard]] inline WindowID GetWindowID() const noexcept { return m_genericWindowID; }
 };
 }  // namespace NLSWIN

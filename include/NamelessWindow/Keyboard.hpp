@@ -25,6 +25,7 @@ class NLSWIN_API_PUBLIC Keyboard {
    Keyboard();
    Keyboard(KeyboardDeviceInfo device);
    ~Keyboard();
+   void SubscribeToWindow(const Window &window);
    [[nodiscard]] bool HasEvent() const noexcept;
    Event GetNextEvent();
 
