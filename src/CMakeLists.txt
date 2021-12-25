@@ -4,7 +4,8 @@ if (${NLSWIN_X11})
                            "X11/EventQueue.x11.cpp"
                            "X11/XConnection.cpp"
                            "X11/Keyboard.x11.cpp"
-                           "X11/KeyMapper.x11.cpp")
+                           "X11/InputMapper.x11.cpp"
+                           "X11/Pointer.x11.cpp")
 elseif(${NLSWIN_WAYLAND})
 
 elseif(${NLSWIN_WIN32})

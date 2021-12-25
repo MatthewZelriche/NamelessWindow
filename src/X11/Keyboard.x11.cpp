@@ -3,7 +3,8 @@
 #include <cstring>
 
 #include "EventQueue.x11.hpp"
-#include "KeyMapper.x11.hpp"
+#include "InputDevice.x11.hpp"
+#include "InputMapper.x11.hpp"
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Window.hpp"
 #include "Window.x11.hpp"
@@ -84,7 +85,7 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    switch (event->event_type) {
       case XCB_INPUT_KEY_PRESS: {
          xcb_input_key_press_event_t *pressEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
-         keyEvent.code.value = X11KeyMapper::TranslateKey(GetSymFromKeyCode(pressEvent->detail));
+         keyEvent.code.value = X11InputMapper::TranslateKey(GetSymFromKeyCode(pressEvent->detail));
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.base);
          keyEvent.sourceWindow = m_SubscribedWindows[pressEvent->event];
@@ -99,7 +100,7 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
       case XCB_INPUT_KEY_RELEASE: {
          xcb_input_key_release_event_t *releaseEvent =
             reinterpret_cast<xcb_input_key_release_event_t *>(event);
-         keyEvent.code.value = X11KeyMapper::TranslateKey(GetSymFromKeyCode(releaseEvent->detail));
+         keyEvent.code.value = X11InputMapper::TranslateKey(GetSymFromKeyCode(releaseEvent->detail));
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          keyEvent.pressType = KeyPressType::RELEASED;
          keyEvent.sourceWindow = m_SubscribedWindows[releaseEvent->event];

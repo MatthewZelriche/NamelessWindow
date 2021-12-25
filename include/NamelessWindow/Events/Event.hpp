@@ -20,6 +20,13 @@ struct NLSWIN_API_PUBLIC KeyEvent {
    WindowID sourceWindow;
 };
 
+struct NLSWIN_API_PUBLIC MouseButtonEvent {
+   ButtonValue button;
+   ButtonPressType type;
+   float xPos;
+   float yPos;
+};
+
 // Currently for internal use only.
 struct NLSWIN_API_PUBLIC WindowCloseEvent {
    static EventType type;
@@ -34,6 +41,7 @@ struct NLSWIN_API_PUBLIC WindowResizeEvent {
    int newHeight;
 };
 
-using Event = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent, WindowResizeEvent>;
+using Event =
+   std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent>;
 
 }  // namespace NLSWIN

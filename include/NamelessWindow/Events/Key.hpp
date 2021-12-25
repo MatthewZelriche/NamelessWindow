@@ -5,6 +5,7 @@
 namespace NLSWIN {
 
 enum class NLSWIN_API_PUBLIC KeyPressType { PRESSED = 0, RELEASED = 1, REPEAT = 2 };
+enum class NLSWIN_API_PUBLIC ButtonPressType { PRESSED = 0, RELEASED = 1 };
 
 enum class NLSWIN_API_PUBLIC KeyModifierState {
    CTRL = 1 << 1,
@@ -14,6 +15,8 @@ enum class NLSWIN_API_PUBLIC KeyModifierState {
    CAPSLCK = 1 << 5
 
 };
+
+enum class NLSWIN_API_PUBLIC ButtonValue { LEFTCLICK = 1, RIGHTCLICK, MIDDLECLICK, MB_4, MB_5, NULLCLICK };
 
 // TODO: Support more keys.
 enum class NLSWIN_API_PUBLIC KeyValue {

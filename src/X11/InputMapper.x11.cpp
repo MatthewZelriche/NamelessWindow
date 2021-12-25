@@ -1,8 +1,13 @@
-#include "KeyMapper.x11.hpp"
+#include "InputMapper.x11.hpp"
 
 using namespace NLSWIN;
 
-std::map<xkb_keysym_t, KeyValue> X11KeyMapper::mTranslationTable = {
+std::map<uint16_t, ButtonValue> X11InputMapper::m_buttonTranslationTable = {
+   {1, ButtonValue::LEFTCLICK}, {2, ButtonValue::MIDDLECLICK}, {3, ButtonValue::RIGHTCLICK},
+   {8, ButtonValue::MB_4},      {9, ButtonValue::MB_5},
+};
+
+std::map<xkb_keysym_t, KeyValue> X11InputMapper::m_keyTranslationTable = {
    {XKB_KEY_VoidSymbol, KeyValue::KEY_NULL},
    {XKB_KEY_0, KeyValue::KEY_0},
    {XKB_KEY_1, KeyValue::KEY_1},

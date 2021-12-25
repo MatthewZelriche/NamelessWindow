@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "Events/Event.hpp"
@@ -10,25 +9,26 @@
 namespace NLSWIN {
 
 class Window;
-struct NLSWIN_API_PUBLIC KeyboardDeviceInfo {
+struct NLSWIN_API_PUBLIC PointerDeviceInfo {
    const std::string_view name {""};
    const uint32_t platformSpecificIdentifier {0};
 };
 
-class NLSWIN_API_PUBLIC Keyboard {
+class NLSWIN_API_PUBLIC Pointer {
    private:
    class Impl;
    std::shared_ptr<Impl> m_pImpl {nullptr};
+   friend class Window;
 
    public:
-   Keyboard();
-   Keyboard(KeyboardDeviceInfo device);
-   ~Keyboard();
+   Pointer();
+   Pointer(PointerDeviceInfo device);
+   ~Pointer();
    void SubscribeToWindow(const Window &window);
    [[nodiscard]] bool HasEvent() const noexcept;
    Event GetNextEvent();
 
-   [[nodiscard]] static std::vector<KeyboardDeviceInfo> EnumerateKeyboards() noexcept;
+   [[nodiscard]] static std::vector<PointerDeviceInfo> EnumeratePointers() noexcept;
 };
 
 }  // namespace NLSWIN
