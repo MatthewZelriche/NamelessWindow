@@ -12,8 +12,6 @@
 
 using namespace NLSWIN;
 
-xcb_connection_t *Keyboard::Impl::m_connection = nullptr;
-
 std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
    std::vector<KeyboardDeviceInfo> keyboards;
    // Open a brief temporary connection to get the screens
@@ -47,33 +45,15 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
    return keyboards;
 }
 
-void Keyboard::Impl::SubscribeToWindow(const Window &window) {
-   xcb_window_t windowID = window.m_pImpl->GetX11WindowID();
-   m_SubscribedWindows.insert({windowID, window.m_pImpl->GetWindowID()});
-
-   XI2EventMask mask;
-   mask.head.deviceid = m_deviceID;
-   mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
-   mask.mask = m_subscribedMasks;
-   xcb_input_xi_select_events(m_connection, windowID, 1, &mask.head);
-   xcb_flush(m_connection);  // To ensure the X server definitely gets the request.
-}
-
-void Keyboard::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
-   switch (event->response_type & ~0x80) {
-         // Handle Xinput2 events.
-      case XCB_GE_GENERIC: {
-         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-         switch (genericEvent->event_type) {
-            case XCB_INPUT_KEY_RELEASE:
-            case XCB_INPUT_KEY_PRESS: {
-               xcb_input_key_press_event_t *keyEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
-               if (m_SubscribedWindows.count(keyEvent->event)) {
-                  if (GetDeviceID() == keyEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
-                     Event processedEvent = ProcessKeyEvent(genericEvent);
-                     PushEvent(processedEvent);
-                  }
-               }
+void Keyboard::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
+   switch (event->event_type) {
+      case XCB_INPUT_KEY_RELEASE:
+      case XCB_INPUT_KEY_PRESS: {
+         xcb_input_key_press_event_t *keyEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
+         if (m_SubscribedWindows.count(keyEvent->event)) {
+            if (GetDeviceID() == keyEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               Event processedEvent = ProcessKeyEvent(event);
+               PushEvent(processedEvent);
             }
          }
       }
@@ -139,19 +119,22 @@ xkb_keysym_t Keyboard::Impl::GetSymFromKeyCode(unsigned int keycode) {
 Keyboard::Impl::Impl() {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
+   xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
+                               XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
    Init(xkb_x11_get_core_keyboard_device_id(m_connection));
 }
 
 Keyboard::Impl::Impl(KeyboardDeviceInfo device) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
-   Init(device.platformSpecificIdentifier);
-}
-
-void Keyboard::Impl::Init(xcb_input_device_id_t deviceID) {
-   m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
    xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
                                XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
+   Init(device.platformSpecificIdentifier);
+}
+void Keyboard::Impl::Init(xcb_input_device_id_t deviceID) {
+   m_subscribedMasks =
+      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE);
+   m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
    m_deviceID = deviceID;
    auto deviceKeymap = xkb_x11_keymap_new_from_device(m_keyboardContext, m_connection, m_deviceID,
                                                       XKB_KEYMAP_COMPILE_NO_FLAGS);
@@ -178,5 +161,5 @@ Event Keyboard::GetNextEvent() {
 }
 
 void Keyboard::SubscribeToWindow(const Window &window) {
-   m_pImpl->SubscribeToWindow(window);
+   m_pImpl->SubscribeToWindow(window.m_pImpl->GetX11WindowID(), window.GetWindowID());
 }

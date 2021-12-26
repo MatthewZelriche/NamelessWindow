@@ -43,58 +43,34 @@ std::vector<PointerDeviceInfo> Pointer::EnumeratePointers() noexcept {
    return pointers;
 }
 
-void Pointer::Impl::Init(xcb_input_device_id_t deviceID) {
-   m_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-   xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
-                               XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
-   m_deviceID = deviceID;
-}
-
-void Pointer::Impl::SubscribeToWindow(const Window &window) {
-   xcb_window_t windowID = window.m_pImpl->GetX11WindowID();
-   m_SubscribedWindows.insert({windowID, window.m_pImpl->GetWindowID()});
-
-   XI2EventMask mask;
-   mask.head.deviceid = m_deviceID;
-   mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
-   mask.mask = m_subscribedMasks;
-   xcb_input_xi_select_events(m_connection, windowID, 1, &mask.head);
-   xcb_flush(m_connection);  // To ensure the X server definitely gets the request.
-}
-
-void Pointer::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
-   switch (event->response_type & ~0x80) {
-         // Handle Xinput2 events.
-      case XCB_GE_GENERIC: {
-         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-         switch (genericEvent->event_type) {
-            case XCB_INPUT_BUTTON_PRESS: {
-               xcb_input_button_press_event_t *buttonPressEvent =
-                  reinterpret_cast<xcb_input_button_press_event_t *>(genericEvent);
-               if (m_SubscribedWindows.count(buttonPressEvent->event)) {
-                  if (GetDeviceID() == buttonPressEvent->deviceid ||
-                      GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
-                     MouseButtonEvent mouseButtonEvent {
-                        X11InputMapper::TranslateButton(buttonPressEvent->detail), ButtonPressType::PRESSED,
-                        TranslateXCBFloat(buttonPressEvent->event_x),
-                        TranslateXCBFloat(buttonPressEvent->event_y)};
-                     PushEvent(mouseButtonEvent);
-                  }
-               }
+void Pointer::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
+   switch (event->event_type) {
+      case XCB_INPUT_BUTTON_PRESS: {
+         xcb_input_button_press_event_t *buttonPressEvent =
+            reinterpret_cast<xcb_input_button_press_event_t *>(event);
+         if (m_SubscribedWindows.count(buttonPressEvent->event)) {
+            if (GetDeviceID() == buttonPressEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               MouseButtonEvent mouseButtonEvent;
+               mouseButtonEvent.button = X11InputMapper::TranslateButton(buttonPressEvent->detail);
+               mouseButtonEvent.type = ButtonPressType::PRESSED;
+               mouseButtonEvent.xPos = TranslateXCBFloat(buttonPressEvent->event_x);
+               mouseButtonEvent.yPos = (buttonPressEvent->event_y);
+               PushEvent(mouseButtonEvent);
             }
-            case XCB_INPUT_BUTTON_RELEASE: {
-               xcb_input_button_release_event_t *buttonreleaseEvent =
-                  reinterpret_cast<xcb_input_button_release_event_t *>(genericEvent);
-               if (m_SubscribedWindows.count(buttonreleaseEvent->event)) {
-                  if (GetDeviceID() == buttonreleaseEvent->deviceid ||
-                      GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
-                     MouseButtonEvent mouseButtonEvent {
-                        X11InputMapper::TranslateButton(buttonreleaseEvent->detail),
-                        ButtonPressType::RELEASED, TranslateXCBFloat(buttonreleaseEvent->event_x),
-                        TranslateXCBFloat(buttonreleaseEvent->event_y)};
-                     PushEvent(mouseButtonEvent);
-                  }
-               }
+         }
+      }
+      case XCB_INPUT_BUTTON_RELEASE: {
+         xcb_input_button_release_event_t *buttonReleaseEvent =
+            reinterpret_cast<xcb_input_button_release_event_t *>(event);
+         if (m_SubscribedWindows.count(buttonReleaseEvent->event)) {
+            if (GetDeviceID() == buttonReleaseEvent->deviceid ||
+                GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               MouseButtonEvent mouseButtonEvent;
+               mouseButtonEvent.button = X11InputMapper::TranslateButton(buttonReleaseEvent->detail);
+               mouseButtonEvent.type = ButtonPressType::RELEASED;
+               mouseButtonEvent.xPos = TranslateXCBFloat(buttonReleaseEvent->event_x);
+               mouseButtonEvent.yPos = (buttonReleaseEvent->event_y);
+               PushEvent(mouseButtonEvent);
             }
          }
       }
@@ -112,20 +88,23 @@ Pointer::Pointer(PointerDeviceInfo device) : m_pImpl(std::make_shared<Pointer::I
 Pointer::~Pointer() {
 }
 
-Pointer::Impl::Impl() {
-   XConnection::CreateConnection();
-   m_connection = XConnection::GetConnection();
-   Init(2);
+Pointer::Impl::Impl() : Impl(2) {
 }
 
-Pointer::Impl::Impl(PointerDeviceInfo device) {
+Pointer::Impl::Impl(PointerDeviceInfo device) : Impl(device.platformSpecificIdentifier) {
+}
+
+Pointer::Impl::Impl(xcb_input_device_id_t deviceID) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
-   Init(device.platformSpecificIdentifier);
+   m_subscribedMasks =
+      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
+                                  XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_MOTION);
+   m_deviceID = deviceID;
 }
 
 void Pointer::SubscribeToWindow(const Window &window) {
-   m_pImpl->SubscribeToWindow(window);
+   m_pImpl->SubscribeToWindow(window.m_pImpl->GetX11WindowID(), window.GetWindowID());
 }
 
 bool Pointer::HasEvent() const noexcept {
