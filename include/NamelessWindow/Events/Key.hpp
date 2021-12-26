@@ -6,6 +6,7 @@ namespace NLSWIN {
 
 enum class NLSWIN_API_PUBLIC KeyPressType { PRESSED = 0, RELEASED = 1, REPEAT = 2 };
 enum class NLSWIN_API_PUBLIC ButtonPressType { PRESSED = 0, RELEASED = 1 };
+enum class NLSWIN_API_PUBLIC ScrollType { UP = 0, DOWN, LEFT, RIGHT };
 
 enum class NLSWIN_API_PUBLIC KeyModifierState {
    CTRL = 1 << 1,

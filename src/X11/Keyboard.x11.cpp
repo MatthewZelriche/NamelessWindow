@@ -132,8 +132,6 @@ Keyboard::Impl::Impl(KeyboardDeviceInfo device) {
    Init(device.platformSpecificIdentifier);
 }
 void Keyboard::Impl::Init(xcb_input_device_id_t deviceID) {
-   m_subscribedMasks =
-      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE);
    m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
    m_deviceID = deviceID;
    auto deviceKeymap = xkb_x11_keymap_new_from_device(m_keyboardContext, m_connection, m_deviceID,
@@ -161,5 +159,7 @@ Event Keyboard::GetNextEvent() {
 }
 
 void Keyboard::SubscribeToWindow(const Window &window) {
-   m_pImpl->SubscribeToWindow(window.m_pImpl->GetX11WindowID(), window.GetWindowID());
+   m_pImpl->SubscribeToWindow(
+      window.m_pImpl->GetX11WindowID(), window.GetWindowID(),
+      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE));
 }

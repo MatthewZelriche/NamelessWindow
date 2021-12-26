@@ -22,13 +22,12 @@ class NLSWIN_API_PRIVATE InputDeviceX11 : public EventListenerX11 {
    protected:
    std::unordered_map<xcb_window_t, WindowID> m_SubscribedWindows;
    xcb_input_device_id_t m_deviceID;
-   xcb_input_xi_event_mask_t m_subscribedMasks;
    xcb_connection_t *m_connection;
 
    virtual void ProcessXInputEvent(xcb_ge_generic_event_t *event) = 0;
 
    public:
    [[nodiscard]] xcb_input_device_id_t GetDeviceID() { return m_deviceID; }
-   void SubscribeToWindow(xcb_window_t x11Handle, WindowID windowID);
+   void SubscribeToWindow(xcb_window_t x11Handle, WindowID windowID, xcb_input_xi_event_mask_t masks);
 };
 }  // namespace NLSWIN

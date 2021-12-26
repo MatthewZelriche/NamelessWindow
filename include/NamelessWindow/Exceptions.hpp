@@ -21,4 +21,11 @@ class NLSWIN_API_PUBLIC PlatformInitializationException : public std::exception 
    }
 };
 
+class NLSWIN_API_PUBLIC BadEventRegistrationException : public std::exception {
+   public:
+   virtual const char* what() const noexcept override {
+      return "A platform error has occured while attempting to register for operating system events.";
+   }
+};
+
 }  // namespace NLSWIN

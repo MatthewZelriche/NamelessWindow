@@ -16,6 +16,7 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
                                 XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
    int m_preferredScreenNum {0};
    xcb_window_t m_x11WindowID {0};
+   xcb_window_t m_rootWindow {0};
    bool receivedTerminateSignal {false};
    WindowMode m_currentWindowMode {WindowMode::WINDOWED};
    std::vector<Keyboard> m_keyboards;
@@ -40,6 +41,7 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
 
    [[nodiscard]] inline xcb_connection_t *GetConnection() const noexcept { return m_xServerConnection; }
    [[nodiscard]] inline xcb_window_t GetX11WindowID() const noexcept { return m_x11WindowID; }
+   [[nodiscard]] inline xcb_window_t GetX11RootWindowID() const noexcept { return m_rootWindow; }
    [[nodiscard]] inline bool RequestedClose() const noexcept { return receivedTerminateSignal; }
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept { return m_currentWindowMode; }
    [[nodiscard]] inline WindowID GetWindowID() const noexcept { return m_genericWindowID; }

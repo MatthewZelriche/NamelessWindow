@@ -50,14 +50,26 @@ void Pointer::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
             reinterpret_cast<xcb_input_button_press_event_t *>(event);
          if (m_SubscribedWindows.count(buttonPressEvent->event)) {
             if (GetDeviceID() == buttonPressEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               // Only process scroll events on a button press - processing both on press and release gives
+               // duplicate events.
+               // TODO: Look into continuous scroll values through valuators.
+               if (buttonPressEvent->detail >= 4 && buttonPressEvent->detail <= 7) {
+                  MouseScrollEvent scrollEvent;
+                  scrollEvent.scrollType = (ScrollType)(buttonPressEvent->detail - 4);
+                  scrollEvent.xPos = TranslateXCBFloat(buttonPressEvent->event_x);
+                  scrollEvent.yPos = TranslateXCBFloat(buttonPressEvent->event_y);
+                  PushEvent(scrollEvent);
+                  return;
+               }
                MouseButtonEvent mouseButtonEvent;
                mouseButtonEvent.button = X11InputMapper::TranslateButton(buttonPressEvent->detail);
                mouseButtonEvent.type = ButtonPressType::PRESSED;
                mouseButtonEvent.xPos = TranslateXCBFloat(buttonPressEvent->event_x);
-               mouseButtonEvent.yPos = (buttonPressEvent->event_y);
+               mouseButtonEvent.yPos = TranslateXCBFloat(buttonPressEvent->event_y);
                PushEvent(mouseButtonEvent);
             }
          }
+         break;
       }
       case XCB_INPUT_BUTTON_RELEASE: {
          xcb_input_button_release_event_t *buttonReleaseEvent =
@@ -69,10 +81,70 @@ void Pointer::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
                mouseButtonEvent.button = X11InputMapper::TranslateButton(buttonReleaseEvent->detail);
                mouseButtonEvent.type = ButtonPressType::RELEASED;
                mouseButtonEvent.xPos = TranslateXCBFloat(buttonReleaseEvent->event_x);
-               mouseButtonEvent.yPos = (buttonReleaseEvent->event_y);
+               mouseButtonEvent.yPos = TranslateXCBFloat(buttonReleaseEvent->event_y);
                PushEvent(mouseButtonEvent);
             }
          }
+         break;
+      }
+      case XCB_INPUT_ENTER: {
+         xcb_input_enter_event_t *enterEvent = reinterpret_cast<xcb_input_enter_event_t *>(event);
+         if (m_SubscribedWindows.count(enterEvent->event)) {
+            if (GetDeviceID() == enterEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               if (enterEvent->mode == XCB_NOTIFY_MODE_NORMAL) {
+                  MouseEnterEvent mouseEnterEvent;
+                  mouseEnterEvent.xPos = TranslateXCBFloat(enterEvent->event_x);
+                  mouseEnterEvent.yPos = TranslateXCBFloat(enterEvent->event_y);
+                  m_currentInhabitedWindow = enterEvent->event;
+                  PushEvent(mouseEnterEvent);
+               }
+            }
+         }
+         break;
+      }
+      case XCB_INPUT_LEAVE: {
+         xcb_input_leave_event_t *leaveEvent = reinterpret_cast<xcb_input_leave_event_t *>(event);
+         if (m_SubscribedWindows.count(leaveEvent->event)) {
+            if (GetDeviceID() == leaveEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               m_currentInhabitedWindow = 0;
+            }
+         }
+      }
+      case XCB_INPUT_MOTION: {
+         xcb_input_motion_event_t *motionEvent = reinterpret_cast<xcb_input_motion_event_t *>(event);
+         if (m_SubscribedWindows.count(motionEvent->event)) {
+            if (GetDeviceID() == motionEvent->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               float newX = TranslateXCBFloat(motionEvent->event_x);
+               float newY = TranslateXCBFloat(motionEvent->event_y);
+               MouseMovementEvent moveEvent;
+               moveEvent.newXPos = newX;
+               moveEvent.newYPos = newY;
+               PushEvent(moveEvent);
+            }
+         }
+         break;
+      }
+      case XCB_INPUT_RAW_MOTION: {
+         // Why are motion events seemingly considered button press events when accessing evaluators?
+         if (m_SubscribedWindows.count(m_currentInhabitedWindow)) {
+            xcb_input_raw_motion_event_t *rawMotion = reinterpret_cast<xcb_input_raw_motion_event_t *>(event);
+            if (GetDeviceID() == rawMotion->deviceid || GetDeviceID() == XCB_INPUT_DEVICE_ALL_MASTER) {
+               auto rawAxisValues =
+                  xcb_input_raw_button_press_axisvalues_raw((xcb_input_raw_button_press_event_t *)rawMotion);
+               MouseRawDeltaMovementEvent rawDeltaMoveEvent;
+               rawDeltaMoveEvent.deltaX = TranslateXCBFloat(rawAxisValues[0]);
+               rawDeltaMoveEvent.deltaY = TranslateXCBFloat(rawAxisValues[1]);
+               PushEvent(rawDeltaMoveEvent);
+               // Non-raw axisvalues gives us the accelerated delta.
+               auto axisValues =
+                  xcb_input_raw_button_press_axisvalues((xcb_input_raw_button_press_event_t *)rawMotion);
+               MouseDeltaMovementEvent deltaMoveEvent;
+               deltaMoveEvent.deltaX = TranslateXCBFloat(axisValues[0]);
+               deltaMoveEvent.deltaY = TranslateXCBFloat(axisValues[1]);
+               PushEvent(deltaMoveEvent);
+            }
+         }
+         break;
       }
    }
 }
@@ -97,14 +169,22 @@ Pointer::Impl::Impl(PointerDeviceInfo device) : Impl(device.platformSpecificIden
 Pointer::Impl::Impl(xcb_input_device_id_t deviceID) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
-   m_subscribedMasks =
-      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
-                                  XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_MOTION);
    m_deviceID = deviceID;
 }
 
 void Pointer::SubscribeToWindow(const Window &window) {
-   m_pImpl->SubscribeToWindow(window.m_pImpl->GetX11WindowID(), window.GetWindowID());
+   m_pImpl->SubscribeToWindow(
+      window.m_pImpl->GetX11WindowID(), window.GetWindowID(),
+      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
+                                  XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_MOTION |
+                                  XCB_INPUT_XI_EVENT_MASK_ENTER | XCB_INPUT_XI_EVENT_MASK_LEAVE));
+
+   // TODO: For reasons that are unknowable, raw input events refuse to work properly unless they are selected
+   // for the root window only. So we have to register them seperately. The only mention of this I could find
+   // anywhere is here: https://lists.freedesktop.org/archives/xorg/2020-May/060269.html
+   // Look into if this will be a problem for multiple pointers, multiple windows, etc.
+   m_pImpl->SubscribeToWindow(window.m_pImpl->GetX11RootWindowID(), window.GetWindowID(),
+                              (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_RAW_MOTION));
 }
 
 bool Pointer::HasEvent() const noexcept {

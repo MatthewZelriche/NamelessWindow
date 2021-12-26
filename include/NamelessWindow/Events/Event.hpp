@@ -27,6 +27,32 @@ struct NLSWIN_API_PUBLIC MouseButtonEvent {
    float yPos;
 };
 
+struct NLSWIN_API_PUBLIC MouseScrollEvent {
+   ScrollType scrollType;
+   float xPos;
+   float yPos;
+};
+
+struct NLSWIN_API_PUBLIC MouseMovementEvent {
+   float newXPos;
+   float newYPos;
+};
+
+struct NLSWIN_API_PUBLIC MouseDeltaMovementEvent {
+   float deltaX;
+   float deltaY;
+};
+
+struct NLSWIN_API_PUBLIC MouseRawDeltaMovementEvent {
+   float deltaX;
+   float deltaY;
+};
+
+struct NLSWIN_API_PUBLIC MouseEnterEvent {
+   float xPos;
+   float yPos;
+};
+
 // Currently for internal use only.
 struct NLSWIN_API_PUBLIC WindowCloseEvent {
    static EventType type;
@@ -41,7 +67,8 @@ struct NLSWIN_API_PUBLIC WindowResizeEvent {
    int newHeight;
 };
 
-using Event =
-   std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent>;
+using Event = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent, WindowResizeEvent,
+                           MouseButtonEvent, MouseScrollEvent, MouseMovementEvent, MouseDeltaMovementEvent,
+                           MouseEnterEvent, MouseRawDeltaMovementEvent>;
 
 }  // namespace NLSWIN

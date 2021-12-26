@@ -36,6 +36,7 @@ Window::Impl::Impl(WindowProperties properties, const Window &window) {
    if (!preferredScreen) {
       throw std::runtime_error("Unspecified error attempting to select a screen");
    }
+   m_rootWindow = preferredScreen->root;
 
    uint32_t windowXCoord = 0;
    uint32_t windowYCoord = 0;
