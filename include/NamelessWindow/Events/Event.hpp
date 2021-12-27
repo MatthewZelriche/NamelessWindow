@@ -67,7 +67,7 @@ struct NLSWIN_API_PUBLIC WindowResizeEvent {
    int newHeight;
 };
 
-using Event = std::variant<KeyEvent, WindowCloseEvent, WindowFocusedEvent, WindowResizeEvent,
+using Event = std::variant<std::monostate, KeyEvent, WindowCloseEvent, WindowFocusedEvent, WindowResizeEvent,
                            MouseButtonEvent, MouseScrollEvent, MouseMovementEvent, MouseDeltaMovementEvent,
                            MouseEnterEvent, MouseRawDeltaMovementEvent>;
 

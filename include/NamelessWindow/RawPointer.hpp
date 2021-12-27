@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "Events/Event.hpp"
@@ -14,17 +15,15 @@ struct NLSWIN_API_PUBLIC PointerDeviceInfo {
    const uint32_t platformSpecificIdentifier {0};
 };
 
-class NLSWIN_API_PUBLIC Pointer {
+class NLSWIN_API_PUBLIC RawPointer {
    private:
    class Impl;
    std::shared_ptr<Impl> m_pImpl {nullptr};
-   friend class Window;
 
    public:
-   Pointer();
-   Pointer(PointerDeviceInfo device);
-   ~Pointer();
-   void SubscribeToWindow(const Window &window);
+   RawPointer(PointerDeviceInfo device);
+   ~RawPointer();
+   void BindToWindow(const Window &window);
    [[nodiscard]] bool HasEvent() const noexcept;
    Event GetNextEvent();
 

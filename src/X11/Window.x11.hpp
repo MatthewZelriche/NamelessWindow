@@ -7,19 +7,22 @@
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/Window.hpp"
+#include "Pointer.x11.hpp"
 
 namespace NLSWIN {
 class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    private:
-   static xcb_connection_t *m_xServerConnection;
+   xcb_connection_t *m_xServerConnection;
    const uint32_t m_eventMask = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE |
-                                XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+                                XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+                                XCB_EVENT_MASK_ENTER_WINDOW;
    int m_preferredScreenNum {0};
    xcb_window_t m_x11WindowID {0};
    xcb_window_t m_rootWindow {0};
    bool receivedTerminateSignal {false};
    WindowMode m_currentWindowMode {WindowMode::WINDOWED};
    std::vector<Keyboard> m_keyboards;
+   static std::unique_ptr<PointerX11> m_masterPointer;
    int m_width = 0;
    int m_height = 0;
 
@@ -28,6 +31,8 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
       return newID++;
    }
    WindowID m_genericWindowID = NewGenericWindowID();
+
+   void RegisterWindowForMasterPointerEvents();
 
    [[nodiscard]] xcb_screen_t *GetScreenFromMonitor(Monitor monitor) const;
    void ProcessGenericEvent(xcb_generic_event_t *event) override;

@@ -28,4 +28,12 @@ class NLSWIN_API_PUBLIC BadEventRegistrationException : public std::exception {
    }
 };
 
+class NLSWIN_API_PUBLIC InputDeviceFailure : public std::exception {
+   public:
+   virtual const char* what() const noexcept override {
+      return "An unspecified platform error has occured when constructing or attempting to use an input "
+             "device.";
+   }
+};
+
 }  // namespace NLSWIN

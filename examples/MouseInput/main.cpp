@@ -2,33 +2,31 @@
 
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Events/EventQueue.hpp"
-#include "NamelessWindow/Pointer.hpp"
+#include "NamelessWindow/RawPointer.hpp"
 #include "NamelessWindow/Window.hpp"
 
 int main() {
-   NLSWIN::WindowProperties properties;
-   properties.horzResolution = 800;
-   properties.vertResolution = 600;
-   properties.windowName = "Hello World!";
-   properties.mode = NLSWIN::WindowMode::WINDOWED;
+   NLSWIN::Window window;
 
-   auto pointers = NLSWIN::Pointer::EnumeratePointers();
+   // List enabled pointer devices.
+   auto pointerInfos = NLSWIN::RawPointer::EnumeratePointers();
+   for (auto info: pointerInfos) { std::cout << info.name << std::endl; }
 
-   for (auto pointer: pointers) { std::cout << pointer.name << std::endl; }
-
-   NLSWIN::Window window(properties);
-   NLSWIN::Pointer pointer;
-   pointer.SubscribeToWindow(window);
    while (!window.RequestedClose()) {
       NLSWIN::EventQueue::GetOSEvents();
 
-      while (pointer.HasEvent()) {
-         NLSWIN::Event nextEvent = pointer.GetNextEvent();
+      while (window.HasEvent()) {
+         NLSWIN::Event nextEvent = window.GetNextEvent();
 
-         if (auto buttonEvent = std::get_if<NLSWIN::MouseButtonEvent>(&nextEvent)) {
-            if (buttonEvent->type == NLSWIN::ButtonPressType::PRESSED) {
-               std::cout << (int)buttonEvent->button << "Pressed at coordinates x: " << buttonEvent->xPos
-                         << ", y: " << buttonEvent->yPos << std::endl;
+         if (auto rawDelta = std::get_if<NLSWIN::MouseRawDeltaMovementEvent>(&nextEvent)) {
+            std::cout << "Raw Delta: " << rawDelta->deltaX << ", " << rawDelta->deltaY << std::endl;
+         } else if (auto delta = std::get_if<NLSWIN::MouseDeltaMovementEvent>(&nextEvent)) {
+            std::cout << "Accel Delta: " << delta->deltaX << ", " << delta->deltaY << std::endl;
+         } else if (auto pos = std::get_if<NLSWIN::MouseMovementEvent>(&nextEvent)) {
+            std::cout << "Mouse current pos: " << pos->newXPos << ", " << pos->newYPos << std::endl;
+         } else if (auto mouseClick = std::get_if<NLSWIN::MouseButtonEvent>(&nextEvent)) {
+            if (mouseClick->type == NLSWIN::ButtonPressType::PRESSED) {
+               std::cout << (int)mouseClick->button << " clicked!" << std::endl;
             }
          }
       }

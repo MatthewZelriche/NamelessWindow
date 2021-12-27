@@ -1,5 +1,6 @@
 #include "Window.x11.hpp"
 
+#include <X11/Xlib-xcb.h>
 #include <xcb/randr.h>
 
 #include <cstring>
@@ -13,11 +14,17 @@
 
 using namespace NLSWIN;
 
-xcb_connection_t *Window::Impl::m_xServerConnection = nullptr;
+std::unique_ptr<PointerX11> NLSWIN::Window::Impl::m_masterPointer = nullptr;
 
-Window::Impl::Impl(WindowProperties properties, const Window &window) {
+NLSWIN::Window::Impl::Impl(WindowProperties properties, const NLSWIN::Window &window) {
    XConnection::CreateConnection();
    m_xServerConnection = XConnection::GetConnection();
+
+   // Only one master pointer that is used by all windows of the application. If it hasn't been created yet,
+   // do so now.
+   if (m_masterPointer == nullptr) {
+      m_masterPointer = std::make_unique<PointerX11>();
+   }
 
    // Get the correct screen.
    xcb_screen_t *preferredScreen = nullptr;
@@ -109,10 +116,39 @@ Window::Impl::Impl(WindowProperties properties, const Window &window) {
    m_height = geomCookieReply->height;
    free(geomCookieReply);
 
+   RegisterWindowForMasterPointerEvents();
+
    xcb_flush(m_xServerConnection);
 }
 
-void Window::Impl::SetFullscreen(bool borderless) noexcept {
+void NLSWIN::Window::Impl::RegisterWindowForMasterPointerEvents() {
+   XI2EventMask mask;
+   mask.head.deviceid = m_masterPointer->GetMasterPointerID();
+   mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
+   mask.mask =
+      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
+                                  XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
+                                  XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION);
+   auto cookie = xcb_input_xi_select_events_checked(m_xServerConnection, m_x11WindowID, 1, &mask.head);
+   auto error = xcb_request_check(m_xServerConnection, cookie);
+   if (error) {
+      throw BadEventRegistrationException();
+   }
+
+   // Raw events have to be registered seperately, to the root window.
+   XI2EventMask mask2;
+   mask2.head.deviceid = m_masterPointer->GetMasterPointerID();
+   mask2.head.mask_len = sizeof(mask2.mask) / sizeof(uint32_t);
+   mask2.mask = (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_RAW_MOTION);
+   auto cookie2 = xcb_input_xi_select_events_checked(m_xServerConnection, m_rootWindow, 1, &mask2.head);
+   auto error2 = xcb_request_check(m_xServerConnection, cookie2);
+   if (error2) {
+      throw BadEventRegistrationException();
+   }
+   xcb_flush(m_xServerConnection);  // To ensure the X server definitely gets the request.
+}
+
+void NLSWIN::Window::Impl::SetFullscreen(bool borderless) noexcept {
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       return;
    }
@@ -126,7 +162,7 @@ void Window::Impl::SetFullscreen(bool borderless) noexcept {
    }
 }
 
-void Window::Impl::SetWindowed() noexcept {
+void NLSWIN::Window::Impl::SetWindowed() noexcept {
    if (m_currentWindowMode == WindowMode::WINDOWED) {
       return;
    }
@@ -136,11 +172,11 @@ void Window::Impl::SetWindowed() noexcept {
    m_currentWindowMode = WindowMode::WINDOWED;
 }
 
-void Window::Impl::Close() noexcept {
+void NLSWIN::Window::Impl::Close() noexcept {
    receivedTerminateSignal = true;
 }
 
-void Window::Impl::ToggleFullscreen() noexcept {
+void NLSWIN::Window::Impl::ToggleFullscreen() noexcept {
    bool fullScreen = 0;
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       fullScreen = 0;
@@ -176,7 +212,7 @@ void Window::Impl::ToggleFullscreen() noexcept {
    free(fullscreenReply);
 }
 
-xcb_screen_t *Window::Impl::GetScreenFromMonitor(Monitor monitor) const {
+xcb_screen_t *NLSWIN::Window::Impl::GetScreenFromMonitor(Monitor monitor) const {
    auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(m_xServerConnection));
    do {
       auto monitorsReply = xcb_randr_get_monitors_reply(
@@ -202,7 +238,7 @@ xcb_screen_t *Window::Impl::GetScreenFromMonitor(Monitor monitor) const {
    return nullptr;
 }
 
-std::vector<Monitor> Window::EnumerateMonitors() noexcept {
+std::vector<Monitor> NLSWIN::Window::EnumerateMonitors() noexcept {
    std::vector<Monitor> listOfMonitors;
    // Open a brief temporary connection to get the screens
    xcb_connection_t *connection = xcb_connect(nullptr, nullptr);
@@ -242,7 +278,7 @@ std::vector<Monitor> Window::EnumerateMonitors() noexcept {
    return listOfMonitors;
 }
 
-void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
+void NLSWIN::Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       // Handle resize events.
       case XCB_CONFIGURE_NOTIFY: {
@@ -285,47 +321,54 @@ void Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
             }
             break;
          }
+         break;
+      }
+      // Handle all master pointer events
+      case XCB_GE_GENERIC: {
+         xcb_ge_generic_event_t *xInputEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
+
+         m_masterPointer->ProcessXInputEvent(xInputEvent, m_x11WindowID, this);
       }
    }
 }
 
-Window::Window() : Window(WindowProperties()) {
+NLSWIN::Window::Window() : Window(WindowProperties()) {
 }
 
-Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<Impl>(properties, *this)) {
+NLSWIN::Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<Impl>(properties, *this)) {
    EventQueueX11::RegisterListener(m_pImpl);
 }
 
-Window::~Window() = default;
+NLSWIN::Window::~Window() = default;
 
-bool Window::HasEvent() const noexcept {
+bool NLSWIN::Window::HasEvent() const noexcept {
    return m_pImpl->HasEvent();
 }
 
-Event Window::GetNextEvent() {
+Event NLSWIN::Window::GetNextEvent() {
    return m_pImpl->GetNextEvent();
 }
 
-void Window::SetFullscreen(bool borderless) noexcept {
+void NLSWIN::Window::SetFullscreen(bool borderless) noexcept {
    m_pImpl->SetFullscreen(borderless);
 }
 
-void Window::SetWindowed() noexcept {
+void NLSWIN::Window::SetWindowed() noexcept {
    m_pImpl->SetWindowed();
 }
 
-WindowMode Window::GetWindowMode() const noexcept {
+WindowMode NLSWIN::Window::GetWindowMode() const noexcept {
    return m_pImpl->GetWindowMode();
 }
 
-WindowID Window::GetWindowID() const noexcept {
+WindowID NLSWIN::Window::GetWindowID() const noexcept {
    return m_pImpl->GetWindowID();
 }
 
-void Window::Close() noexcept {
+void NLSWIN::Window::Close() noexcept {
    return m_pImpl->Close();
 }
 
-bool Window::RequestedClose() const noexcept {
+bool NLSWIN::Window::RequestedClose() const noexcept {
    return m_pImpl->RequestedClose();
 }
