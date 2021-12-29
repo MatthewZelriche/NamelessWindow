@@ -7,14 +7,11 @@
 
 #include "InputDevice.x11.hpp"
 #include "NamelessWindow/NLSAPI.h"
-#include "NamelessWindow/RawPointer.hpp"
+#include "NamelessWindow/Pointer.hpp"
 
 namespace NLSWIN {
 class Window;
 class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11 {
-   private:
-   // WindowID m_boundWindow {0};
-
    protected:
    xcb_window_t m_currentInhabitedWindow {0};
 
@@ -34,6 +31,5 @@ class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11 {
 
    public:
    PointerDeviceX11(xcb_input_device_id_t deviceID);
-   // void BindToWindow(const Window &window);
 };
 }  // namespace NLSWIN

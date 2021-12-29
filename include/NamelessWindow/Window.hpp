@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
+#include "EventListener.hpp"
 #include "NLSAPI.h"
+#include "Pointer.hpp"
 
 namespace NLSWIN {
 
@@ -35,26 +37,19 @@ struct NLSWIN_API_PUBLIC WindowProperties {
    std::optional<Monitor> preferredMonitor;
 };
 
-class NLSWIN_API_PUBLIC Window {
+class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    public:
-   Window();
-   Window(WindowProperties properties);
+   static std::shared_ptr<Window> Create();
+   static std::shared_ptr<Window> Create(WindowProperties properties);
    ~Window();
-   void SetFullscreen(bool borderless = true) noexcept;
-   void SetWindowed() noexcept;
-   void Close() noexcept;
-   [[nodiscard]] bool RequestedClose() const noexcept;
-   [[nodiscard]] bool HasEvent() const noexcept;
-   Event GetNextEvent();
-   [[nodiscard]] WindowMode GetWindowMode() const noexcept;
-   [[nodiscard]] WindowID GetWindowID() const noexcept;
+   virtual void SetFullscreen(bool borderless = true) noexcept = 0;
+   virtual void SetWindowed() noexcept = 0;
+   virtual void Close() noexcept = 0;
+   virtual Pointer &GetMasterPointer() = 0;
+   [[nodiscard]] virtual bool RequestedClose() const noexcept = 0;
+   [[nodiscard]] virtual WindowMode GetWindowMode() const noexcept = 0;
+   [[nodiscard]] virtual WindowID GetWindowID() const noexcept = 0;
 
    [[nodiscard]] static std::vector<Monitor> EnumerateMonitors() noexcept;
-
-   private:
-   class Impl;
-   friend class Keyboard;
-   friend class RawPointer;
-   std::shared_ptr<Impl> m_pImpl {nullptr};
 };
 }  // namespace NLSWIN

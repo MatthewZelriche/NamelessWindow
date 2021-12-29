@@ -12,8 +12,9 @@
 
 using namespace NLSWIN;
 
-#include <iostream>
-void MasterPointer::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
+bool MasterPointerX11::m_instantiated {false};
+
+void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    if (m_disabled) {
       return;
    }
@@ -53,17 +54,22 @@ void MasterPointer::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          break;
       }
    }
-   // ProcessEvent(event);
 }
 
-MasterPointer::Impl::Impl() : PointerDeviceX11(GetMasterPointerDeviceID()) {
+void MasterPointerX11::BindToWindow(const Window *const window) {
+}
+
+MasterPointerX11::MasterPointerX11() : PointerDeviceX11(GetMasterPointerDeviceID()) {
+   if (m_instantiated) {
+      throw MultipleMasterPointerError();
+   }
    m_corePointerID = GetMasterPointerDeviceID();
    if (m_corePointerID == 0) {
       throw InputDeviceFailure();
    }
 }
 
-xcb_input_device_id_t MasterPointer::Impl::GetMasterPointerDeviceID() {
+xcb_input_device_id_t MasterPointerX11::GetMasterPointerDeviceID() {
    XConnection::CreateConnection();
    xcb_connection_t *connection = XConnection::GetConnection();
    xcb_input_xi_query_device_cookie_t queryCookie =
@@ -81,31 +87,4 @@ xcb_input_device_id_t MasterPointer::Impl::GetMasterPointerDeviceID() {
       xcb_input_xi_device_info_next(&iter);
    }
    return 0;
-}
-
-MasterPointer::MasterPointer() : m_pImpl(std::make_shared<MasterPointer::Impl>()) {
-   EventQueueX11::RegisterListener(m_pImpl);
-}
-
-MasterPointer::~MasterPointer() {
-}
-
-void MasterPointer::Enable() {
-   m_pImpl->Enable();
-}
-void MasterPointer::Disable() {
-   m_pImpl->Disable();
-}
-
-bool MasterPointer::HasEvent() const noexcept {
-   return m_pImpl->HasEvent();
-}
-
-Event MasterPointer::GetNextEvent() {
-   return m_pImpl->GetNextEvent();
-}
-
-MasterPointer &MasterPointer::GetInstance() {
-   static MasterPointer instance;
-   return instance;
 }

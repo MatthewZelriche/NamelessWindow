@@ -36,4 +36,12 @@ class NLSWIN_API_PUBLIC InputDeviceFailure : public std::exception {
    }
 };
 
+class NLSWIN_API_PUBLIC MultipleMasterPointerError : public std::exception {
+   public:
+   virtual const char* what() const noexcept override {
+      return "An attempt was made to instantiate a Master Pointer more than once. There can only be one "
+             "master pointer per application";
+   }
+};
+
 }  // namespace NLSWIN

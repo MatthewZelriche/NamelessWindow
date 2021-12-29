@@ -14,7 +14,9 @@
 
 using namespace NLSWIN;
 
-NLSWIN::Window::Impl::Impl(WindowProperties properties, const NLSWIN::Window &window) {
+std::shared_ptr<MasterPointerX11> WindowX11::m_masterPointer {nullptr};
+
+WindowX11::WindowX11(WindowProperties properties) {
    XConnection::CreateConnection();
    m_xServerConnection = XConnection::GetConnection();
 
@@ -108,7 +110,12 @@ NLSWIN::Window::Impl::Impl(WindowProperties properties, const NLSWIN::Window &wi
    m_height = geomCookieReply->height;
    free(geomCookieReply);
 
-   MasterPointer::GetInstance().m_pImpl->SubscribeToWindow(
+   if (!m_masterPointer) {
+      m_masterPointer = std::make_shared<MasterPointerX11>();
+      EventQueueX11::RegisterListener(m_masterPointer);
+   }
+
+   m_masterPointer->SubscribeToWindow(
       m_x11WindowID, m_genericWindowID,
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
                                   XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
@@ -117,7 +124,7 @@ NLSWIN::Window::Impl::Impl(WindowProperties properties, const NLSWIN::Window &wi
    xcb_flush(m_xServerConnection);
 }
 
-void NLSWIN::Window::Impl::SetFullscreen(bool borderless) noexcept {
+void WindowX11::SetFullscreen(bool borderless) noexcept {
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       return;
    }
@@ -131,7 +138,7 @@ void NLSWIN::Window::Impl::SetFullscreen(bool borderless) noexcept {
    }
 }
 
-void NLSWIN::Window::Impl::SetWindowed() noexcept {
+void WindowX11::SetWindowed() noexcept {
    if (m_currentWindowMode == WindowMode::WINDOWED) {
       return;
    }
@@ -141,11 +148,11 @@ void NLSWIN::Window::Impl::SetWindowed() noexcept {
    m_currentWindowMode = WindowMode::WINDOWED;
 }
 
-void NLSWIN::Window::Impl::Close() noexcept {
+void WindowX11::Close() noexcept {
    receivedTerminateSignal = true;
 }
 
-void NLSWIN::Window::Impl::ToggleFullscreen() noexcept {
+void WindowX11::ToggleFullscreen() noexcept {
    bool fullScreen = 0;
    if (m_currentWindowMode == WindowMode::FULLSCREEN || m_currentWindowMode == WindowMode::BORDERLESS) {
       fullScreen = 0;
@@ -181,7 +188,7 @@ void NLSWIN::Window::Impl::ToggleFullscreen() noexcept {
    free(fullscreenReply);
 }
 
-xcb_screen_t *NLSWIN::Window::Impl::GetScreenFromMonitor(Monitor monitor) const {
+xcb_screen_t *WindowX11::GetScreenFromMonitor(Monitor monitor) const {
    auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(m_xServerConnection));
    do {
       auto monitorsReply = xcb_randr_get_monitors_reply(
@@ -247,7 +254,7 @@ std::vector<Monitor> NLSWIN::Window::EnumerateMonitors() noexcept {
    return listOfMonitors;
 }
 
-void NLSWIN::Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
+void WindowX11::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       // Handle resize events.
       case XCB_CONFIGURE_NOTIFY: {
@@ -295,43 +302,20 @@ void NLSWIN::Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
    }
 }
 
-NLSWIN::Window::Window() : Window(WindowProperties()) {
+Pointer &WindowX11::GetMasterPointer() {
+   return *m_masterPointer.get();
 }
 
-NLSWIN::Window::Window(WindowProperties properties) : m_pImpl(std::make_shared<Impl>(properties, *this)) {
-   EventQueueX11::RegisterListener(m_pImpl);
+std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create() {
+   std::shared_ptr<WindowX11> impl = std::make_shared<WindowX11>(WindowProperties());
+   EventQueueX11::RegisterListener(impl);
+   return std::move(impl);
+}
+
+std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properties) {
+   std::shared_ptr<WindowX11> impl = std::make_shared<WindowX11>(properties);
+   EventQueueX11::RegisterListener(impl);
+   return std::move(impl);
 }
 
 NLSWIN::Window::~Window() = default;
-
-bool NLSWIN::Window::HasEvent() const noexcept {
-   return m_pImpl->HasEvent();
-}
-
-Event NLSWIN::Window::GetNextEvent() {
-   return m_pImpl->GetNextEvent();
-}
-
-void NLSWIN::Window::SetFullscreen(bool borderless) noexcept {
-   m_pImpl->SetFullscreen(borderless);
-}
-
-void NLSWIN::Window::SetWindowed() noexcept {
-   m_pImpl->SetWindowed();
-}
-
-WindowMode NLSWIN::Window::GetWindowMode() const noexcept {
-   return m_pImpl->GetWindowMode();
-}
-
-WindowID NLSWIN::Window::GetWindowID() const noexcept {
-   return m_pImpl->GetWindowID();
-}
-
-void NLSWIN::Window::Close() noexcept {
-   return m_pImpl->Close();
-}
-
-bool NLSWIN::Window::RequestedClose() const noexcept {
-   return m_pImpl->RequestedClose();
-}

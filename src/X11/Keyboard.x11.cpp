@@ -16,7 +16,7 @@ std::vector<KeyboardDeviceInfo> Keyboard::EnumerateKeyboards() noexcept {
    return EnumerateDevicesX11<KeyboardDeviceInfo>(XCB_INPUT_DEVICE_TYPE_SLAVE_KEYBOARD);
 }
 
-void Keyboard::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
+void KeyboardX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    switch (event->event_type) {
       case XCB_INPUT_KEY_RELEASE:
       case XCB_INPUT_KEY_PRESS: {
@@ -31,7 +31,7 @@ void Keyboard::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    }
 }
 
-Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
+Event KeyboardX11::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    KeyEvent keyEvent;
    switch (event->event_type) {
       case XCB_INPUT_KEY_PRESS: {
@@ -62,7 +62,7 @@ Event Keyboard::Impl::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    return keyEvent;
 }
 
-KeyModifiers Keyboard::Impl::ParseModifierState(uint32_t mods) {
+KeyModifiers KeyboardX11::ParseModifierState(uint32_t mods) {
    KeyModifiers modifiers {false};
    if ((mods & XCB_MOD_MASK_CONTROL)) {
       modifiers.ctrl = true;
@@ -82,12 +82,12 @@ KeyModifiers Keyboard::Impl::ParseModifierState(uint32_t mods) {
    return modifiers;
 }
 
-xkb_keysym_t Keyboard::Impl::GetSymFromKeyCode(unsigned int keycode) {
+xkb_keysym_t KeyboardX11::GetSymFromKeyCode(unsigned int keycode) {
    // TODO: Consider somehow converting this to xcb even though xcb's lack of documentation makes me weep.
    return xkb_state_key_get_one_sym(m_KeyboardState, keycode);
 }
 
-Keyboard::Impl::Impl() {
+KeyboardX11::KeyboardX11() {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
    xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
@@ -95,14 +95,14 @@ Keyboard::Impl::Impl() {
    Init(xkb_x11_get_core_keyboard_device_id(m_connection));
 }
 
-Keyboard::Impl::Impl(KeyboardDeviceInfo device) {
+KeyboardX11::KeyboardX11(KeyboardDeviceInfo device) {
    XConnection::CreateConnection();
    m_connection = XConnection::GetConnection();
    xkb_x11_setup_xkb_extension(m_connection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
                                XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
    Init(device.platformSpecificIdentifier);
 }
-void Keyboard::Impl::Init(xcb_input_device_id_t deviceID) {
+void KeyboardX11::Init(xcb_input_device_id_t deviceID) {
    m_keyboardContext = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
    m_deviceID = deviceID;
    auto deviceKeymap = xkb_x11_keymap_new_from_device(m_keyboardContext, m_connection, m_deviceID,
@@ -110,27 +110,24 @@ void Keyboard::Impl::Init(xcb_input_device_id_t deviceID) {
    m_KeyboardState = xkb_x11_state_new_from_device(deviceKeymap, m_connection, m_deviceID);
 }
 
-Keyboard::Keyboard() : m_pImpl(std::make_shared<Keyboard::Impl>()) {
-   EventQueueX11::RegisterListener(m_pImpl);
-}
-
-Keyboard::Keyboard(KeyboardDeviceInfo device) : m_pImpl(std::make_shared<Keyboard::Impl>(device)) {
-   EventQueueX11::RegisterListener(m_pImpl);
-}
-
 Keyboard::~Keyboard() {
 }
 
-bool Keyboard::HasEvent() const noexcept {
-   return m_pImpl->HasEvent();
+std::shared_ptr<Keyboard> Keyboard::Create() {
+   std::shared_ptr<KeyboardX11> impl = std::make_shared<KeyboardX11>();
+   EventQueueX11::RegisterListener(impl);
+   return std::move(impl);
 }
 
-Event Keyboard::GetNextEvent() {
-   return m_pImpl->GetNextEvent();
+std::shared_ptr<Keyboard> Keyboard::Create(KeyboardDeviceInfo device) {
+   std::shared_ptr<KeyboardX11> impl = std::make_shared<KeyboardX11>(device);
+   EventQueueX11::RegisterListener(impl);
+   return std::move(impl);
 }
 
-void Keyboard::SubscribeToWindow(const Window &window) {
-   m_pImpl->SubscribeToWindow(
-      window.m_pImpl->GetX11WindowID(), window.GetWindowID(),
+void KeyboardX11::SubscribeToWindow(const Window *const window) {
+   auto windowImpl = static_cast<const WindowX11 *const>(window);
+   InputDeviceX11::SubscribeToWindow(
+      windowImpl->GetX11WindowID(), windowImpl->GetWindowID(),
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE));
 }

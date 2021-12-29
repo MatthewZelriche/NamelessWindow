@@ -14,16 +14,16 @@ int main() {
    properties.windowName = "Hello World!";
    properties.mode = NLSWIN::WindowMode::WINDOWED;
 
-   NLSWIN::Window window(properties);
+   std::shared_ptr<NLSWIN::Window> window = NLSWIN::Window::Create(properties);
    // We don't care which keyboard we wish to get events from...
-   NLSWIN::Keyboard keyboard;
-   keyboard.SubscribeToWindow(window);
+   std::shared_ptr<NLSWIN::Keyboard> keyboard = NLSWIN::Keyboard::Create();
+   keyboard->SubscribeToWindow(window.get());
 
-   while (!window.RequestedClose()) {
+   while (!window->RequestedClose()) {
       NLSWIN::EventQueue::GetOSEvents();
 
-      while (keyboard.HasEvent()) {
-         NLSWIN::Event nextEvent = keyboard.GetNextEvent();
+      while (keyboard->HasEvent()) {
+         NLSWIN::Event nextEvent = keyboard->GetNextEvent();
 
          // Example event handling
          if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&nextEvent)) {

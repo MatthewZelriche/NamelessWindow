@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "EventListener.hpp"
 #include "Events/Event.hpp"
 #include "NLSAPI.h"
 
@@ -15,19 +16,12 @@ struct NLSWIN_API_PUBLIC KeyboardDeviceInfo {
    const uint32_t platformSpecificIdentifier {0};
 };
 
-class NLSWIN_API_PUBLIC Keyboard {
-   private:
-   class Impl;
-   std::shared_ptr<Impl> m_pImpl {nullptr};
-
+class NLSWIN_API_PUBLIC Keyboard : virtual public EventListener {
    public:
-   Keyboard();
-   Keyboard(KeyboardDeviceInfo device);
+   static std::shared_ptr<Keyboard> Create();
+   static std::shared_ptr<Keyboard> Create(KeyboardDeviceInfo device);
    ~Keyboard();
-   void SubscribeToWindow(const Window &window);
-   [[nodiscard]] bool HasEvent() const noexcept;
-   Event GetNextEvent();
-
+   virtual void SubscribeToWindow(const Window *const window) = 0;
    [[nodiscard]] static std::vector<KeyboardDeviceInfo> EnumerateKeyboards() noexcept;
 };
 

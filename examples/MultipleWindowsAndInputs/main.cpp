@@ -13,16 +13,16 @@
  * therefore unlikely to execute properly on other computers. In a real-world use case, you would likely need
  * some way of letting the application user select an appropriate keyboard returned from EnumerateKeyboards.
  */
-NLSWIN::Keyboard ConstructKeyboardIfExists(const char *keyboardName) {
+std::shared_ptr<NLSWIN::Keyboard> ConstructKeyboardIfExists(const char *keyboardName) {
    auto keyboardInfos = NLSWIN::Keyboard::EnumerateKeyboards();
    for (auto keyboard: keyboardInfos) {
       // Specific to developer's computer - real-world use case would require some kind of interactive
       // selection here.
       if (keyboard.name == keyboardName) {
-         return NLSWIN::Keyboard(keyboard);
+         return NLSWIN::Keyboard::Create(keyboard);
       }
    }
-   return NLSWIN::Keyboard();
+   return NLSWIN::Keyboard::Create();
 }
 
 int main() {
@@ -32,30 +32,30 @@ int main() {
    properties.windowName = "Hello World!";
    properties.mode = NLSWIN::WindowMode::WINDOWED;
 
-   NLSWIN::Window window(properties);
-   NLSWIN::Window window2;
+   std::shared_ptr<NLSWIN::Window> window = NLSWIN::Window::Create(properties);
+   std::shared_ptr<NLSWIN::Window> window2 = NLSWIN::Window::Create();
 
    // We will set each keyboard to listen to a seperate window.
-   NLSWIN::Keyboard keyboard = ConstructKeyboardIfExists("AT Translated Set 2 keyboard");
-   keyboard.SubscribeToWindow(window);
-   NLSWIN::Keyboard keyboard2 = ConstructKeyboardIfExists("MOSART Semi. 2.4G Keyboard Mouse");
-   keyboard2.SubscribeToWindow(window2);
+   auto keyboard = ConstructKeyboardIfExists("AT Translated Set 2 keyboard");
+   keyboard->SubscribeToWindow(window.get());
+   auto keyboard2 = ConstructKeyboardIfExists("MOSART Semi. 2.4G Keyboard Mouse");
+   keyboard2->SubscribeToWindow(window2.get());
 
-   while (!window.RequestedClose() && !window2.RequestedClose()) {
+   while (!window->RequestedClose() && !window2->RequestedClose()) {
       NLSWIN::EventQueue::GetOSEvents();
 
-      while (keyboard2.HasEvent()) {
-         NLSWIN::Event nextEvent = keyboard2.GetNextEvent();
+      while (keyboard2->HasEvent()) {
+         NLSWIN::Event nextEvent = keyboard2->GetNextEvent();
 
          if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&nextEvent)) {
-            if (keyEvent->sourceWindow == window2.GetWindowID()) {
+            if (keyEvent->sourceWindow == window2->GetWindowID()) {
                std::cout << "Window 2 recieved keypress!" << std::endl;
             }
          }
       }
 
-      while (keyboard.HasEvent()) {
-         NLSWIN::Event nextEvent = keyboard.GetNextEvent();
+      while (keyboard->HasEvent()) {
+         NLSWIN::Event nextEvent = keyboard->GetNextEvent();
 
          if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&nextEvent)) {
             if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {

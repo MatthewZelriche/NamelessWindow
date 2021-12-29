@@ -10,7 +10,7 @@
 #include "NamelessWindow/Window.hpp"
 
 namespace NLSWIN {
-class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
+class NLSWIN_API_PRIVATE WindowX11 : public Window, public EventListenerX11 {
    private:
    xcb_connection_t *m_xServerConnection;
    const uint32_t m_eventMask = XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE |
@@ -25,6 +25,8 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    int m_width = 0;
    int m_height = 0;
 
+   static std::shared_ptr<MasterPointerX11> m_masterPointer;
+
    inline static uint32_t NewGenericWindowID() {
       static uint32_t newID;
       return newID++;
@@ -38,10 +40,11 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    void ToggleFullscreen() noexcept;
 
    public:
-   Impl(WindowProperties properties, const Window &window);
+   WindowX11(WindowProperties properties);
    void SetFullscreen(bool borderless) noexcept;
    void SetWindowed() noexcept;
    void Close() noexcept;
+   Pointer &GetMasterPointer() override;
 
    [[nodiscard]] inline xcb_connection_t *GetConnection() const noexcept { return m_xServerConnection; }
    [[nodiscard]] inline xcb_window_t GetX11WindowID() const noexcept { return m_x11WindowID; }

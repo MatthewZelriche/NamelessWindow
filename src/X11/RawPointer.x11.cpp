@@ -9,25 +9,33 @@
 
 using namespace NLSWIN;
 
-std::vector<PointerDeviceInfo> RawPointer::EnumeratePointers() noexcept {
+std::vector<PointerDeviceInfo> Pointer::EnumeratePointers() noexcept {
    return EnumerateDevicesX11<PointerDeviceInfo>(XCB_INPUT_DEVICE_TYPE_SLAVE_POINTER);
 }
 
-RawPointer::Impl::Impl(xcb_input_device_id_t deviceID, const Window &window) : PointerDeviceX11(deviceID) {
+RawPointerX11::RawPointerX11(xcb_input_device_id_t deviceID, const Window *const window) :
+   PointerDeviceX11(deviceID) {
    m_deviceID = deviceID;
+   auto windowImpl = static_cast<const WindowX11 *const>(window);
+
    SubscribeToWindow(
-      window.m_pImpl->GetX11WindowID(), window.m_pImpl->GetWindowID(),
+      windowImpl->GetX11WindowID(), windowImpl->GetWindowID(),
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
                                   XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
                                   XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION));
 }
 
-RawPointer::RawPointer(PointerDeviceInfo device, const Window &window) :
-   m_pImpl(std::make_shared<RawPointer::Impl>(device.platformSpecificIdentifier, window)) {
-   EventQueueX11::RegisterListener(m_pImpl);
+void RawPointerX11::BindToWindow(const Window *const window) {
 }
 
-void RawPointer::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
+std::shared_ptr<Pointer> Pointer::Create(PointerDeviceInfo device, const Window *const window) {
+   std::shared_ptr<RawPointerX11> impl =
+      std::make_shared<RawPointerX11>(device.platformSpecificIdentifier, window);
+   EventQueueX11::RegisterListener(impl);
+   return std::move(impl);
+}
+
+void RawPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    switch (event->event_type) {
       case XCB_INPUT_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =
@@ -55,13 +63,5 @@ void RawPointer::Impl::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    }
 }
 
-RawPointer::~RawPointer() {
-}
-
-bool RawPointer::HasEvent() const noexcept {
-   return m_pImpl->HasEvent();
-}
-
-Event RawPointer::GetNextEvent() {
-   return m_pImpl->GetNextEvent();
+Pointer::~Pointer() {
 }
