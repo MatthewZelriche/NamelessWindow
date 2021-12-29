@@ -12,7 +12,7 @@ namespace NLSWIN {
 using WindowID = uint32_t;
 class KeyboardDeviceInfo;
 class Keyboard;
-class Pointer;
+class RawPointer;
 
 enum class NLSWIN_API_PUBLIC WindowMode { FULLSCREEN = 0, BORDERLESS = 1, WINDOWED = 2, NO_PREFERENCE = 3 };
 
@@ -54,7 +54,7 @@ class NLSWIN_API_PUBLIC Window {
    private:
    class Impl;
    friend class Keyboard;
-   friend class Pointer;
+   friend class RawPointer;
    std::shared_ptr<Impl> m_pImpl {nullptr};
 };
 }  // namespace NLSWIN

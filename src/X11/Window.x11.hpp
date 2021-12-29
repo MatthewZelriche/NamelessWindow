@@ -4,10 +4,10 @@
 #include <vector>
 
 #include "EventListener.x11.hpp"
+#include "MasterPointer.x11.hpp"
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/Window.hpp"
-#include "Pointer.x11.hpp"
 
 namespace NLSWIN {
 class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
@@ -22,7 +22,6 @@ class NLSWIN_API_PRIVATE Window::Impl : public EventListenerX11 {
    bool receivedTerminateSignal {false};
    WindowMode m_currentWindowMode {WindowMode::WINDOWED};
    std::vector<Keyboard> m_keyboards;
-   static std::unique_ptr<PointerX11> m_masterPointer;
    int m_width = 0;
    int m_height = 0;
 

@@ -14,17 +14,9 @@
 
 using namespace NLSWIN;
 
-std::unique_ptr<PointerX11> NLSWIN::Window::Impl::m_masterPointer = nullptr;
-
 NLSWIN::Window::Impl::Impl(WindowProperties properties, const NLSWIN::Window &window) {
    XConnection::CreateConnection();
    m_xServerConnection = XConnection::GetConnection();
-
-   // Only one master pointer that is used by all windows of the application. If it hasn't been created yet,
-   // do so now.
-   if (m_masterPointer == nullptr) {
-      m_masterPointer = std::make_unique<PointerX11>();
-   }
 
    // Get the correct screen.
    xcb_screen_t *preferredScreen = nullptr;
@@ -116,36 +108,13 @@ NLSWIN::Window::Impl::Impl(WindowProperties properties, const NLSWIN::Window &wi
    m_height = geomCookieReply->height;
    free(geomCookieReply);
 
-   RegisterWindowForMasterPointerEvents();
-
-   xcb_flush(m_xServerConnection);
-}
-
-void NLSWIN::Window::Impl::RegisterWindowForMasterPointerEvents() {
-   XI2EventMask mask;
-   mask.head.deviceid = m_masterPointer->GetMasterPointerID();
-   mask.head.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
-   mask.mask =
+   MasterPointer::GetInstance().m_pImpl->SubscribeToWindow(
+      m_x11WindowID, m_genericWindowID,
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
                                   XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
-                                  XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION);
-   auto cookie = xcb_input_xi_select_events_checked(m_xServerConnection, m_x11WindowID, 1, &mask.head);
-   auto error = xcb_request_check(m_xServerConnection, cookie);
-   if (error) {
-      throw BadEventRegistrationException();
-   }
+                                  XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION));
 
-   // Raw events have to be registered seperately, to the root window.
-   XI2EventMask mask2;
-   mask2.head.deviceid = m_masterPointer->GetMasterPointerID();
-   mask2.head.mask_len = sizeof(mask2.mask) / sizeof(uint32_t);
-   mask2.mask = (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_RAW_MOTION);
-   auto cookie2 = xcb_input_xi_select_events_checked(m_xServerConnection, m_rootWindow, 1, &mask2.head);
-   auto error2 = xcb_request_check(m_xServerConnection, cookie2);
-   if (error2) {
-      throw BadEventRegistrationException();
-   }
-   xcb_flush(m_xServerConnection);  // To ensure the X server definitely gets the request.
+   xcb_flush(m_xServerConnection);
 }
 
 void NLSWIN::Window::Impl::SetFullscreen(bool borderless) noexcept {
@@ -322,12 +291,6 @@ void NLSWIN::Window::Impl::ProcessGenericEvent(xcb_generic_event_t *event) {
             break;
          }
          break;
-      }
-      // Handle all master pointer events
-      case XCB_GE_GENERIC: {
-         xcb_ge_generic_event_t *xInputEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-
-         m_masterPointer->ProcessXInputEvent(xInputEvent, m_x11WindowID, this);
       }
    }
 }

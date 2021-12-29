@@ -21,7 +21,7 @@ class NLSWIN_API_PUBLIC RawPointer {
    std::shared_ptr<Impl> m_pImpl {nullptr};
 
    public:
-   RawPointer(PointerDeviceInfo device);
+   RawPointer(PointerDeviceInfo device, const Window &window);
    ~RawPointer();
    void BindToWindow(const Window &window);
    [[nodiscard]] bool HasEvent() const noexcept;
