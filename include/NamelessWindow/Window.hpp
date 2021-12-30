@@ -49,6 +49,8 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    [[nodiscard]] virtual bool RequestedClose() const noexcept = 0;
    [[nodiscard]] virtual WindowMode GetWindowMode() const noexcept = 0;
    [[nodiscard]] virtual WindowID GetWindowID() const noexcept = 0;
+   [[nodiscard]] virtual unsigned int GetWindowWidth() const noexcept = 0;
+   [[nodiscard]] virtual unsigned int GetWindowHeight() const noexcept = 0;
 
    [[nodiscard]] static std::vector<Monitor> EnumerateMonitors() noexcept;
 };

@@ -21,6 +21,9 @@ class NLSWIN_API_PUBLIC Pointer : virtual public EventListener {
    static std::shared_ptr<Pointer> Create(PointerDeviceInfo device, const Window *const window);
    ~Pointer();
    virtual void BindToWindow(const Window *const window) = 0;
+   virtual void UnbindFromWindow() = 0;
+   virtual void RequestShowCursor() = 0;
+   virtual void RequestHiddenCursor() = 0;
    [[nodiscard]] static std::vector<PointerDeviceInfo> EnumeratePointers() noexcept;
 };
 

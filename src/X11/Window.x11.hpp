@@ -52,5 +52,7 @@ class NLSWIN_API_PRIVATE WindowX11 : public Window, public EventListenerX11 {
    [[nodiscard]] inline bool RequestedClose() const noexcept { return receivedTerminateSignal; }
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept { return m_currentWindowMode; }
    [[nodiscard]] inline WindowID GetWindowID() const noexcept { return m_genericWindowID; }
+   [[nodiscard]] inline unsigned int GetWindowWidth() const noexcept override { return m_width; }
+   [[nodiscard]] inline unsigned int GetWindowHeight() const noexcept override { return m_height; }
 };
 }  // namespace NLSWIN

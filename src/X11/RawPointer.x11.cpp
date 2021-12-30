@@ -17,15 +17,13 @@ RawPointerX11::RawPointerX11(xcb_input_device_id_t deviceID, const Window *const
    PointerDeviceX11(deviceID) {
    m_deviceID = deviceID;
    auto windowImpl = static_cast<const WindowX11 *const>(window);
+   BindToWindow(window);
 
    SubscribeToWindow(
       windowImpl->GetX11WindowID(), windowImpl->GetWindowID(),
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
                                   XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
                                   XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION));
-}
-
-void RawPointerX11::BindToWindow(const Window *const window) {
 }
 
 std::shared_ptr<Pointer> Pointer::Create(PointerDeviceInfo device, const Window *const window) {
@@ -35,12 +33,34 @@ std::shared_ptr<Pointer> Pointer::Create(PointerDeviceInfo device, const Window 
    return std::move(impl);
 }
 
+void RawPointerX11::BindToWindow(const Window *const window) {
+   m_boundWindow = static_cast<const WindowX11 *const>(window)->GetX11WindowID();
+   if (!AttemptCursorGrab(m_boundWindow)) {
+      m_attemptGrabNextPoll = true;
+   }
+   m_SubscribedWindows.clear();
+   SubscribeToWindow(
+      m_boundWindow, window->GetWindowID(),
+      (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
+                                  XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
+                                  XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION));
+}
+
+void RawPointerX11::UnbindFromWindow() {
+   // Intentionally override to be empty - not supported for raw pointers.
+}
+
 void RawPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
+   if (m_attemptGrabNextPoll) {
+      if (AttemptCursorGrab(m_boundWindow)) {
+         m_attemptGrabNextPoll = false;
+      }
+   }
    switch (event->event_type) {
       case XCB_INPUT_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =
             reinterpret_cast<xcb_input_button_press_event_t *>(event);
-         if (buttonPressEvent->deviceid == m_deviceID) {
+         if (buttonPressEvent->deviceid == m_deviceID && m_boundWindow == buttonPressEvent->event) {
             PackageButtonPressEvent(buttonPressEvent);
          }
          break;
@@ -48,7 +68,7 @@ void RawPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
       case XCB_INPUT_BUTTON_RELEASE: {
          xcb_input_button_release_event_t *buttonReleaseEvent =
             reinterpret_cast<xcb_input_button_release_event_t *>(event);
-         if (buttonReleaseEvent->deviceid == m_deviceID) {
+         if (buttonReleaseEvent->deviceid == m_deviceID && m_boundWindow == buttonReleaseEvent->event) {
             PackageButtonReleaseEvent(buttonReleaseEvent);
          }
          break;

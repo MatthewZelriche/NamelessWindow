@@ -18,32 +18,52 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    if (m_disabled) {
       return;
    }
+   // Keep trying until we succeed at a grab.
+   if (m_attemptGrabNextPoll) {
+      if (AttemptCursorGrab(m_boundWindow)) {
+         m_attemptGrabNextPoll = false;
+      }
+   }
    switch (event->event_type) {
       case XCB_INPUT_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =
             reinterpret_cast<xcb_input_button_press_event_t *>(event);
-         PackageButtonPressEvent(buttonPressEvent);
+         if (!(m_boundWindow && m_boundWindow != buttonPressEvent->event)) {
+            PackageButtonPressEvent(buttonPressEvent);
+         }
          break;
       }
       case XCB_INPUT_BUTTON_RELEASE: {
          xcb_input_button_release_event_t *buttonReleaseEvent =
             reinterpret_cast<xcb_input_button_release_event_t *>(event);
-         PackageButtonReleaseEvent(buttonReleaseEvent);
+         if (!(m_boundWindow && m_boundWindow != buttonReleaseEvent->event)) {
+            PackageButtonReleaseEvent(buttonReleaseEvent);
+         }
          break;
       }
       case XCB_INPUT_ENTER: {
          xcb_input_enter_event_t *enterEvent = reinterpret_cast<xcb_input_enter_event_t *>(event);
-         PackageEnterEvent(enterEvent);
+         if (!(m_boundWindow && m_boundWindow != enterEvent->event)) {
+            PackageEnterEvent(enterEvent);
+         }
+         if (ClientRequestedHiddenCursor()) {
+            HideCursor();
+         }
          break;
       }
       case XCB_INPUT_LEAVE: {
          xcb_input_leave_event_t *leaveEvent = reinterpret_cast<xcb_input_leave_event_t *>(event);
-         PackageLeaveEvent(leaveEvent);
+         if (!(m_boundWindow && m_boundWindow != leaveEvent->event)) {
+            PackageLeaveEvent(leaveEvent);
+         }
+         ShowCursor();
          break;
       }
       case XCB_INPUT_MOTION: {
          xcb_input_motion_event_t *motionEvent = reinterpret_cast<xcb_input_motion_event_t *>(event);
-         PackageMotionEvent(motionEvent);
+         if (!(m_boundWindow && m_boundWindow != motionEvent->event)) {
+            PackageMotionEvent(motionEvent);
+         }
          break;
       }
       case XCB_INPUT_RAW_MOTION: {
@@ -57,6 +77,18 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
 }
 
 void MasterPointerX11::BindToWindow(const Window *const window) {
+   m_boundWindow = static_cast<const WindowX11 *const>(window)->GetX11WindowID();
+   if (!AttemptCursorGrab(m_boundWindow)) {
+      m_attemptGrabNextPoll = true;
+   }
+}
+
+void MasterPointerX11::UnbindFromWindow() {
+   m_boundWindow = 0;
+   m_attemptGrabNextPoll = false;
+   auto cookie = xcb_ungrab_pointer_checked(m_connection, XCB_CURRENT_TIME);
+   // TODO: This doesn't work unless I do a request check. What??
+   auto err = xcb_request_check(m_connection, cookie);
 }
 
 MasterPointerX11::MasterPointerX11() : PointerDeviceX11(GetMasterPointerDeviceID()) {

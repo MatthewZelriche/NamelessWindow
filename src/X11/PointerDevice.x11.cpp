@@ -1,11 +1,16 @@
 #include "PointerDevice.x11.hpp"
 
 #include "InputMapper.x11.hpp"
+#include "Window.x11.hpp"
 
 using namespace NLSWIN;
 
 PointerDeviceX11::PointerDeviceX11(xcb_input_device_id_t deviceID) {
    m_deviceID = deviceID;
+
+   xcb_cursor_t cursor = xcb_generate_id(m_connection);
+   xcb_pixmap_t pixmap = xcb_generate_id(m_connection);
+   xcb_create_cursor(m_connection, m_cursor, pixmap, pixmap, 0, 0, 0, 0, 0, 0, 0, 0);
    SubscribeToRawRootEvents(XCB_INPUT_XI_EVENT_MASK_RAW_MOTION);
 }
 
@@ -59,6 +64,8 @@ void PointerDeviceX11::PackageLeaveEvent(xcb_input_leave_event_t *event) {
       MouseLeaveEvent mouseLeaveEvent;
       mouseLeaveEvent.xPos = TranslateXCBFloat(event->event_x);
       mouseLeaveEvent.yPos = TranslateXCBFloat(event->event_y);
+      lastX = mouseLeaveEvent.xPos;
+      lastY = mouseLeaveEvent.yPos;
       PushEvent(mouseLeaveEvent);
    }
 }
@@ -79,6 +86,38 @@ void PointerDeviceX11::PackageMotionEvent(xcb_input_motion_event_t *event) {
       lastY = newY;
       PushEvent(moveEvent);
    }
+}
+void PointerDeviceX11::HideCursor() {
+   // Only hide the cursor if the pointer is currently within bounds of a window.
+   if (m_shouldCursorBeHidden && m_currentInhabitedWindow) {
+      for (auto window: m_SubscribedWindows) { xcb_xfixes_hide_cursor(m_connection, window.first); }
+      xcb_flush(m_connection);
+   }
+}
+
+void PointerDeviceX11::RequestShowCursor() {
+   m_shouldCursorBeHidden = false;
+   ShowCursor();
+}
+void PointerDeviceX11::RequestHiddenCursor() {
+   m_shouldCursorBeHidden = true;
+   // If the cursor is not currently within the bounds of a window, this call will do nothing.
+   // The cursor will not be set to hidden until it next enters the bounds of a window (EnterEvent).
+   HideCursor();
+}
+
+void PointerDeviceX11::ShowCursor() {
+   // TODO: This doesnt work unless i do it twice. Why?
+   for (auto window: m_SubscribedWindows) { xcb_xfixes_show_cursor(m_connection, window.first); }
+   for (auto window: m_SubscribedWindows) { xcb_xfixes_show_cursor(m_connection, window.first); }
+   xcb_flush(m_connection);
+}
+
+bool PointerDeviceX11::AttemptCursorGrab(xcb_window_t window) {
+   auto cookie = xcb_grab_pointer(m_connection, 1, m_boundWindow, 0, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC,
+                                  m_boundWindow, m_cursor, XCB_CURRENT_TIME);
+   auto reply = xcb_grab_pointer_reply(m_connection, cookie, nullptr);
+   return reply->status == XCB_GRAB_STATUS_SUCCESS;
 }
 
 void PointerDeviceX11::PackageDeltaEvent(xcb_input_raw_motion_event_t *event) {

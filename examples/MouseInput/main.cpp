@@ -5,9 +5,9 @@
 #include "NamelessWindow/Pointer.hpp"
 #include "NamelessWindow/Window.hpp"
 
-// TODO: Implement the ability to bind raw pointer devices to a new window.
 int main() {
    std::shared_ptr<NLSWIN::Window> window = NLSWIN::Window::Create();
+   std::shared_ptr<NLSWIN::Window> window2 = NLSWIN::Window::Create();
 
    // List enabled pointer devices.
    auto pointerInfos = NLSWIN::Pointer::EnumeratePointers();
@@ -15,11 +15,12 @@ int main() {
    // If you construct a raw pointer device object, you will automatically start recieving duplicate events
    // from the master pointer device. If you want to use a raw pointer device, you need to not use
    // the master pointer at all, unless you are okay with duplicate events.
-   // NLSWIN::RawPointer ppointer(NLSWIN::PointerDeviceInfo {"blah", 8}, window);
    // std::shared_ptr<NLSWIN::Pointer> pointer = NLSWIN::Pointer::Create({"blah", 8}, window.get());
    NLSWIN::Pointer &pointer = window->GetMasterPointer();
+   pointer.BindToWindow(window.get());
+   pointer.RequestHiddenCursor();
 
-   while (!window->RequestedClose()) {
+   while (!window->RequestedClose() && !window2->RequestedClose()) {
       NLSWIN::EventQueue::GetOSEvents();
 
       while (pointer.HasEvent()) {
@@ -34,6 +35,8 @@ int main() {
          } else if (auto mouseClick = std::get_if<NLSWIN::MouseButtonEvent>(&nextEvent)) {
             if (mouseClick->type == NLSWIN::ButtonPressType::PRESSED) {
                std::cout << (int)mouseClick->button << " clicked!" << std::endl;
+               pointer.UnbindFromWindow();
+               pointer.RequestShowCursor();
             }
          }
       }

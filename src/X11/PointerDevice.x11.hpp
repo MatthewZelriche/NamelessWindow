@@ -1,6 +1,7 @@
 #pragma once
 
 #include <xcb/xcb.h>
+#include <xcb/xfixes.h>
 #include <xcb/xinput.h>
 
 #include <MagicEnum/magic_enum.hpp>
@@ -11,9 +12,23 @@
 
 namespace NLSWIN {
 class Window;
-class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11 {
+class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11, public Pointer {
+   private:
+   void RequestShowCursor() override;
+   void RequestHiddenCursor() override;
+   bool m_shouldCursorBeHidden {false};
+   xcb_cursor_t m_cursor {0};
+
    protected:
    xcb_window_t m_currentInhabitedWindow {0};
+   xcb_window_t m_boundWindow {0};
+   bool m_attemptGrabNextPoll {false};
+   [[nodiscard]] inline bool ClientRequestedHiddenCursor() { return m_shouldCursorBeHidden; };
+
+   void HideCursor();
+   void ShowCursor();
+   [[nodiscard]] bool AttemptCursorGrab(xcb_window_t window);
+   void UngrabCursor();
 
    void PackageButtonPressEvent(xcb_input_button_press_event_t *event);
    void PackageButtonReleaseEvent(xcb_input_button_release_event_t *event);
