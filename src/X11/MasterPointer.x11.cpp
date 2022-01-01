@@ -68,6 +68,12 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
       }
       case XCB_INPUT_RAW_MOTION: {
          xcb_input_raw_motion_event_t *rawEvent = reinterpret_cast<xcb_input_raw_motion_event_t *>(event);
+         // Hacky workaround to ignore duplicate motion events due to master/slave pointer issues.
+         static xcb_timestamp_t lastTimeStamp = 0;
+         if (rawEvent->time == lastTimeStamp) {
+            break;
+         }
+         lastTimeStamp = rawEvent->time;
          if (m_currentInhabitedWindow != 0) {
             PackageDeltaEvent(rawEvent);
          }
