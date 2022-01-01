@@ -89,34 +89,36 @@ void PointerDeviceX11::PackageMotionEvent(xcb_input_motion_event_t *event) {
 }
 void PointerDeviceX11::HideCursor() {
    // Only hide the cursor if the pointer is currently within bounds of a window.
-   if (m_shouldCursorBeHidden && m_currentInhabitedWindow) {
+   // Don't send another request if the cursor is already hidden - the requests appear to stack.
+   if (m_clientRequestedHiddenCursor && m_currentInhabitedWindow && !m_cursorHidden) {
       for (auto window: m_SubscribedWindows) { xcb_xfixes_hide_cursor(m_connection, window.first); }
       xcb_flush(m_connection);
+      m_cursorHidden = true;
    }
 }
 
 void PointerDeviceX11::RequestShowCursor() {
-   m_shouldCursorBeHidden = false;
+   m_clientRequestedHiddenCursor = false;
    ShowCursor();
 }
 void PointerDeviceX11::RequestHiddenCursor() {
-   m_shouldCursorBeHidden = true;
+   m_clientRequestedHiddenCursor = true;
    // If the cursor is not currently within the bounds of a window, this call will do nothing.
    // The cursor will not be set to hidden until it next enters the bounds of a window (EnterEvent).
    HideCursor();
 }
 
 void PointerDeviceX11::ShowCursor() {
-   // TODO: This doesnt work unless i do it twice. Why?
-   for (auto window: m_SubscribedWindows) { xcb_xfixes_show_cursor(m_connection, window.first); }
    for (auto window: m_SubscribedWindows) { xcb_xfixes_show_cursor(m_connection, window.first); }
    xcb_flush(m_connection);
+   m_cursorHidden = false;
 }
 
 bool PointerDeviceX11::AttemptCursorGrab(xcb_window_t window) {
    auto cookie = xcb_grab_pointer(m_connection, 1, m_boundWindow, 0, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC,
                                   m_boundWindow, m_cursor, XCB_CURRENT_TIME);
    auto reply = xcb_grab_pointer_reply(m_connection, cookie, nullptr);
+   xcb_flush(m_connection);
    return reply->status == XCB_GRAB_STATUS_SUCCESS;
 }
 

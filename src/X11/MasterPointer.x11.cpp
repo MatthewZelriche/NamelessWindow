@@ -45,9 +45,9 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          xcb_input_enter_event_t *enterEvent = reinterpret_cast<xcb_input_enter_event_t *>(event);
          if (!(m_boundWindow && m_boundWindow != enterEvent->event)) {
             PackageEnterEvent(enterEvent);
-         }
-         if (ClientRequestedHiddenCursor()) {
-            HideCursor();
+            if (ClientRequestedHiddenCursor()) {
+               HideCursor();
+            }
          }
          break;
       }
@@ -78,17 +78,24 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
 
 void MasterPointerX11::BindToWindow(const Window *const window) {
    m_boundWindow = static_cast<const WindowX11 *const>(window)->GetX11WindowID();
-   if (!AttemptCursorGrab(m_boundWindow)) {
-      m_attemptGrabNextPoll = true;
-   }
+   xcb_set_input_focus(m_connection, 0, m_boundWindow, XCB_CURRENT_TIME);
+   // TODO: Better way of handling this.
+   int count = 0;
+   while (!AttemptCursorGrab(m_boundWindow) && count <= 10) { count++; }
+   xcb_flush(m_connection);
 }
 
 void MasterPointerX11::UnbindFromWindow() {
    m_boundWindow = 0;
    m_attemptGrabNextPoll = false;
    auto cookie = xcb_ungrab_pointer_checked(m_connection, XCB_CURRENT_TIME);
-   // TODO: This doesn't work unless I do a request check. What??
-   auto err = xcb_request_check(m_connection, cookie);
+}
+
+void MasterPointerX11::OnFocusOut(xcb_focus_out_event_t *event) {
+   if (event->mode == XCB_NOTIFY_MODE_GRAB) {
+      ShowCursor();
+      UnbindFromWindow();
+   }
 }
 
 MasterPointerX11::MasterPointerX11() : PointerDeviceX11(GetMasterPointerDeviceID()) {

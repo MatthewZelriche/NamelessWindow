@@ -35,9 +35,7 @@ std::shared_ptr<Pointer> Pointer::Create(PointerDeviceInfo device, const Window 
 
 void RawPointerX11::BindToWindow(const Window *const window) {
    m_boundWindow = static_cast<const WindowX11 *const>(window)->GetX11WindowID();
-   if (!AttemptCursorGrab(m_boundWindow)) {
-      m_attemptGrabNextPoll = true;
-   }
+   xcb_set_input_focus(m_connection, 0, m_boundWindow, XCB_CURRENT_TIME);
    m_SubscribedWindows.clear();
    SubscribeToWindow(
       m_boundWindow, window->GetWindowID(),
@@ -51,11 +49,6 @@ void RawPointerX11::UnbindFromWindow() {
 }
 
 void RawPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
-   if (m_attemptGrabNextPoll) {
-      if (AttemptCursorGrab(m_boundWindow)) {
-         m_attemptGrabNextPoll = false;
-      }
-   }
    switch (event->event_type) {
       case XCB_INPUT_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =

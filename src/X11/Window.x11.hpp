@@ -45,6 +45,7 @@ class NLSWIN_API_PRIVATE WindowX11 : public Window, public EventListenerX11 {
    void SetWindowed() noexcept;
    void Close() noexcept;
    Pointer &GetMasterPointer() override;
+   void RepositionWindow(uint32_t newX, uint32_t newY) override;
 
    [[nodiscard]] inline xcb_connection_t *GetConnection() const noexcept { return m_xServerConnection; }
    [[nodiscard]] inline xcb_window_t GetX11WindowID() const noexcept { return m_x11WindowID; }

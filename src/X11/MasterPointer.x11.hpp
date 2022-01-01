@@ -27,6 +27,7 @@ class NLSWIN_API_PRIVATE MasterPointerX11 : public PointerDeviceX11 {
 
    public:
    MasterPointerX11();
+   void OnFocusOut(xcb_focus_out_event_t *event);
 
    [[nodiscard]] inline xcb_input_device_id_t GetMasterPointerID() const noexcept { return m_corePointerID; }
 };

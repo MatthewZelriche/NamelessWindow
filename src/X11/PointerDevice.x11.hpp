@@ -16,14 +16,15 @@ class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11, public Pointe
    private:
    void RequestShowCursor() override;
    void RequestHiddenCursor() override;
-   bool m_shouldCursorBeHidden {false};
+   bool m_clientRequestedHiddenCursor {false};
+   bool m_cursorHidden {false};
    xcb_cursor_t m_cursor {0};
 
    protected:
    xcb_window_t m_currentInhabitedWindow {0};
    xcb_window_t m_boundWindow {0};
    bool m_attemptGrabNextPoll {false};
-   [[nodiscard]] inline bool ClientRequestedHiddenCursor() { return m_shouldCursorBeHidden; };
+   [[nodiscard]] inline bool ClientRequestedHiddenCursor() { return m_clientRequestedHiddenCursor; };
 
    void HideCursor();
    void ShowCursor();

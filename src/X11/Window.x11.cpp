@@ -121,6 +121,14 @@ WindowX11::WindowX11(WindowProperties properties) {
                                   XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
                                   XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION));
 
+   RepositionWindow(windowXCoord, windowYCoord);
+   xcb_flush(m_xServerConnection);
+}
+
+void WindowX11::RepositionWindow(uint32_t newX, uint32_t newY) {
+   uint32_t newCoords[] = {newX, newY};
+   xcb_configure_window(m_xServerConnection, m_x11WindowID, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
+                        newCoords);
    xcb_flush(m_xServerConnection);
 }
 
@@ -276,6 +284,13 @@ void WindowX11::ProcessGenericEvent(xcb_generic_event_t *event) {
          if (focusEvent->event == m_x11WindowID) {
             WindowFocusedEvent windowFocusEvent;
             PushEvent(windowFocusEvent);
+         }
+         break;
+      }
+      case XCB_FOCUS_OUT: {
+         xcb_focus_out_event_t *focusEvent = reinterpret_cast<xcb_focus_out_event_t *>(event);
+         if (focusEvent->event == m_x11WindowID) {
+            m_masterPointer->OnFocusOut(focusEvent);
          }
          break;
       }

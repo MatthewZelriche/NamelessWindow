@@ -12,6 +12,7 @@ void XConnection::CreateConnection() {
    if (!m_xServerConnection) {
       m_Display = XOpenDisplay(NULL);
       m_xServerConnection = XGetXCBConnection(m_Display);
+      XSetEventQueueOwner(m_Display, XCBOwnsEventQueue);
       auto cookie =
          xcb_xfixes_query_version(m_xServerConnection, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
       auto reply = xcb_xfixes_query_version_reply(m_xServerConnection, cookie, nullptr);
