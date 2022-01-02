@@ -24,6 +24,7 @@ class NLSWIN_API_PRIVATE WindowX11 : public Window, public EventListenerX11 {
    std::vector<Keyboard> m_keyboards;
    int m_width = 0;
    int m_height = 0;
+   bool m_isUserResizable {true};
 
    static std::shared_ptr<MasterPointerX11> m_masterPointer;
 
@@ -46,6 +47,8 @@ class NLSWIN_API_PRIVATE WindowX11 : public Window, public EventListenerX11 {
    void Close() noexcept;
    Pointer &GetMasterPointer() override;
    void RepositionWindow(uint32_t newX, uint32_t newY) override;
+   void SetUserResizable(bool isResizable) override;
+   void Resize(uint32_t width, uint32_t height) override;
 
    [[nodiscard]] inline xcb_connection_t *GetConnection() const noexcept { return m_xServerConnection; }
    [[nodiscard]] inline xcb_window_t GetX11WindowID() const noexcept { return m_x11WindowID; }

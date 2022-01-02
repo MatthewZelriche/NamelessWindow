@@ -18,12 +18,6 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    if (m_disabled) {
       return;
    }
-   // Keep trying until we succeed at a grab.
-   if (m_attemptGrabNextPoll) {
-      if (AttemptCursorGrab(m_boundWindow)) {
-         m_attemptGrabNextPoll = false;
-      }
-   }
    switch (event->event_type) {
       case XCB_INPUT_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =
@@ -87,11 +81,14 @@ void MasterPointerX11::BindToWindow(const Window *const window) {
    xcb_set_input_focus(m_connection, 0, m_boundWindow, XCB_CURRENT_TIME);
    // TODO: Better way of handling this.
    int count = 0;
-   while (!AttemptCursorGrab(m_boundWindow) && count <= 10) { count++; }
+   while (!AttemptCursorGrab(m_boundWindow) && count <= 10000) { count++; }
    xcb_flush(m_connection);
 }
 
 void MasterPointerX11::UnbindFromWindow() {
+   if (m_boundWindow = 0) {
+      return;
+   }
    m_boundWindow = 0;
    m_attemptGrabNextPoll = false;
    auto cookie = xcb_ungrab_pointer_checked(m_connection, XCB_CURRENT_TIME);

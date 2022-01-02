@@ -47,5 +47,6 @@ class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11, public Pointe
 
    public:
    PointerDeviceX11(xcb_input_device_id_t deviceID);
+   inline xcb_window_t BoundWindow() { return m_boundWindow; }
 };
 }  // namespace NLSWIN

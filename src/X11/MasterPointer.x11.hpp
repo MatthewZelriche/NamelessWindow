@@ -22,12 +22,11 @@ class NLSWIN_API_PRIVATE MasterPointerX11 : public PointerDeviceX11 {
    void ProcessXInputEvent(xcb_ge_generic_event_t *event) override;
    bool m_disabled {false};
 
-   void BindToWindow(const Window *const window) override;
-   void UnbindFromWindow() override;
-
    public:
    MasterPointerX11();
    void OnFocusOut(xcb_focus_out_event_t *event);
+   void BindToWindow(const Window *const window) override;
+   void UnbindFromWindow() override;
 
    [[nodiscard]] inline xcb_input_device_id_t GetMasterPointerID() const noexcept { return m_corePointerID; }
 };

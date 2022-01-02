@@ -2,6 +2,7 @@
 
 #include <X11/Xlib-xcb.h>
 #include <xcb/randr.h>
+#include <xcb/xcb_icccm.h>
 
 #include <cstring>
 #include <memory>
@@ -19,6 +20,11 @@ std::shared_ptr<MasterPointerX11> WindowX11::m_masterPointer {nullptr};
 WindowX11::WindowX11(WindowProperties properties) {
    XConnection::CreateConnection();
    m_xServerConnection = XConnection::GetConnection();
+
+   if (!m_masterPointer) {
+      m_masterPointer = std::make_shared<MasterPointerX11>();
+      EventQueueX11::RegisterListener(m_masterPointer);
+   }
 
    // Get the correct screen.
    xcb_screen_t *preferredScreen = nullptr;
@@ -110,11 +116,6 @@ WindowX11::WindowX11(WindowProperties properties) {
    m_height = geomCookieReply->height;
    free(geomCookieReply);
 
-   if (!m_masterPointer) {
-      m_masterPointer = std::make_shared<MasterPointerX11>();
-      EventQueueX11::RegisterListener(m_masterPointer);
-   }
-
    m_masterPointer->SubscribeToWindow(
       m_x11WindowID, m_genericWindowID,
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_BUTTON_PRESS |
@@ -122,6 +123,43 @@ WindowX11::WindowX11(WindowProperties properties) {
                                   XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION));
 
    RepositionWindow(windowXCoord, windowYCoord);
+   xcb_flush(m_xServerConnection);
+}
+
+void WindowX11::SetUserResizable(bool isResizable) {
+   xcb_unmap_window(m_xServerConnection, m_x11WindowID);
+   m_isUserResizable = isResizable;
+
+   xcb_size_hints_t hints;
+   if (m_isUserResizable) {
+      xcb_icccm_size_hints_set_min_size(&hints, 0, 0);
+      xcb_icccm_size_hints_set_max_size(&hints, INT32_MAX, INT32_MAX);
+   } else {
+      xcb_icccm_size_hints_set_min_size(&hints, m_width, m_height);
+      xcb_icccm_size_hints_set_max_size(&hints, m_width, m_height);
+   }
+
+   xcb_icccm_set_wm_size_hints(m_xServerConnection, m_x11WindowID, XCB_ATOM_WM_NORMAL_HINTS, &hints);
+   xcb_map_window(m_xServerConnection, m_x11WindowID);
+
+   // Unmapping the window appears to disable a grab. We need to re-perform the grab entirely after remapping.
+   if (m_masterPointer->BoundWindow() == m_x11WindowID) {
+      m_masterPointer->UnbindFromWindow();
+      m_masterPointer->BindToWindow(this);
+   }
+   xcb_flush(m_xServerConnection);
+}
+
+void WindowX11::Resize(uint32_t width, uint32_t height) {
+   uint32_t newSize[] = {width, height};
+   xcb_configure_window(m_xServerConnection, m_x11WindowID,
+                        XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, newSize);
+
+   m_width = width;
+   m_height = height;
+   if (!m_isUserResizable) {
+      SetUserResizable(false);
+   }
    xcb_flush(m_xServerConnection);
 }
 

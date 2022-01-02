@@ -47,6 +47,8 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    virtual void Close() noexcept = 0;
    virtual Pointer &GetMasterPointer() = 0;
    virtual void RepositionWindow(uint32_t newX, uint32_t newY) = 0;
+   virtual void SetUserResizable(bool isResizable) = 0;
+   virtual void Resize(uint32_t width, uint32_t height) = 0;
    [[nodiscard]] virtual bool RequestedClose() const noexcept = 0;
    [[nodiscard]] virtual WindowMode GetWindowMode() const noexcept = 0;
    [[nodiscard]] virtual WindowID GetWindowID() const noexcept = 0;
