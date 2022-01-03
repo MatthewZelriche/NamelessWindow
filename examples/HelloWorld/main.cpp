@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "NamelessWindow/Events/Event.hpp"
-#include "NamelessWindow/Events/EventQueue.hpp"
+#include "NamelessWindow/Events/EventDispatcher.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/Window.hpp"
 
@@ -16,7 +16,7 @@ int main() {
    std::shared_ptr<NLSWIN::Keyboard> keyboard = NLSWIN::Keyboard::Create();
    keyboard->SubscribeToWindow(window.get());
    while (!window->RequestedClose()) {
-      NLSWIN::EventQueue::GetOSEvents();
+      NLSWIN::EventDispatcher::GetOSEvents();
 
       while (window->HasEvent()) {
          NLSWIN::Event nextEvent = window->GetNextEvent();

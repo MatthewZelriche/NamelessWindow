@@ -1,21 +1,20 @@
 #pragma once
 
-#include <map>
 #include <memory>
-#include <typeindex>
-#include <unordered_set>
+#include <vector>
 
 #include "EventListener.x11.hpp"
-#include "NamelessWindow/Events/Event.hpp"
-#include "NamelessWindow/Events/EventQueue.hpp"
-#include "NamelessWindow/NLSAPI.h"
+#include "NamelessWindow/Events/EventDispatcher.hpp"
+#include "NamelessWindow/NLSAPI.hpp"
 
 namespace NLSWIN {
 
-class NLSWIN_API_PRIVATE EventQueueX11 {
+class NLSWIN_API_PRIVATE EventDispatcherX11 {
    private:
    static std::vector<std::weak_ptr<EventListenerX11>> m_listeners;
    static xcb_connection_t *m_connection;
+   static std::vector<xcb_generic_event_t *> m_eventsToFreeNextPoll;
+   static void FreeOldEvents();
 
    public:
    static void GetOSEvents();

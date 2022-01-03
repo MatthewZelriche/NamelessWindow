@@ -7,11 +7,10 @@
 #include <unordered_map>
 
 #include "EventListener.x11.hpp"
-#include "NamelessWindow/NLSAPI.h"
+#include "NamelessWindow/NLSAPI.hpp"
 #include "XConnection.h"
 
 namespace NLSWIN {
-class Window;
 struct NLSWIN_API_PRIVATE XI2EventMask {
    xcb_input_event_mask_t head;
    xcb_input_xi_event_mask_t mask;
@@ -23,7 +22,9 @@ class NLSWIN_API_PRIVATE InputDeviceX11 : public EventListenerX11 {
    xcb_window_t GetRootWindow();
 
    protected:
-   std::unordered_map<xcb_window_t, WindowID> m_SubscribedWindows;
+   // Should always use SubscribeToWindow instead of manually inserting.
+   // TODO: Better way of handling this?
+   std::unordered_map<xcb_window_t, WindowID> m_subscribedWindows;
    xcb_input_device_id_t m_deviceID;
    xcb_connection_t *m_connection;
 
@@ -38,7 +39,6 @@ class NLSWIN_API_PRIVATE InputDeviceX11 : public EventListenerX11 {
 
 template <typename T>
 [[nodiscard]] NLSWIN_API_PUBLIC std::vector<T> EnumerateDevicesX11(xcb_input_device_type_t type) noexcept {
-   XConnection::CreateConnection();
    xcb_connection_t *connection = XConnection::GetConnection();
    std::vector<T> devices;
 

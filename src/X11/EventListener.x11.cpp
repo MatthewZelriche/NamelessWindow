@@ -2,7 +2,8 @@
 
 #include <stdexcept>
 
-#include "EventQueue.x11.hpp"
+#include "EventDispatcher.x11.hpp"
+#include "NamelessWindow/Exceptions.hpp"
 
 using namespace NLSWIN;
 
@@ -16,7 +17,7 @@ void EventListenerX11::PushEvent(Event event) {
 
 Event EventListenerX11::GetNextEvent() {
    if (!HasEvent()) {
-      throw std::runtime_error("Attempted to get event from empty queue.");
+      throw EmptyEventQueueException();
    }
    Event test = std::move(m_Queue.front());
    m_Queue.pop();

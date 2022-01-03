@@ -5,7 +5,20 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TY
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/bin")
 
 option(BUILD_NLSWIN_EXAMPLES "ON if you want to build examples, OFF to just build the shared library" OFF)
+option(BUILD_NLSWIN_DOCUMENTATION "Build doxygen docs" ON)
 option(BUILD_NLSWIN_FOR_WAYLAND "ON if you wish the library to target Wayland, off if you want to target X11" OFF)
+
+
+if (${BUILD_NLSWIN_DOCUMENTATION})
+   find_package(Doxygen)
+   if (DOXYGEN_FOUND)
+      set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile)
+      set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+      configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+      add_custom_target( doc_doxygen ALL COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT} WORKING_DIRECTORY 
+      ${CMAKE_CURRENT_BINARY_DIR})
+   endif()
+endif()
 
 
 set(NLSWIN_LIBRARIES_TO_LINK "")

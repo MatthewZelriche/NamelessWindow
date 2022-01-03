@@ -1,34 +1,23 @@
 #pragma once
 
 #include <xcb/xcb.h>
-#include <xcb/xfixes.h>
-#include <xcb/xinput.h>
 
-#include <MagicEnum/magic_enum.hpp>
+#include <climits>
 
 #include "InputDevice.x11.hpp"
-#include "NamelessWindow/NLSAPI.h"
+#include "NamelessWindow/NLSAPI.hpp"
 #include "NamelessWindow/Pointer.hpp"
 
 namespace NLSWIN {
-class Window;
-class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11, public Pointer {
+class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11, virtual public Pointer {
    private:
-   void RequestShowCursor() override;
-   void RequestHiddenCursor() override;
-   bool m_clientRequestedHiddenCursor {false};
-   bool m_cursorHidden {false};
+   bool m_grabOnNextView {false};
    xcb_cursor_t m_cursor {0};
 
    protected:
    xcb_window_t m_currentInhabitedWindow {0};
    xcb_window_t m_boundWindow {0};
-   bool m_attemptGrabNextPoll {false};
-   [[nodiscard]] inline bool ClientRequestedHiddenCursor() { return m_clientRequestedHiddenCursor; };
-
-   void HideCursor();
-   void ShowCursor();
-   [[nodiscard]] bool AttemptCursorGrab(xcb_window_t window);
+   void AttemptCursorGrab(xcb_window_t window);
    void UngrabCursor();
 
    void PackageButtonPressEvent(xcb_input_button_press_event_t *event);
@@ -47,6 +36,7 @@ class NLSWIN_API_PRIVATE PointerDeviceX11 : public InputDeviceX11, public Pointe
 
    public:
    PointerDeviceX11(xcb_input_device_id_t deviceID);
+   inline bool shouldGrabOnNextVisibilityEvent() { return m_grabOnNextView; }
    inline xcb_window_t BoundWindow() { return m_boundWindow; }
 };
 }  // namespace NLSWIN

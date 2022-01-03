@@ -6,25 +6,18 @@
 
 #include <cstring>
 #include <memory>
+#include <vector>
 
-#include "EventQueue.x11.hpp"
-#include "Keyboard.x11.hpp"
+#include "EventDispatcher.x11.hpp"
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Exceptions.hpp"
 #include "XConnection.h"
 
 using namespace NLSWIN;
 
-std::shared_ptr<MasterPointerX11> WindowX11::m_masterPointer {nullptr};
-
 WindowX11::WindowX11(WindowProperties properties) {
-   XConnection::CreateConnection();
    m_xServerConnection = XConnection::GetConnection();
-
-   if (!m_masterPointer) {
-      m_masterPointer = std::make_shared<MasterPointerX11>();
-      EventQueueX11::RegisterListener(m_masterPointer);
-   }
+   m_masterPointer = static_cast<MasterPointerX11 *>(&MasterPointer::GetMasterPointer());
 
    // Get the correct screen.
    xcb_screen_t *preferredScreen = nullptr;
@@ -41,7 +34,7 @@ WindowX11::WindowX11(WindowProperties properties) {
       preferredScreen = screenIter.data;
    }
    if (!preferredScreen) {
-      throw std::runtime_error("Unspecified error attempting to select a screen");
+      throw PlatformInitializationException();
    }
    m_rootWindow = preferredScreen->root;
 
@@ -77,6 +70,14 @@ WindowX11::WindowX11(WindowProperties properties) {
                      borderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCB_COPY_FROM_PARENT, XCB_CW_EVENT_MASK,
                      valueMaskArray.data());
 
+   // When requesting resizing, we set the window resolution to the preferred resolution first.
+   // Later, we re-query the width and height in case the window manager decided on a different size.
+   m_width = properties.horzResolution;
+   m_height = properties.vertResolution;
+   if (!properties.isUserResizable) {
+      DisableUserResizing();
+   }
+   RepositionWindow(windowXCoord, windowYCoord);
    auto geomCookie = xcb_get_geometry(m_xServerConnection, m_x11WindowID);
 
    // Set window name if we were given one.
@@ -96,9 +97,8 @@ WindowX11::WindowX11(WindowProperties properties) {
       xcb_intern_atom_reply(m_xServerConnection, deleteWindowCookie, nullptr);
    xcb_change_property(m_xServerConnection, XCB_PROP_MODE_REPLACE, m_x11WindowID, protocolsAtomReply->atom,
                        XCB_ATOM_ATOM, 32, 1, &(deleteWindowAtomReply->atom));
-
-   // Present
-   xcb_map_window(m_xServerConnection, m_x11WindowID);
+   free(protocolsAtomReply);
+   free(deleteWindowAtomReply);
 
    // X defaults to windowed, so if we want to initialize as fullscreen, just toggle.
    if (properties.mode == WindowMode::FULLSCREEN) {
@@ -122,48 +122,32 @@ WindowX11::WindowX11(WindowProperties properties) {
                                   XCB_INPUT_XI_EVENT_MASK_BUTTON_RELEASE | XCB_INPUT_XI_EVENT_MASK_ENTER |
                                   XCB_INPUT_XI_EVENT_MASK_LEAVE | XCB_INPUT_XI_EVENT_MASK_MOTION));
 
-   RepositionWindow(windowXCoord, windowYCoord);
+   // Present
+   xcb_map_window(m_xServerConnection, m_x11WindowID);
    xcb_flush(m_xServerConnection);
 }
 
-void WindowX11::SetUserResizable(bool isResizable) {
-   xcb_unmap_window(m_xServerConnection, m_x11WindowID);
-   m_isUserResizable = isResizable;
-
+void WindowX11::DisableUserResizing() {
    xcb_size_hints_t hints;
-   if (m_isUserResizable) {
-      xcb_icccm_size_hints_set_min_size(&hints, 0, 0);
-      xcb_icccm_size_hints_set_max_size(&hints, INT32_MAX, INT32_MAX);
-   } else {
-      xcb_icccm_size_hints_set_min_size(&hints, m_width, m_height);
-      xcb_icccm_size_hints_set_max_size(&hints, m_width, m_height);
-   }
+   // Setting the min and max size to the same values ensures the window cant be resized - assuming window
+   // managers respect this.
+   xcb_icccm_size_hints_set_min_size(&hints, m_width, m_height);
+   xcb_icccm_size_hints_set_max_size(&hints, m_width, m_height);
 
    xcb_icccm_set_wm_size_hints(m_xServerConnection, m_x11WindowID, XCB_ATOM_WM_NORMAL_HINTS, &hints);
-   xcb_map_window(m_xServerConnection, m_x11WindowID);
-
-   // Unmapping the window appears to disable a grab. We need to re-perform the grab entirely after remapping.
-   if (m_masterPointer->BoundWindow() == m_x11WindowID) {
-      m_masterPointer->UnbindFromWindow();
-      m_masterPointer->BindToWindow(this);
-   }
-   xcb_flush(m_xServerConnection);
 }
 
-void WindowX11::Resize(uint32_t width, uint32_t height) {
+void WindowX11::Resize(uint32_t width, uint32_t height) noexcept {
    uint32_t newSize[] = {width, height};
    xcb_configure_window(m_xServerConnection, m_x11WindowID,
                         XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, newSize);
 
    m_width = width;
    m_height = height;
-   if (!m_isUserResizable) {
-      SetUserResizable(false);
-   }
    xcb_flush(m_xServerConnection);
 }
 
-void WindowX11::RepositionWindow(uint32_t newX, uint32_t newY) {
+void WindowX11::RepositionWindow(uint32_t newX, uint32_t newY) noexcept {
    uint32_t newCoords[] = {newX, newY};
    xcb_configure_window(m_xServerConnection, m_x11WindowID, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
                         newCoords);
@@ -192,10 +176,6 @@ void WindowX11::SetWindowed() noexcept {
    ToggleFullscreen();
 
    m_currentWindowMode = WindowMode::WINDOWED;
-}
-
-void WindowX11::Close() noexcept {
-   receivedTerminateSignal = true;
 }
 
 void WindowX11::ToggleFullscreen() noexcept {
@@ -260,46 +240,6 @@ xcb_screen_t *WindowX11::GetScreenFromMonitor(Monitor monitor) const {
    return nullptr;
 }
 
-std::vector<Monitor> NLSWIN::Window::EnumerateMonitors() noexcept {
-   std::vector<Monitor> listOfMonitors;
-   // Open a brief temporary connection to get the screens
-   xcb_connection_t *connection = xcb_connect(nullptr, nullptr);
-   int result = xcb_connection_has_error(connection);
-   if (result != 0) {
-      xcb_disconnect(connection);
-      return {};
-   }
-
-   auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(connection));
-   do {
-      auto screenInfo = xcb_randr_get_screen_info_reply(
-         connection, xcb_randr_get_screen_info_unchecked(connection, screenIter.data->root), nullptr);
-
-      auto monitorsReply = xcb_randr_get_monitors_reply(
-         connection, xcb_randr_get_monitors(connection, screenIter.data->root, true), nullptr);
-
-      auto monitorIter = xcb_randr_get_monitors_monitors_iterator(monitorsReply);
-      do {
-         // Get name of the current monitor.
-         char *monitorName = xcb_get_atom_name_name(xcb_get_atom_name_reply(
-            connection, xcb_get_atom_name(connection, monitorIter.data->name), nullptr));
-         Monitor monitor {monitorIter.data->width, monitorIter.data->height, monitorIter.data->x,
-                          monitorIter.data->y, monitorName};
-
-         // Copying a new screen struct into the vector for each different monitor.
-         listOfMonitors.push_back(monitor);
-         xcb_randr_monitor_info_next(&monitorIter);
-      } while (monitorIter.rem > 0);
-
-      free(screenInfo);
-      free(monitorsReply);
-      xcb_screen_next(&screenIter);
-   } while (screenIter.rem > 0);
-
-   xcb_disconnect(connection);
-   return listOfMonitors;
-}
-
 void WindowX11::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       // Handle resize events.
@@ -332,6 +272,14 @@ void WindowX11::ProcessGenericEvent(xcb_generic_event_t *event) {
          }
          break;
       }
+      case XCB_VISIBILITY_NOTIFY: {
+         xcb_visibility_notify_event_t *visEvent = reinterpret_cast<xcb_visibility_notify_event_t *>(event);
+         if (visEvent->state == XCB_VISIBILITY_UNOBSCURED &&
+             m_masterPointer->shouldGrabOnNextVisibilityEvent() &&
+             m_masterPointer->BoundWindow() == m_x11WindowID) {
+            m_masterPointer->BindToWindow(this);
+         }
+      }
       case XCB_CLIENT_MESSAGE: {
          // XCB_CLIENT_MESSAGE is currently only used for overriding the X11 window manager and handling
          // a close event directly. The close event is not sent to the API user, it is only handled
@@ -346,29 +294,62 @@ void WindowX11::ProcessGenericEvent(xcb_generic_event_t *event) {
          if (clientEvent->data.data32[0] == deleteWindowAtomReply->atom) {
             // No need to push anything. Just handle it internally!
             if (clientEvent->window == m_x11WindowID) {
-               Close();
+               receivedTerminateSignal = true;
             }
-            break;
          }
+         free(deleteWindowAtomReply);
          break;
       }
    }
 }
 
-Pointer &WindowX11::GetMasterPointer() {
-   return *m_masterPointer.get();
-}
-
 std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create() {
    std::shared_ptr<WindowX11> impl = std::make_shared<WindowX11>(WindowProperties());
-   EventQueueX11::RegisterListener(impl);
+   EventDispatcherX11::RegisterListener(impl);
    return std::move(impl);
 }
 
 std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properties) {
    std::shared_ptr<WindowX11> impl = std::make_shared<WindowX11>(properties);
-   EventQueueX11::RegisterListener(impl);
+   EventDispatcherX11::RegisterListener(impl);
    return std::move(impl);
 }
 
-NLSWIN::Window::~Window() = default;
+std::vector<Monitor> NLSWIN::Window::EnumerateMonitors() noexcept {
+   std::vector<Monitor> listOfMonitors;
+   // Open a brief temporary connection to get the screens
+   xcb_connection_t *connection = xcb_connect(nullptr, nullptr);
+   int result = xcb_connection_has_error(connection);
+   if (result != 0) {
+      xcb_disconnect(connection);
+      return {};
+   }
+
+   auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(connection));
+   do {
+      auto screenInfo = xcb_randr_get_screen_info_reply(
+         connection, xcb_randr_get_screen_info_unchecked(connection, screenIter.data->root), nullptr);
+
+      auto monitorsReply = xcb_randr_get_monitors_reply(
+         connection, xcb_randr_get_monitors(connection, screenIter.data->root, true), nullptr);
+
+      auto monitorIter = xcb_randr_get_monitors_monitors_iterator(monitorsReply);
+      do {
+         // Get name of the current monitor.
+         char *monitorName = xcb_get_atom_name_name(xcb_get_atom_name_reply(
+            connection, xcb_get_atom_name(connection, monitorIter.data->name), nullptr));
+         Monitor monitor {monitorIter.data->width, monitorIter.data->height, monitorIter.data->x,
+                          monitorIter.data->y, monitorName};
+         // Copying a new screen struct into the vector for each different monitor.
+         listOfMonitors.push_back(monitor);
+         xcb_randr_monitor_info_next(&monitorIter);
+      } while (monitorIter.rem > 0);
+
+      free(screenInfo);
+      free(monitorsReply);
+      xcb_screen_next(&screenIter);
+   } while (screenIter.rem > 0);
+
+   xcb_disconnect(connection);
+   return listOfMonitors;
+}

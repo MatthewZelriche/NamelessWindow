@@ -9,16 +9,14 @@
 
 #include <MagicEnum/magic_enum.hpp>
 #include <array>
-#include <unordered_map>
 
-#include "EventListener.x11.hpp"
 #include "InputDevice.x11.hpp"
 #include "NamelessWindow/Keyboard.hpp"
-#include "NamelessWindow/NLSAPI.h"
+#include "NamelessWindow/NLSAPI.hpp"
 
 namespace NLSWIN {
 class Window;
-class NLSWIN_API_PRIVATE KeyboardX11 : public InputDeviceX11, public Keyboard {
+class NLSWIN_API_PRIVATE KeyboardX11 : public InputDeviceX11, virtual public Keyboard {
    private:
    static constexpr std::size_t m_NumKeys = magic_enum::enum_count<KeyValue>();
    std::array<bool, m_NumKeys> m_InternalKeyState;
@@ -26,7 +24,7 @@ class NLSWIN_API_PRIVATE KeyboardX11 : public InputDeviceX11, public Keyboard {
    xkb_state *m_KeyboardState;
    void ProcessXInputEvent(xcb_ge_generic_event_t *event) override;
    void Init(xcb_input_device_id_t deviceID);
-   void SubscribeToWindow(const Window *const window) override;
+   void SubscribeToWindow(const Window *const window) noexcept override;
 
    public:
    KeyboardX11();
@@ -34,5 +32,11 @@ class NLSWIN_API_PRIVATE KeyboardX11 : public InputDeviceX11, public Keyboard {
    [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
    [[nodiscard]] xkb_keysym_t GetSymFromKeyCode(unsigned int keycode);
    [[nodiscard]] KeyModifiers ParseModifierState(uint32_t mods);
+
+   ~KeyboardX11();
+   KeyboardX11(const KeyboardX11 &) = default;
+   KeyboardX11 &operator=(const KeyboardX11 &other) = default;
+   KeyboardX11(KeyboardX11 &&other) noexcept = default;
+   KeyboardX11 &operator=(KeyboardX11 &&other) noexcept = default;
 };
 }  // namespace NLSWIN

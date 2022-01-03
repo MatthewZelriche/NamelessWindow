@@ -18,7 +18,23 @@ void XConnection::CreateConnection() {
       auto reply = xcb_xfixes_query_version_reply(m_xServerConnection, cookie, nullptr);
       // 4.0 or higher is needed for cursor visibility functions.
       if (reply->major_version < 4) {
+         free(reply);
          throw PlatformInitializationException();
       }
+      free(reply);
    }
+}
+
+xcb_connection_t* XConnection::GetConnection() noexcept {
+   if (!m_xServerConnection) {
+      CreateConnection();
+   }
+   return m_xServerConnection;
+}
+
+Display* XConnection::GetDisplay() noexcept {
+   if (!m_Display) {
+      CreateConnection();
+   }
+   return m_Display;
 }

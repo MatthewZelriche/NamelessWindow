@@ -2,7 +2,7 @@
 
 #include <cstring>
 
-#include "EventQueue.x11.hpp"
+#include "EventDispatcher.x11.hpp"
 #include "InputDevice.x11.hpp"
 #include "InputMapper.x11.hpp"
 #include "NamelessWindow/Exceptions.hpp"
@@ -14,10 +14,43 @@ using namespace NLSWIN;
 
 bool MasterPointerX11::m_instantiated {false};
 
-void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
-   if (m_disabled) {
-      return;
+MasterPointer &MasterPointer::GetMasterPointer() {
+   static std::shared_ptr<MasterPointerX11> instance = nullptr;
+   if (!instance) {
+      instance = std::make_shared<MasterPointerX11>();
+      EventDispatcherX11::RegisterListener(instance);
    }
+   return *instance;
+}
+
+void MasterPointerX11::SetCursorInvisible() {
+   // Only hide the cursor if the pointer is currently within bounds of a window.
+   // Don't send another request if the cursor is already hidden - the requests appear to stack.
+   if (m_clientRequestedHiddenCursor && m_currentInhabitedWindow && !m_cursorHidden) {
+      for (auto window: m_subscribedWindows) { xcb_xfixes_hide_cursor(m_connection, window.first); }
+      xcb_flush(m_connection);
+      m_cursorHidden = true;
+   }
+}
+
+void MasterPointerX11::ShowCursor() noexcept {
+   m_clientRequestedHiddenCursor = false;
+   SetCursorVisible();
+}
+void MasterPointerX11::HideCursor() noexcept {
+   m_clientRequestedHiddenCursor = true;
+   // If the cursor is not currently within the bounds of a window, this call will do nothing.
+   // The cursor will not be set to hidden until it next enters the bounds of a window (EnterEvent).
+   SetCursorInvisible();
+}
+
+void MasterPointerX11::SetCursorVisible() {
+   for (auto window: m_subscribedWindows) { xcb_xfixes_show_cursor(m_connection, window.first); }
+   xcb_flush(m_connection);
+   m_cursorHidden = false;
+}
+
+void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    switch (event->event_type) {
       case XCB_INPUT_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =
@@ -76,25 +109,24 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
    }
 }
 
-void MasterPointerX11::BindToWindow(const Window *const window) {
+void MasterPointerX11::BindToWindow(const Window *const window) noexcept {
    m_boundWindow = static_cast<const WindowX11 *const>(window)->GetX11WindowID();
    xcb_set_input_focus(m_connection, 0, m_boundWindow, XCB_CURRENT_TIME);
-   // TODO: Better way of handling this.
-   int count = 0;
-   while (!AttemptCursorGrab(m_boundWindow) && count <= 10000) { count++; }
+   AttemptCursorGrab(m_boundWindow);
    xcb_flush(m_connection);
 }
 
-void MasterPointerX11::UnbindFromWindow() {
+void MasterPointerX11::UnbindFromWindow() noexcept {
    if (m_boundWindow = 0) {
       return;
    }
    m_boundWindow = 0;
-   m_attemptGrabNextPoll = false;
    auto cookie = xcb_ungrab_pointer_checked(m_connection, XCB_CURRENT_TIME);
 }
 
 void MasterPointerX11::OnFocusOut(xcb_focus_out_event_t *event) {
+   // If the client requested a grab or a hidden cursor, but we lose focus on the window, we should reverse
+   // this.
    if (event->mode == XCB_NOTIFY_MODE_GRAB) {
       ShowCursor();
       UnbindFromWindow();
@@ -105,6 +137,7 @@ MasterPointerX11::MasterPointerX11() : PointerDeviceX11(GetMasterPointerDeviceID
    if (m_instantiated) {
       throw MultipleMasterPointerError();
    }
+   m_instantiated = true;
    m_corePointerID = GetMasterPointerDeviceID();
    if (m_corePointerID == 0) {
       throw InputDeviceFailure();
@@ -112,7 +145,6 @@ MasterPointerX11::MasterPointerX11() : PointerDeviceX11(GetMasterPointerDeviceID
 }
 
 xcb_input_device_id_t MasterPointerX11::GetMasterPointerDeviceID() {
-   XConnection::CreateConnection();
    xcb_connection_t *connection = XConnection::GetConnection();
    xcb_input_xi_query_device_cookie_t queryCookie =
       xcb_input_xi_query_device(connection, XCB_INPUT_DEVICE_ALL_MASTER);

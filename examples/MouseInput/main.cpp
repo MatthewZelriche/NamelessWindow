@@ -1,12 +1,20 @@
 #include <iostream>
 
 #include "NamelessWindow/Events/Event.hpp"
-#include "NamelessWindow/Events/EventQueue.hpp"
+#include "NamelessWindow/Events/EventDispatcher.hpp"
 #include "NamelessWindow/Pointer.hpp"
 #include "NamelessWindow/Window.hpp"
 
 int main() {
-   std::shared_ptr<NLSWIN::Window> window = NLSWIN::Window::Create();
+   NLSWIN::WindowProperties props;
+   props.isUserResizable = false;
+   auto monitors = NLSWIN::Window::EnumerateMonitors();
+   for (auto monitor: monitors) {
+      if (monitor.name == "VIRTUAL-RIGHT") {
+         props.preferredMonitor.emplace(monitor);
+      }
+   }
+   std::shared_ptr<NLSWIN::Window> window = NLSWIN::Window::Create(props);
    std::shared_ptr<NLSWIN::Window> window2 = NLSWIN::Window::Create();
 
    // List enabled pointer devices.
@@ -16,12 +24,12 @@ int main() {
    // from the master pointer device. If you want to use a raw pointer device, you need to not use
    // the master pointer at all, unless you are okay with duplicate events.
    // std::shared_ptr<NLSWIN::Pointer> pointer = NLSWIN::Pointer::Create({"blah", 8}, window.get());
-   NLSWIN::Pointer &pointer = window->GetMasterPointer();
+   NLSWIN::MasterPointer &pointer = NLSWIN::MasterPointer::GetMasterPointer();
    pointer.BindToWindow(window.get());
-   pointer.RequestHiddenCursor();
+   pointer.HideCursor();
 
    while (!window->RequestedClose() && !window2->RequestedClose()) {
-      NLSWIN::EventQueue::GetOSEvents();
+      NLSWIN::EventDispatcher::GetOSEvents();
 
       while (pointer.HasEvent()) {
          NLSWIN::Event nextEvent = pointer.GetNextEvent();
@@ -35,8 +43,6 @@ int main() {
          } else if (auto mouseClick = std::get_if<NLSWIN::MouseButtonEvent>(&nextEvent)) {
             if (mouseClick->type == NLSWIN::ButtonPressType::PRESSED) {
                std::cout << (int)mouseClick->button << " clicked!" << std::endl;
-               pointer.UnbindFromWindow();
-               pointer.RequestShowCursor();
             }
          }
       }

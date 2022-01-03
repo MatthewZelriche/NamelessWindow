@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "NamelessWindow/Events/Event.hpp"
-#include "NamelessWindow/Events/EventQueue.hpp"
+#include "NamelessWindow/Events/EventDispatcher.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/Window.hpp"
 
@@ -20,7 +20,7 @@ int main() {
    keyboard->SubscribeToWindow(window.get());
 
    while (!window->RequestedClose()) {
-      NLSWIN::EventQueue::GetOSEvents();
+      NLSWIN::EventDispatcher::GetOSEvents();
 
       while (keyboard->HasEvent()) {
          NLSWIN::Event nextEvent = keyboard->GetNextEvent();

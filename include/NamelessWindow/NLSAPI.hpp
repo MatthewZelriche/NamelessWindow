@@ -1,3 +1,10 @@
+/*!
+ * @file Exceptions.hpp
+ * @author MZelriche
+ * @date 2021-2022
+ * @copyright MIT License
+ * @todo: Confirm Win32 import/export of symbols works.
+ */
 #pragma once
 
 #ifdef _WIN32
