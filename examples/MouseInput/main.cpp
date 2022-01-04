@@ -25,7 +25,7 @@ int main() {
    // the master pointer at all, unless you are okay with duplicate events.
    // std::shared_ptr<NLSWIN::Pointer> pointer = NLSWIN::Pointer::Create({"blah", 8}, window.get());
    NLSWIN::MasterPointer &pointer = NLSWIN::MasterPointer::GetMasterPointer();
-   pointer.BindToWindow(window.get());
+   pointer.BindToWindow(window2.get());
    pointer.HideCursor();
 
    while (window || window2) {

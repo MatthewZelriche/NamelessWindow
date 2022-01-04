@@ -120,7 +120,9 @@ struct NLSWIN_API_PUBLIC MouseLeaveEvent {
 /*! Generated whenever an application window receives focus. */
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-struct NLSWIN_API_PUBLIC WindowFocusedEvent {};
+struct NLSWIN_API_PUBLIC WindowFocusedEvent {
+   WindowID sourceWindow;
+};
 
 /*! Generated whenever an application window is resized. */
 /*! @ingroup Common */

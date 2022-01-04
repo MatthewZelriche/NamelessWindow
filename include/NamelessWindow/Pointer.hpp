@@ -106,7 +106,7 @@ class NLSWIN_API_PUBLIC MasterPointer : virtual public Pointer {
     */
    static MasterPointer &GetMasterPointer();
    /*! Unbinds the MasterPointer from any window. Calling this method when MasterPointer is not bound to a
-    * window does nothing.*/
+    * window does nothing. This is called automatically whenever the bound window loses focus. */
    virtual void UnbindFromWindow() noexcept = 0;
    /**
     * Requests that the cursor be visible when inside a window, if it is not already. If the cursor is

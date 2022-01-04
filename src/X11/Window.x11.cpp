@@ -261,14 +261,16 @@ void WindowX11::ProcessGenericEvent(xcb_generic_event_t *event) {
          xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
          if (focusEvent->event == m_x11WindowID) {
             WindowFocusedEvent windowFocusEvent;
+            windowFocusEvent.sourceWindow = m_genericWindowID;
             PushEvent(windowFocusEvent);
          }
          break;
       }
       case XCB_FOCUS_OUT: {
          xcb_focus_out_event_t *focusEvent = reinterpret_cast<xcb_focus_out_event_t *>(event);
-         if (focusEvent->event == m_x11WindowID) {
-            m_masterPointer->OnFocusOut(focusEvent);
+         if (focusEvent->event == m_x11WindowID && focusEvent->mode == XCB_NOTIFY_MODE_GRAB) {
+            m_masterPointer->SetCursorVisible();
+            m_masterPointer->UnbindFromWindow();
          }
          break;
       }
@@ -316,6 +318,7 @@ std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properti
 }
 
 NLSWIN::WindowX11::~WindowX11() {
+   m_masterPointer->UnsubscribeFromWindow(m_x11WindowID);
    xcb_destroy_window(m_xServerConnection, m_x11WindowID);
    xcb_flush(m_xServerConnection);
 }

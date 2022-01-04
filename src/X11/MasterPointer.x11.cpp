@@ -27,7 +27,7 @@ void MasterPointerX11::SetCursorInvisible() {
    // Only hide the cursor if the pointer is currently within bounds of a window.
    // Don't send another request if the cursor is already hidden - the requests appear to stack.
    if (m_clientRequestedHiddenCursor && m_currentInhabitedWindow && !m_cursorHidden) {
-      for (auto window: m_subscribedWindows) { xcb_xfixes_hide_cursor(m_connection, window.first); }
+      xcb_xfixes_hide_cursor(m_connection, m_currentInhabitedWindow);
       xcb_flush(m_connection);
       m_cursorHidden = true;
    }
@@ -45,9 +45,11 @@ void MasterPointerX11::HideCursor() noexcept {
 }
 
 void MasterPointerX11::SetCursorVisible() {
-   for (auto window: m_subscribedWindows) { xcb_xfixes_show_cursor(m_connection, window.first); }
-   xcb_flush(m_connection);
-   m_cursorHidden = false;
+   if (m_cursorHidden) {
+      for (auto window: m_subscribedWindows) { xcb_xfixes_show_cursor_checked(m_connection, window.first); }
+      xcb_flush(m_connection);
+      m_cursorHidden = false;
+   }
 }
 
 void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
@@ -72,18 +74,18 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          xcb_input_enter_event_t *enterEvent = reinterpret_cast<xcb_input_enter_event_t *>(event);
          if (!(m_boundWindow && m_boundWindow != enterEvent->event)) {
             PackageEnterEvent(enterEvent);
-            if (ClientRequestedHiddenCursor()) {
-               HideCursor();
-            }
+         }
+         if (ClientRequestedHiddenCursor()) {
+            SetCursorInvisible();
          }
          break;
       }
       case XCB_INPUT_LEAVE: {
          xcb_input_leave_event_t *leaveEvent = reinterpret_cast<xcb_input_leave_event_t *>(event);
-         if (!(m_boundWindow && m_boundWindow != leaveEvent->event)) {
+         if (!m_boundWindow) {
             PackageLeaveEvent(leaveEvent);
+            SetCursorVisible();
          }
-         ShowCursor();
          break;
       }
       case XCB_INPUT_MOTION: {
@@ -111,8 +113,8 @@ void MasterPointerX11::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
 
 void MasterPointerX11::BindToWindow(const Window *const window) noexcept {
    m_boundWindow = static_cast<const WindowX11 *const>(window)->GetX11WindowID();
-   xcb_set_input_focus(m_connection, 0, m_boundWindow, XCB_CURRENT_TIME);
    AttemptCursorGrab(m_boundWindow);
+   xcb_set_input_focus(m_connection, 0, m_boundWindow, XCB_CURRENT_TIME);
    xcb_flush(m_connection);
 }
 
@@ -122,14 +124,12 @@ void MasterPointerX11::UnbindFromWindow() noexcept {
    }
    m_boundWindow = 0;
    auto cookie = xcb_ungrab_pointer_checked(m_connection, XCB_CURRENT_TIME);
+   auto err = xcb_request_check(m_connection, cookie);
 }
 
-void MasterPointerX11::OnFocusOut(xcb_focus_out_event_t *event) {
-   // If the client requested a grab or a hidden cursor, but we lose focus on the window, we should reverse
-   // this.
-   if (event->mode == XCB_NOTIFY_MODE_GRAB) {
-      ShowCursor();
-      UnbindFromWindow();
+void MasterPointerX11::UnsubscribeFromWindow(xcb_window_t window) {
+   if (m_subscribedWindows.count(window)) {
+      m_subscribedWindows.erase(window);
    }
 }
 
