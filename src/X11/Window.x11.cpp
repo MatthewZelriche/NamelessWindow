@@ -315,6 +315,11 @@ std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properti
    return std::move(impl);
 }
 
+NLSWIN::WindowX11::~WindowX11() {
+   xcb_destroy_window(m_xServerConnection, m_x11WindowID);
+   xcb_flush(m_xServerConnection);
+}
+
 std::vector<Monitor> NLSWIN::Window::EnumerateMonitors() noexcept {
    std::vector<Monitor> listOfMonitors;
    // Open a brief temporary connection to get the screens

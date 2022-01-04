@@ -75,7 +75,9 @@ struct NLSWIN_API_PUBLIC WindowProperties {
  * @brief An application window that is displayed to the user.
  *
  * The window is the core of the NLSWIN library. It represents a single window drawn by the underlying
- * platform. Creation of windows is performed through the Create factory methods.
+ * platform. Creation of windows is performed through the Create factory methods. Window close occurs upon
+ * calling of the destructor. A window must be closed by the client - it is never closed by the NLSWIN
+ * library.
  * @see WindowProperties
  */
 class NLSWIN_API_PUBLIC Window : virtual public EventListener {
@@ -132,6 +134,10 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    /**
     * @brief Whether a request to close the window has been made.
     *
+    * Note that this only means the underlying platform has requested the window be destroyed - the window
+    * won't actually be destroyed automatically. It is the application's responsibility to destroy the window.
+    * An example of a close request being triggered is when the application user clicks the X button to close
+    * the window.
     * @return True if a request was made, false otherwise.
     */
    [[nodiscard]] virtual bool RequestedClose() const noexcept = 0;

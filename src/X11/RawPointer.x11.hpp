@@ -16,5 +16,6 @@ class NLSWIN_API_PRIVATE RawPointerX11 : public PointerDeviceX11 {
 
    public:
    RawPointerX11(xcb_input_device_id_t deviceID, const Window *const window);
+   ~RawPointerX11() = default;
 };
 }  // namespace NLSWIN

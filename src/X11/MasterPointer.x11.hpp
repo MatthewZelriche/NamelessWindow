@@ -29,5 +29,7 @@ class NLSWIN_API_PRIVATE MasterPointerX11 : public PointerDeviceX11, public Mast
 
    [[nodiscard]] inline bool ClientRequestedHiddenCursor() { return m_clientRequestedHiddenCursor; };
    [[nodiscard]] inline xcb_input_device_id_t GetMasterPointerID() const noexcept { return m_corePointerID; }
+
+   ~MasterPointerX11() = default;
 };
 }  // namespace NLSWIN

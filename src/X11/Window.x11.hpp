@@ -48,5 +48,11 @@ class NLSWIN_API_PRIVATE WindowX11 : public Window, public EventListenerX11 {
    [[nodiscard]] inline WindowID GetWindowID() const noexcept { return m_genericWindowID; }
    [[nodiscard]] inline unsigned int GetWindowWidth() const noexcept override { return m_width; }
    [[nodiscard]] inline unsigned int GetWindowHeight() const noexcept override { return m_height; }
+
+   ~WindowX11();
+   WindowX11(const WindowX11 &) = default;
+   WindowX11 &operator=(const WindowX11 &other) = default;
+   WindowX11(WindowX11 &&other) noexcept = default;
+   WindowX11 &operator=(WindowX11 &&other) noexcept = default;
 };
 }  // namespace NLSWIN

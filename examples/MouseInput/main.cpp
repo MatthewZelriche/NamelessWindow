@@ -28,8 +28,15 @@ int main() {
    pointer.BindToWindow(window.get());
    pointer.HideCursor();
 
-   while (!window->RequestedClose() && !window2->RequestedClose()) {
+   while (window || window2) {
       NLSWIN::EventDispatcher::GetOSEvents();
+
+      if (window != nullptr && window->RequestedClose()) {
+         window.reset();
+      }
+      if (window2 != nullptr && window2->RequestedClose()) {
+         window2.reset();
+      }
 
       while (pointer.HasEvent()) {
          NLSWIN::Event nextEvent = pointer.GetNextEvent();
