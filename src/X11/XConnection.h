@@ -7,14 +7,16 @@
 
 namespace NLSWIN {
 class NLSWIN_API_PRIVATE XConnection {
+   public:
+   static xcb_connection_t* GetConnection() noexcept;
+   static Display* GetDisplay() noexcept;
+
    private:
    static xcb_connection_t* m_xServerConnection;
    static Display* m_Display;
    static void CreateConnection();
    XConnection();
-
-   public:
-   static xcb_connection_t* GetConnection() noexcept;
-   static Display* GetDisplay() noexcept;
+   XConnection(XConnection const&);
+   void operator=(XConnection const&);
 };
 }  // namespace NLSWIN

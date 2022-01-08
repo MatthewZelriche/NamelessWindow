@@ -1,5 +1,5 @@
 /*!
- * @file EventDispatcher.hpp
+ * @file
  * @author MZelriche
  * @date 2021-2022
  * @copyright MIT License
@@ -13,17 +13,17 @@
 namespace NLSWIN {
 
 /*!
- * @headerfile "Events/EventDispatcher.hpp"
+ * @headerfile "Events/EventBus.hpp"
  * @ingroup Common
  * @brief Dispatches platform-specific events to interested listeners.
  *
- * The EventDispatcher is a static class that retrieves the raw, untranslated OS events from the system and
+ * The EventBus is a static class that retrieves the raw, untranslated OS events from the system and
  * dispatches then to all registered listeners so that the listeners may translate these OS Events into
  * platform-independent NLSWIN events.
  *
  * @see EventListener
  */
-class NLSWIN_API_PUBLIC EventDispatcher {
+class NLSWIN_API_PUBLIC EventBus {
    public:
    /*!
     * @brief Non-Blocking retrieval of all OS events that have accumulated since the last call to this method.
@@ -33,7 +33,7 @@ class NLSWIN_API_PUBLIC EventDispatcher {
     * via a previous call to this method. This method is non-blocking. A common use case of this method is to
     * call it once per frame in a realtime 3D application.
     */
-   static void GetOSEvents();
+   static void PollEvents();
 };
 
 }  // namespace NLSWIN

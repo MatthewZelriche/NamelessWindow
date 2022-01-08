@@ -1,14 +1,8 @@
 if (${NLSWIN_X11})
-   set(NLSWIN_SOURCE_FILES "X11/Window.x11.cpp"
-                           "X11/EventListener.x11.cpp"
-                           "X11/EventDispatcher.x11.cpp"
+   set(NLSWIN_SOURCE_FILES "X11/X11EventListener.cpp"
+                           "X11/X11EventBus.cpp"
                            "X11/XConnection.cpp"
-                           "X11/InputDevice.x11.cpp"
-                           "X11/Keyboard.x11.cpp"
-                           "X11/InputMapper.x11.cpp"
-                           "X11/PointerDevice.x11.cpp"
-                           "X11/MasterPointer.x11.cpp"
-                           "X11/RawPointer.x11.cpp")
+                           "X11/X11Window.cpp")
 elseif(${NLSWIN_WAYLAND})
 
 elseif(${NLSWIN_WIN32})
