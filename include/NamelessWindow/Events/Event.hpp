@@ -18,12 +18,12 @@
 namespace NLSWIN {
 
 /*! @ingroup Common */
-/*! @headerfile "Events/Event.hpp"
+/*! @headerfile "Events/Event.hpp" */
 /*! Each created window is assigned one of these unique WindowIDs. */
 using WindowID = uint32_t;
 
 /*! @ingroup Common */
-/*! @headerfile "Events/Event.hpp"
+/*! @headerfile "Events/Event.hpp" */
 /*! Generated whenever the user interacts with the keyboard. */
 struct NLSWIN_API_PUBLIC KeyEvent {
    std::string_view keyName; /*!< The human-readable name of the keyboard key that generated the event. */
@@ -33,7 +33,7 @@ struct NLSWIN_API_PUBLIC KeyEvent {
 };
 
 /*! @ingroup Common */
-/*! @headerfile "Events/Event.hpp"
+/*! @headerfile "Events/Event.hpp" */
 /*! Generated whenever the user interacts with a pointer button. */
 struct NLSWIN_API_PUBLIC MouseButtonEvent {
    ButtonValue button;    /*!< Which button was pressed. @see ButtonValue */
@@ -44,7 +44,7 @@ struct NLSWIN_API_PUBLIC MouseButtonEvent {
 };
 
 /*! @ingroup Common */
-/*! @headerfile "Events/Event.hpp"
+/*! @headerfile "Events/Event.hpp" */
 /*! Generated whenever the user interacts with the scroll wheel on a pointer. */
 struct NLSWIN_API_PUBLIC MouseScrollEvent {
    ScrollType scrollType; /*!< The direction the scroll wheel was scrolled in. @see ScrollType */

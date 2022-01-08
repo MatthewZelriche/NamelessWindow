@@ -4,7 +4,7 @@ project(NamelessWindow CXX)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/bin")
 
-option(BUILD_NLSWIN_EXAMPLES "ON if you want to build examples, OFF to just build the shared library" OFF)
+option(BUILD_NLSWIN_EXAMPLES "ON if you want to build examples, OFF to just build the shared library" ON)
 option(BUILD_NLSWIN_DOCUMENTATION "Build doxygen docs" ON)
 option(BUILD_NLSWIN_FOR_WAYLAND "ON if you wish the library to target Wayland, off if you want to target X11" OFF)
 

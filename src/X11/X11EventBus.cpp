@@ -6,7 +6,6 @@
 
 using namespace NLSWIN;
 
-#include <iostream>
 void X11EventBus::PollEvents() {
    // xcb events are dynamically allocated, so to avoid memory leaks we must free all events from the last
    // poll.
@@ -17,7 +16,7 @@ void X11EventBus::PollEvents() {
       for (auto iter = m_listeners.begin(); iter != m_listeners.end();) {
          if (!(*iter).expired()) {
             auto listenerSharedPtr = (*iter).lock();
-            if ((event->response_type & ~0x80) & listenerSharedPtr->GetSubscribedEvents()) {
+            if ((event->response_type & ~0x80) & listenerSharedPtr->GetSubscribedEventTypes()) {
                listenerSharedPtr->ProcessGenericEvent(event);
             }
             iter++;
