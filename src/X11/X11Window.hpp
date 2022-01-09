@@ -17,10 +17,13 @@
 namespace NLSWIN {
 class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    public:
-   void DisableUserResizing() override;
-   void EnableUserResizing() override;
    void Show() override;
    void Hide() override;
+   void DisableUserResizing() override;
+   void EnableUserResizing() override;
+   void SetFullscreen(bool borderless = true) noexcept override;
+   void SetWindowed() noexcept override;
+   inline bool RequestedClose() const noexcept override { return m_shouldClose; }
 
    /**
     * @brief Construct a new X11Window object
@@ -28,6 +31,8 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
     * @param properties The properties that should define this window.
     */
    X11Window(WindowProperties properties);
+   ~X11Window();
+   void ToggleFullscreen() noexcept;
    /**
     * @brief Gets the default X screen.
     *
@@ -37,6 +42,7 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
 
    private:
    void ProcessGenericEvent(xcb_generic_event_t *event) override;
+   WindowMode m_windowMode {WindowMode::WINDOWED};
    xcb_screen_t *m_defaultScreen {nullptr};
    xcb_window_t m_rootWindow {0};
    xcb_window_t m_x11WindowID {0};
@@ -48,6 +54,7 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    unsigned int m_width {0};
    unsigned int m_height {0};
    bool m_isMapped {false};
+   bool m_shouldClose {false};
    const xcb_event_mask_t m_eventMask =
       (xcb_event_mask_t)(XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_FOCUS_CHANGE |
                          XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_ENTER_WINDOW |

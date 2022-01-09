@@ -8,7 +8,7 @@ int main() {
    NLSWIN::EventBus::PollEvents();
    auto window = NLSWIN::Window::Create();
    window->Show();
-   while (true) {
+   while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
       while (window->HasEvent()) { auto bub = window->GetNextEvent(); }
    }

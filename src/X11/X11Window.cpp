@@ -90,9 +90,19 @@ X11Window::X11Window(WindowProperties properties) {
    free(protocolsAtomReply);
    free(deleteWindowAtomReply);
 
-   // TODO: Set Window Mode
+   // X defaults to windowed
+   if (properties.mode == WindowMode::FULLSCREEN) {
+      SetFullscreen(false);
+   } else if (properties.mode == WindowMode::BORDERLESS) {
+      SetFullscreen(true);
+   }
 
    SubscribeToEvents(m_eventMask);
+   xcb_flush(XConnection::GetConnection());
+}
+
+X11Window::~X11Window() {
+   xcb_destroy_window(XConnection::GetConnection(), m_x11WindowID);
    xcb_flush(XConnection::GetConnection());
 }
 
@@ -130,6 +140,59 @@ void X11Window::Hide() {
    while (m_isMapped) { X11EventBus::GetInstance().PollEvents(); }
 }
 
+void X11Window::SetFullscreen(bool borderless) noexcept {
+   if (m_windowMode == WindowMode::FULLSCREEN || m_windowMode == WindowMode::BORDERLESS) {
+      return;
+   }
+   ToggleFullscreen();
+   m_windowMode = borderless ? WindowMode::BORDERLESS : WindowMode::FULLSCREEN;
+}
+
+void X11Window::SetWindowed() noexcept {
+   if (m_windowMode == WindowMode::WINDOWED) {
+      return;
+   }
+   ToggleFullscreen();
+   m_windowMode = WindowMode::WINDOWED;
+}
+
+void X11Window::ToggleFullscreen() noexcept {
+   bool fullScreen = 0;
+   if (m_windowMode == WindowMode::FULLSCREEN || m_windowMode == WindowMode::BORDERLESS) {
+      fullScreen = 0;
+   } else {
+      fullScreen = 1;
+   }
+
+   xcb_intern_atom_cookie_t stateCookie =
+      xcb_intern_atom(XConnection::GetConnection(), 1, std::strlen("_NET_WM_STATE"), "_NET_WM_STATE");
+   xcb_intern_atom_cookie_t fullscreenCookie = xcb_intern_atom(
+      XConnection::GetConnection(), 1, std::strlen("_NET_WM_STATE_FULLSCREEN"), "_NET_WM_STATE_FULLSCREEN");
+
+   xcb_client_message_event_t message {0};
+   message.response_type = XCB_CLIENT_MESSAGE;
+
+   xcb_intern_atom_reply_t *stateReply =
+      xcb_intern_atom_reply(XConnection::GetConnection(), stateCookie, nullptr);
+   xcb_intern_atom_reply_t *fullscreenReply =
+      xcb_intern_atom_reply(XConnection::GetConnection(), fullscreenCookie, nullptr);
+
+   message.type = stateReply->atom;
+   message.format = 32;
+   message.window = m_x11WindowID;
+   message.data.data32[0] = fullScreen;
+   message.data.data32[1] = fullscreenReply->atom;
+   message.data.data32[2] = 0;
+
+   xcb_send_event(XConnection::GetConnection(), true, m_x11WindowID,
+                  XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                  (const char *)&message);
+
+   xcb_flush(XConnection::GetConnection());
+   free(stateReply);
+   free(fullscreenReply);
+}
+
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       case XCB_CONFIGURE_NOTIFY: {
@@ -146,6 +209,26 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
       }
       case XCB_UNMAP_NOTIFY: {
          m_isMapped = false;
+         break;
+      }
+      case XCB_CLIENT_MESSAGE: {
+         // XCB_CLIENT_MESSAGE is currently only used for overriding the X11 window manager and handling
+         // a close event directly. The close event is not sent to the API user, it is only handled
+         // internally.
+         xcb_client_message_event_t *clientEvent = reinterpret_cast<xcb_client_message_event_t *>(event);
+         xcb_intern_atom_cookie_t deleteWindowCookie = xcb_intern_atom(
+            XConnection::GetConnection(), false, std::strlen("WM_DELETE_WINDOW"), "WM_DELETE_WINDOW");
+         xcb_intern_atom_reply_t *deleteWindowAtomReply =
+            xcb_intern_atom_reply(XConnection::GetConnection(), deleteWindowCookie, nullptr);
+
+         // Test if this is actually a close event.
+         if (clientEvent->data.data32[0] == deleteWindowAtomReply->atom) {
+            // No need to push anything. Just handle it internally!
+            if (clientEvent->window == m_x11WindowID) {
+               m_shouldClose = true;
+            }
+         }
+         free(deleteWindowAtomReply);
          break;
       }
    }
