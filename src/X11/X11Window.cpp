@@ -216,10 +216,26 @@ void X11Window::ToggleFullscreen() noexcept {
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       case XCB_CONFIGURE_NOTIFY: {
-         xcb_configure_notify_event_t *notify = (xcb_configure_notify_event_t *)event;
-         if (m_width != notify->width || m_height != notify->height) {
-            m_width = notify->width;
-            m_height = notify->height;
+         xcb_configure_notify_event_t *notifyEvent = reinterpret_cast<xcb_configure_notify_event_t *>(event);
+         if (notifyEvent->window == m_x11WindowID) {
+            // Has the window size changed?
+            if (notifyEvent->width != m_width || notifyEvent->height != m_height) {
+               m_width = notifyEvent->width;
+               m_height = notifyEvent->height;
+               WindowResizeEvent resizeEvent;
+               resizeEvent.newWidth = m_width;
+               resizeEvent.newHeight = m_height;
+               PushEvent(resizeEvent);
+            }
+         }
+         break;
+      }
+      case XCB_FOCUS_IN: {
+         xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
+         if (focusEvent->event == m_x11WindowID) {
+            WindowFocusedEvent windowFocusEvent;
+            windowFocusEvent.sourceWindow = m_genericID;
+            PushEvent(windowFocusEvent);
          }
          break;
       }
