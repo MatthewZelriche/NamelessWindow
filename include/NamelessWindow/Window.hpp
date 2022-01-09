@@ -86,6 +86,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * @throws BadMonitorException
     * @return A shared pointer to the newly constructed Window. Caller owns this resource and is expected to
     * manage its lifetime.
+    * @warning Show must be called before the window will be drawn on the screen after creation.
     * @see EventDispatcher
     */
    static std::shared_ptr<Window> Create();
@@ -97,8 +98,45 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * @throws BadMonitorException
     * @return A shared pointer to the newly constructed Window. Caller owns this resource and is expected to
     * manage its lifetime.
+    * @warning Show must be called before the window will be drawn on the screen after creation.
     * @see EventDispatcher
     */
    static std::shared_ptr<Window> Create(WindowProperties properties);
+
+   /**
+    * @brief Disable user-resizing of the window. The window will remain a fixed size unless the application
+    * explicitly chooses to resize the window.
+    * @warning This method should be called while a window has NOT been drawn on the screen with Show().
+    * Behavior is undefined when this method is called while a window has been drawn to the screen.
+    */
+   virtual void DisableUserResizing() = 0;
+   /**
+    * @brief Enable user-resizing of the window. The window may be resized at any time by the user.
+    * @warning This method should be called while a window has NOT been drawn on the screen with Show().
+    * Behavior is undefined when this method is called while a window has been drawn to the screen.
+    */
+   virtual void EnableUserResizing() = 0;
+   /**
+    * @brief Draw the window onto the screen.
+    *
+    * This method blocks until the window has been successfully drawn, if necessary. During this time,
+    * events are automatically processed as if the client had called EventBus::PollEvents().
+    */
+   virtual void Show() = 0;
+   /**
+    * @brief Stop drawing the window to the screen. The window will be hidden from the user.
+    *
+    * This method blocks until the window has been successfully hidden, if necessary. During this time,
+    * events are automatically processed as if the client had called EventBus::PollEvents().
+    */
+   virtual void Hide() = 0;
+   /**
+    * @brief Gets a list of all detected monitors.
+    * @throws PlatformInitializationException
+    * @return A vector of MonitorInfos, each elementing containing information on a single monitor.
+    */
+   [[nodiscard]] static std::vector<MonitorInfo> EnumerateMonitors();
+
+   virtual ~Window() = default;
 };
 }  // namespace NLSWIN

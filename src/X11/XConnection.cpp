@@ -17,6 +17,7 @@ void XConnection::CreateConnection() {
          xcb_xfixes_query_version(m_xServerConnection, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
       auto reply = xcb_xfixes_query_version_reply(m_xServerConnection, cookie, nullptr);
       // 4.0 or higher is needed for cursor visibility functions.
+      // TODO: Test for XRandR version 5.0 and xcb-icccm
       if (reply->major_version < 4) {
          free(reply);
          throw PlatformInitializationException();
