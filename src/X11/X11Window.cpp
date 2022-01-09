@@ -156,6 +156,26 @@ void X11Window::SetWindowed() noexcept {
    m_windowMode = WindowMode::WINDOWED;
 }
 
+void X11Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
+   uint32_t newCoords[] = {newX, newY};
+   xcb_configure_window(XConnection::GetConnection(), m_x11WindowID,
+                        XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, newCoords);
+   xcb_flush(XConnection::GetConnection());
+}
+
+void X11Window::Resize(uint32_t width, uint32_t height) noexcept {
+   uint32_t newSize[] = {width, height};
+   // Set the new desired width and height in case the wm doesn't respect it.
+   m_preferredWidth = width;
+   m_preferredHeight = height;
+   xcb_configure_window(XConnection::GetConnection(), m_x11WindowID,
+                        XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, newSize);
+
+   m_width = width;
+   m_height = height;
+   xcb_flush(XConnection::GetConnection());
+}
+
 void X11Window::ToggleFullscreen() noexcept {
    bool fullScreen = 0;
    if (m_windowMode == WindowMode::FULLSCREEN || m_windowMode == WindowMode::BORDERLESS) {

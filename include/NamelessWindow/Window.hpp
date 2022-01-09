@@ -138,6 +138,26 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    virtual void SetFullscreen(bool borderless = true) noexcept = 0;
    /*! Request that the window be drawn as a regular window, not in fullscreen. */
    virtual void SetWindowed() noexcept = 0;
+   /*!
+    * @brief Request that the monitor be drawn at a new position.
+    *
+    * Note that this does not account for global space monitor offsets. The arguments correspond to the
+    * virtual screen coordinates, not the monitor coordinates.
+    *
+    * @param newX The new X coordinate for the top-left hand of the window.
+    * @param newY The new Y coordinate for the top-left hand of the window.
+    */
+   virtual void Reposition(uint32_t newX, uint32_t newY) noexcept = 0;
+   /*!
+    * @brief Request that the monitor be drawn with new dimensions.
+    *
+    * Note that some platforms will ignore this if they handle window sizing in a specific fashion (eg, tiling
+    * window managers).
+    *
+    * @param width The new width of the monitor.
+    * @param height The new height of the monitor.
+    */
+   virtual void Resize(uint32_t width, uint32_t height) noexcept = 0;
    /**
     * @brief Whether a request to close the window has been made.
     *
@@ -148,6 +168,12 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * @return True if a request was made, false otherwise.
     */
    [[nodiscard]] virtual bool RequestedClose() const noexcept = 0;
+   /*! Gets the current mode. */
+   [[nodiscard]] virtual WindowMode GetWindowMode() const noexcept = 0;
+   /*! Gets the current width of the window, in pixels. */
+   [[nodiscard]] virtual unsigned int GetWindowWidth() const noexcept = 0;
+   /*! Gets the current height of the window, in pixels. */
+   [[nodiscard]] virtual unsigned int GetWindowHeight() const noexcept = 0;
    /**
     * @brief Gets a list of all detected monitors.
     * @throws PlatformInitializationException
