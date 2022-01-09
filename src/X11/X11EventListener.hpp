@@ -10,6 +10,7 @@
 #pragma once
 
 #include <xcb/xcb.h>
+#include <xcb/xinput.h>
 
 #include <memory>
 #include <queue>
@@ -49,6 +50,14 @@ class NLSWIN_API_PRIVATE X11EventListener : virtual public EventListener {
    /*!
     * @brief Get a mask of xcb event types that this listener is currently subscribed to receive.
     *
+    * @return The  xcb_input_xi_event_mask_t containing the XInput2 event types.
+    */
+   inline xcb_input_xi_event_mask_t GetSubscribedXInputEventTypes() const noexcept {
+      return m_subscribedXInputMask;
+   }
+   /*!
+    * @brief Get a mask of XInput2 event types that this listener is currently subscribed to receive.
+    *
     * @return The xcb_event_mast_t containing the event types.
     */
    inline xcb_event_mask_t GetSubscribedEventTypes() const noexcept { return m_subscribedEventMask; }
@@ -61,14 +70,21 @@ class NLSWIN_API_PRIVATE X11EventListener : virtual public EventListener {
     */
    void PushEvent(Event event);
    /*!
-    * @brief Subscribes this listener to each event type specified in mask.
+    * @brief Subscribes this listener to each generic XCB event type specified in mask.
     *
     * @param mask The mask of event types to subscribe to.
     */
-   void SubscribeToEvents(xcb_event_mask_t mask);
+   virtual void SubscribeToEvents(xcb_event_mask_t mask);
+   /*!
+    * @brief Subscribes this listener to each XInput2 event type specified in mask.
+    *
+    * @param mask The mask of event types to subscribe to.
+    */
+   virtual void SubscribeToEvents(xcb_input_xi_event_mask_t mask);
 
    private:
-   xcb_event_mask_t m_subscribedEventMask;
+   xcb_event_mask_t m_subscribedEventMask {XCB_EVENT_MASK_NO_EVENT};
+   xcb_input_xi_event_mask_t m_subscribedXInputMask {(xcb_input_xi_event_mask_t)0};
    std::queue<Event> m_Queue;
 };
 
