@@ -12,19 +12,24 @@
 #include <xcb/xinput.h>
 
 #include <cassert>
-#include <unordered_set>
+#include <cstring>
+#include <unordered_map>
 
+#include "NamelessWindow/InputDevice.hpp"
+#include "NamelessWindow/Window.hpp"
 #include "X11EventListener.hpp"
+#include "XConnection.h"
 
 namespace NLSWIN {
+/*! @ingroup X11 */
 struct NLSWIN_API_PRIVATE XI2EventMask {
    xcb_input_event_mask_t head;
    xcb_input_xi_event_mask_t mask;
 };
 
-class NLSWIN_API_PRIVATE X11InputDevice : public X11EventListener {
+/*! @ingroup X11 */
+class NLSWIN_API_PRIVATE X11InputDevice : public X11EventListener, virtual public InputDevice {
    public:
-   X11InputDevice(xcb_input_device_id_t id) noexcept;
    /*!
     * @brief Takes an Xinput2 event, and either constructs a platform-independent Event object to store in
     * its queue, or discards the event.
@@ -38,7 +43,7 @@ class NLSWIN_API_PRIVATE X11InputDevice : public X11EventListener {
     * @param x11Handle The window to receive events from.
     * @param windowID The NLSWIN unique identifier of the X11 window.
     */
-   void SubscribeToWindow(xcb_window_t x11Handle, WindowID windowID);
+   void SubscribeToWindow(const Window *const window) override;
    /*!
     * @brief Inform the X server that this deviceID no longer wishes to receive XInput2 events from a specific
     * window.
@@ -47,24 +52,17 @@ class NLSWIN_API_PRIVATE X11InputDevice : public X11EventListener {
     * @param windowID The NLSWIN unique identifier of the X11 window.
     * @todo Test to confirm this function doesn't inadvertantly wipe the event mask for EVERY window.
     */
-   void UnsubscribeFromWindow(xcb_window_t x11Handle, WindowID windowID);
-   /*! overridden as a reminder to prevent subscribing to generic events - this class is for xinput events
-    * only */
-   void SubscribeToEvents(xcb_input_xi_event_mask_t mask) override { assert(false); }
+   void UnsubscribeFromWindow(const Window *const window) override;
 
    protected:
-   const std::unordered_set<WindowID> &GetSubscribedWindowIDs() const noexcept {
-      return m_subscribedWindowGenericIDs;
+   const std::unordered_map<xcb_window_t, WindowID> &GetSubscribedWindows() const noexcept {
+      return m_subscribedWindows;
    }
-   const std::unordered_set<xcb_window_t> &GetSubscribedWindowX11Handles() const noexcept {
-      return m_subscribedWindowGenericIDs;
-   }
+   xcb_input_device_id_t m_deviceID {0};
 
    private:
    void ProcessGenericEvent(xcb_generic_event_t *event) override;
-   xcb_input_device_id_t m_deviceID {0};
-   std::unordered_set<xcb_window_t> m_subscribedWindowX11Handles;
-   std::unordered_set<WindowID> m_subscribedWindowGenericIDs;
+   std::unordered_map<xcb_window_t, WindowID> m_subscribedWindows;
 };
 
 template <typename T>

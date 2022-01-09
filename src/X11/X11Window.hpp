@@ -30,9 +30,9 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    void Reposition(uint32_t newX, uint32_t newY) noexcept;
    void Resize(uint32_t width, uint32_t height) noexcept;
    inline bool RequestedClose() const noexcept override { return m_shouldClose; }
-   inline WindowMode GetWindowMode() const noexcept { return m_windowMode; }
-   unsigned int GetWindowWidth() const noexcept { return m_width; }
-   unsigned int GetWindowHeight() const noexcept { return m_height; }
+   inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
+   unsigned int GetWindowWidth() const noexcept override { return m_width; }
+   unsigned int GetWindowHeight() const noexcept override { return m_height; }
 
    /**
     * @brief Construct a new X11Window object
@@ -48,10 +48,17 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
     * @return The default X screen.
     */
    static xcb_screen_t *GetDefaultScreen();
+   void NewID() {
+      static uint32_t ID = 0;
+      m_genericID = ID++;
+   }
+   inline WindowID GetGenericID() const noexcept { return m_genericID; }
+   inline xcb_window_t GetX11ID() const noexcept { return m_x11WindowID; }
 
    private:
    void ProcessGenericEvent(xcb_generic_event_t *event) override;
    WindowMode m_windowMode {WindowMode::WINDOWED};
+   WindowID m_genericID {0};
    xcb_screen_t *m_defaultScreen {nullptr};
    xcb_window_t m_rootWindow {0};
    xcb_window_t m_x11WindowID {0};

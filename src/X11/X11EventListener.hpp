@@ -70,17 +70,19 @@ class NLSWIN_API_PRIVATE X11EventListener : virtual public EventListener {
     */
    void PushEvent(Event event);
    /*!
-    * @brief Subscribes this listener to each generic XCB event type specified in mask.
+    * @brief Subscribes this listener to each generic XCB event type specified in mask. Resets any previous
+    * subscription.
     *
     * @param mask The mask of event types to subscribe to.
     */
    virtual void SubscribeToEvents(xcb_event_mask_t mask);
    /*!
-    * @brief Subscribes this listener to each XInput2 event type specified in mask.
+    * @brief Subscribes this listener to each XInput2 event type specified in mask. Resets any previous
+    * subscription.
     *
     * @param mask The mask of event types to subscribe to.
     */
-   virtual void SubscribeToEvents(xcb_input_xi_event_mask_t mask);
+   virtual void SubscribeToXInputEvents(xcb_input_xi_event_mask_t mask);
 
    private:
    xcb_event_mask_t m_subscribedEventMask {XCB_EVENT_MASK_NO_EVENT};
