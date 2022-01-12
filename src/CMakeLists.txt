@@ -4,7 +4,10 @@ if (${NLSWIN_X11})
                            "X11/XConnection.cpp"
                            "X11/X11Window.cpp"
                            "X11/X11InputDevice.cpp"
-                           "X11/X11Keyboard.cpp")
+                           "X11/X11Keyboard.cpp"
+                           "X11/X11GenericMouse.cpp"
+                           "X11/X11RawMouse.cpp"
+                           "X11/X11Util.cpp")
 elseif(${NLSWIN_WAYLAND})
 
 elseif(${NLSWIN_WIN32})

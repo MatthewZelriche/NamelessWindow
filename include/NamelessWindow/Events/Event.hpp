@@ -45,12 +45,27 @@ struct NLSWIN_API_PUBLIC MouseButtonEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
+/*! Generated whenever the user interacts with a mouse button. */
+struct NLSWIN_API_PUBLIC RawMouseButtonEvent {
+   ButtonValue button;   /*!< Which button was pressed. @see ButtonValue */
+   ButtonPressType type; /*!< Whether the event was a press or release. */
+};
+
+/*! @ingroup Common */
+/*! @headerfile "Events/Event.hpp" */
 /*! Generated whenever the user interacts with the scroll wheel on a pointer. */
 struct NLSWIN_API_PUBLIC MouseScrollEvent {
    ScrollType scrollType; /*!< The direction the scroll wheel was scrolled in. @see ScrollType */
    float xPos;            /*!< The X pixel coordinate where the event was generated in the source window. */
    float yPos;            /*!< The Y pixel coordinate where the event was generated in the source window. */
    WindowID sourceWindow; /*!< The ID of the window that this event came from */
+};
+
+/*! @ingroup Common */
+/*! @headerfile "Events/Event.hpp" */
+/*! Generated whenever the user interacts with the scroll wheel on a mouse. */
+struct NLSWIN_API_PUBLIC RawMouseScrollEvent {
+   ScrollType scrollType; /*!< The direction the scroll wheel was scrolled in. @see ScrollType */
 };
 
 /*!
@@ -88,7 +103,7 @@ struct NLSWIN_API_PUBLIC MouseDeltaMovementEvent {
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
  */
-struct NLSWIN_API_PUBLIC MouseRawDeltaMovementEvent {
+struct NLSWIN_API_PUBLIC RawMouseDeltaMovementEvent {
    float deltaX;
    float deltaY;
 };
@@ -135,8 +150,9 @@ struct NLSWIN_API_PUBLIC WindowResizeEvent {
 /*! Generic NLSWIN Event. */
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-using Event = std::variant<std::monostate, KeyEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent,
-                           MouseScrollEvent, MouseMovementEvent, MouseDeltaMovementEvent, MouseEnterEvent,
-                           MouseLeaveEvent, MouseRawDeltaMovementEvent>;
+using Event =
+   std::variant<std::monostate, KeyEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent,
+                RawMouseButtonEvent, MouseScrollEvent, RawMouseScrollEvent, MouseMovementEvent,
+                MouseDeltaMovementEvent, MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent>;
 
 }  // namespace NLSWIN

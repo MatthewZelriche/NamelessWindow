@@ -8,6 +8,7 @@
 
 #include "NamelessWindow/Exceptions.hpp"
 #include "X11EventBus.hpp"
+#include "X11Util.hpp"
 #include "XConnection.h"
 
 using namespace NLSWIN;
@@ -26,7 +27,7 @@ std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properti
 
 X11Window::X11Window(WindowProperties properties) {
    // Currently, this library doesn't support multiple screens.
-   m_defaultScreen = GetDefaultScreen();
+   m_defaultScreen = UTIL::GetDefaultScreen();
    if (!m_defaultScreen) {
       throw PlatformInitializationException();
    }
@@ -271,7 +272,7 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
 }
 
 std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
-   xcb_screen_t *defaultScreen = X11Window::GetDefaultScreen();
+   xcb_screen_t *defaultScreen = UTIL::GetDefaultScreen();
    if (!defaultScreen) {
       return {};
    }
@@ -292,28 +293,4 @@ std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
 
    free(monitorsReply);
    return listOfMonitors;
-}
-
-xcb_screen_t *NLSWIN::X11Window::GetDefaultScreen() {
-   // Quick side connection with xcb to get the default screen number - our main connection cant do that.
-   int defaultScreenNum = 0;
-   auto connection = xcb_connect(nullptr, &defaultScreenNum);
-   if (!connection) {
-      throw PlatformInitializationException();
-   }
-
-   // Get the default screen.
-   xcb_screen_t *defaultScreen = nullptr;
-   auto screenIter = xcb_setup_roots_iterator(xcb_get_setup(connection));
-   while (screenIter.rem > 0) {
-      if (defaultScreenNum == 0) {
-         defaultScreen = screenIter.data;
-         break;
-      }
-      defaultScreenNum -= 1;
-      xcb_screen_next(&screenIter);
-   }
-
-   xcb_disconnect(connection);
-   return defaultScreen;
 }

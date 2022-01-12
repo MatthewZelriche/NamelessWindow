@@ -42,12 +42,6 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    X11Window(WindowProperties properties);
    ~X11Window();
    void ToggleFullscreen() noexcept;
-   /**
-    * @brief Gets the default X screen.
-    *
-    * @return The default X screen.
-    */
-   static xcb_screen_t *GetDefaultScreen();
    void NewID() {
       static uint32_t ID = 0;
       m_genericID = ID++;

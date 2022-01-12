@@ -21,11 +21,6 @@
 #include "XConnection.h"
 
 namespace NLSWIN {
-/*! @ingroup X11 */
-struct NLSWIN_API_PRIVATE XI2EventMask {
-   xcb_input_event_mask_t head;
-   xcb_input_xi_event_mask_t mask;
-};
 
 /*! @ingroup X11 */
 class NLSWIN_API_PRIVATE X11InputDevice : public X11EventListener, virtual public InputDevice {
