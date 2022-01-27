@@ -5,35 +5,32 @@
 
 using namespace NLSWIN;
 
-void X11InputDevice::ProcessGenericEvent(xcb_generic_event_t *event) {
-   switch (event->response_type & ~0x80) {
-      // TODO: Why are we getting non GE events?
-      case XCB_GE_GENERIC: {
-         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-         ProcessXInputEvent(genericEvent);
-      }
+void X11InputDevice::SubscribeToWindow(const std::weak_ptr<Window> x11Window) {
+   if (!x11Window.expired()) {
+      std::shared_ptr<X11Window> windowSharedPtr = std::static_pointer_cast<X11Window>(x11Window.lock());
+      m_subscribedWindows.insert(
+         std::make_pair(windowSharedPtr->GetX11ID(), std::static_pointer_cast<X11Window>(windowSharedPtr)));
+
+      UTIL::XI2EventMask mask;
+      mask.header.deviceid = m_deviceID;
+      mask.header.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
+      mask.mask = m_subscribedXInputMask;
+      xcb_input_xi_select_events_checked(XConnection::GetConnection(), windowSharedPtr->GetX11ID(), 1,
+                                         &mask.header);
+      xcb_flush(XConnection::GetConnection());
    }
 }
 
-void X11InputDevice::SubscribeToWindow(const Window *const window) {
-   auto x11Window = static_cast<const X11Window *const>(window);
-   m_subscribedWindows.insert({x11Window->GetX11ID(), x11Window->GetGenericID()});
+void X11InputDevice::UnsubscribeFromWindow(const std::weak_ptr<Window> x11Window) {
+   if (!x11Window.expired()) {
+      std::shared_ptr<X11Window> windowSharedPtr = std::static_pointer_cast<X11Window>(x11Window.lock());
+      m_subscribedWindows.erase(windowSharedPtr->GetX11ID());
 
-   UTIL::XI2EventMask mask;
-   mask.header.deviceid = m_deviceID;
-   mask.header.mask_len = sizeof(mask.mask) / sizeof(uint32_t);
-   mask.mask = GetSubscribedXInputEventTypes();
-   xcb_input_xi_select_events_checked(XConnection::GetConnection(), x11Window->GetX11ID(), 1, &mask.header);
-   xcb_flush(XConnection::GetConnection());
-}
-
-void X11InputDevice::UnsubscribeFromWindow(const Window *const window) {
-   auto x11Window = static_cast<const X11Window *const>(window);
-   m_subscribedWindows.erase(x11Window->GetX11ID());
-
-   UTIL::XI2EventMask mask;
-   mask.header.deviceid = m_deviceID;
-   mask.header.mask_len = 0;  // Length of zero clears the mask on the X server,
-   xcb_input_xi_select_events_checked(XConnection::GetConnection(), x11Window->GetX11ID(), 1, &mask.header);
-   xcb_flush(XConnection::GetConnection());
+      UTIL::XI2EventMask mask;
+      mask.header.deviceid = m_deviceID;
+      mask.header.mask_len = 0;  // Length of zero clears the mask on the X server,
+      xcb_input_xi_select_events_checked(XConnection::GetConnection(), windowSharedPtr->GetX11ID(), 1,
+                                         &mask.header);
+      xcb_flush(XConnection::GetConnection());
+   }
 }

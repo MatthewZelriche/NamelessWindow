@@ -27,6 +27,11 @@ namespace NLSWIN {
 /*! @ingroup Common */
 enum class WindowMode { FULLSCREEN = 0, BORDERLESS = 1, WINDOWED = 2 };
 
+struct Rect {
+   int x {0};
+   int y {0};
+};
+
 /*! Information about a physical monitor connected to the system. */
 /*! @ingroup Common */
 struct NLSWIN_API_PUBLIC MonitorInfo {
@@ -174,6 +179,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    [[nodiscard]] virtual unsigned int GetWindowWidth() const noexcept = 0;
    /*! Gets the current height of the window, in pixels. */
    [[nodiscard]] virtual unsigned int GetWindowHeight() const noexcept = 0;
+   [[nodiscard]] virtual WindowID GetGenericID() const noexcept = 0;
    /**
     * @brief Gets a list of all detected monitors.
     * @throws PlatformInitializationException

@@ -43,14 +43,18 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    ~X11Window();
    void ToggleFullscreen() noexcept;
    void NewID() {
-      static uint32_t ID = 0;
+      static WindowID ID = 0;
       m_genericID = ID++;
    }
-   inline WindowID GetGenericID() const noexcept { return m_genericID; }
-   inline xcb_window_t GetX11ID() const noexcept { return m_x11WindowID; }
+   [[nodiscard]] WindowID GetGenericID() const noexcept { return m_genericID; }
+   [[nodiscard]] inline xcb_window_t GetX11ID() const noexcept { return m_x11WindowID; }
+   [[nodiscard]] inline Rect GetWindowGeometry() const noexcept { return m_windowGeometry; }
+   [[nodiscard]] inline xcb_window_t GetRootWindow() const noexcept { return m_rootWindow; }
 
    private:
+   Rect m_windowGeometry;
    void ProcessGenericEvent(xcb_generic_event_t *event) override;
+   Rect GetNewGeometry();
    WindowMode m_windowMode {WindowMode::WINDOWED};
    WindowID m_genericID {0};
    xcb_screen_t *m_defaultScreen {nullptr};
@@ -68,6 +72,6 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    const xcb_event_mask_t m_eventMask =
       (xcb_event_mask_t)(XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_FOCUS_CHANGE |
                          XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_ENTER_WINDOW |
-                         XCB_EVENT_MASK_VISIBILITY_CHANGE);
+                         XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_VISIBILITY_CHANGE);
 };
 }  // namespace NLSWIN

@@ -20,11 +20,3 @@ Event X11EventListener::GetNextEvent() {
    m_Queue.pop();
    return test;
 }
-
-void X11EventListener::SubscribeToEvents(xcb_event_mask_t mask) {
-   m_subscribedEventMask = mask;
-}
-
-void X11EventListener::SubscribeToXInputEvents(xcb_input_xi_event_mask_t mask) {
-   m_subscribedXInputMask = mask;
-}

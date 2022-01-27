@@ -38,8 +38,8 @@ struct NLSWIN_API_PUBLIC MouseDeviceInfo {
  * a Pointer must always be bound to a window, certain events are unavailable to it, such as cursor enter and
  * cursor leave events.
  * Clients should use this class only if they are interested in events coming from a specific physical mouse
- * only. Otherwise, cursor events can be accessed through a Window's event queue.
- * @see Window
+ * only. Otherwise, you likely want to use Cursor instead.
+ * @see Cursor
  */
 class NLSWIN_API_PUBLIC RawMouse : virtual public EventListener {
    public:

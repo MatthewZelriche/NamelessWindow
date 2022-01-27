@@ -68,7 +68,6 @@ X11Window::X11Window(WindowProperties properties) {
    if (!properties.isUserResizable) {
       DisableUserResizing();
    }
-   auto geomCookie = xcb_get_geometry(XConnection::GetConnection(), m_x11WindowID);
 
    // Set window name if we were given one.
    if (!properties.windowName.empty()) {
@@ -98,8 +97,9 @@ X11Window::X11Window(WindowProperties properties) {
       SetFullscreen(true);
    }
 
-   SubscribeToEvents(m_eventMask);
+   m_windowGeometry = GetNewGeometry();
    xcb_flush(XConnection::GetConnection());
+   NewID();
 }
 
 X11Window::~X11Window() {
@@ -227,6 +227,11 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
                resizeEvent.newWidth = m_width;
                resizeEvent.newHeight = m_height;
                PushEvent(resizeEvent);
+               // Set new geometry
+               m_windowGeometry = GetNewGeometry();
+            }
+            if (notifyEvent->x != m_windowGeometry.x || notifyEvent->y != m_windowGeometry.y) {
+               m_windowGeometry = GetNewGeometry();
             }
          }
          break;
@@ -269,6 +274,12 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
          break;
       }
    }
+}
+
+Rect X11Window::GetNewGeometry() {
+   auto geomCookie = xcb_get_geometry(XConnection::GetConnection(), m_x11WindowID);
+   auto geomReply = xcb_get_geometry_reply(XConnection::GetConnection(), geomCookie, nullptr);
+   return {geomReply->x, geomReply->y};
 }
 
 std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {

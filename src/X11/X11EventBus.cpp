@@ -16,14 +16,7 @@ void X11EventBus::PollEvents() {
       for (auto iter = m_listeners.begin(); iter != m_listeners.end();) {
          if (!(*iter).expired()) {
             auto listenerSharedPtr = (*iter).lock();
-            if ((event->response_type & ~0x80) & listenerSharedPtr->GetSubscribedEventTypes()) {
-               listenerSharedPtr->ProcessGenericEvent(event);
-            }
-            // TODO: How to send only XInput2 events that were subscribed for?
-            if (event->response_type == XCB_GE_GENERIC &&
-                listenerSharedPtr->GetSubscribedXInputEventTypes()) {
-               listenerSharedPtr->ProcessGenericEvent(event);
-            }
+            listenerSharedPtr->ProcessGenericEvent(event);
             iter++;
          } else {
             // Erase expired listeners - no longer needed.

@@ -24,12 +24,12 @@ class NLSWIN_API_PUBLIC InputDevice : virtual public EventListener {
     *
     * @param window The window to subscribe to for events.
     */
-   virtual void SubscribeToWindow(const Window *const window) = 0;
+   virtual void SubscribeToWindow(const std::weak_ptr<Window> window) = 0;
    /*!
     * @brief Unsubscribe this InputDevice from receiving events from the specified window.
     *
     * @param window The window to unsubscribe from for events.
     */
-   virtual void UnsubscribeFromWindow(const Window *const window) = 0;
+   virtual void UnsubscribeFromWindow(const std::weak_ptr<Window> window) = 0;
 };
 }  // namespace NLSWIN

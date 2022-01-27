@@ -64,7 +64,7 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          keyEvent.code.value = TranslateKey(GetSymFromKeyCode(pressEvent->detail));
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.base);
-         keyEvent.sourceWindow = GetSubscribedWindows().at(pressEvent->event);
+         keyEvent.sourceWindow = GetSubscribedWindows().at(pressEvent->event).lock()->GetGenericID();
          if (m_InternalKeyState[pressEvent->detail] == true) {
             keyEvent.pressType = KeyPressType::REPEAT;
          } else {
@@ -79,7 +79,7 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          keyEvent.code.value = TranslateKey(GetSymFromKeyCode(releaseEvent->detail));
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
          keyEvent.pressType = KeyPressType::RELEASED;
-         keyEvent.sourceWindow = GetSubscribedWindows().at(releaseEvent->event);
+         keyEvent.sourceWindow = GetSubscribedWindows().at(releaseEvent->event).lock()->GetGenericID();
          m_InternalKeyState[releaseEvent->detail] = false;
          break;
       }

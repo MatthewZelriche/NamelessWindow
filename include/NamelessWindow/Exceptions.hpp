@@ -60,11 +60,11 @@ class NLSWIN_API_PUBLIC InputDeviceFailure : public std::exception {
  * Usually this exception would occur because an attempt was made by the client to subclass MasterPointer
  * @see MasterPointer
  */
-class NLSWIN_API_PUBLIC MultipleMasterPointerError : public std::exception {
+class NLSWIN_API_PUBLIC MultipleCursorException : public std::exception {
    public:
    virtual const char* what() const noexcept override {
-      return "An attempt was made to instantiate a Master Pointer more than once. There can only be one "
-             "master pointer per application";
+      return "An attempt was made to instantiate a Cursor more than once. There can only be one "
+             "Cursor.";
    }
 };
 

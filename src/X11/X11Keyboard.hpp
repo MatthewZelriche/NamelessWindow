@@ -22,7 +22,7 @@ namespace NLSWIN {
  * @brief An instance of a deviceID corresponding to a Keyboard.
  * @ingroup X11
  */
-class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, virtual public Keyboard {
+class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
    public:
    X11Keyboard();
    X11Keyboard(KeyboardDeviceInfo info);
