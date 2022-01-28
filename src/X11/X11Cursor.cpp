@@ -98,8 +98,16 @@ void X11Cursor::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          break;
       }
       case XCB_INPUT_LEAVE: {
-         AttemptSetVisible();
-         m_inhabitedWindow = 0;
+         xcb_input_leave_event_t *leaveEvent = reinterpret_cast<xcb_input_leave_event_t *>(event);
+         if (m_boundWindow) {
+            if (leaveEvent->mode == XCB_INPUT_NOTIFY_MODE_UNGRAB) {
+               m_boundWindow = 0;
+               AttemptSetVisible();
+            }
+         } else {
+            AttemptSetVisible();
+            m_inhabitedWindow = 0;
+         }
          break;
       }
       case XCB_INPUT_MOTION: {
