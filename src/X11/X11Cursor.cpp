@@ -21,7 +21,6 @@ X11Cursor::X11Cursor() {
    m_deviceID = GetMasterPointerDeviceID();
    xcb_pixmap_t pixmap = xcb_generate_id(XConnection::GetConnection());
    xcb_create_cursor(XConnection::GetConnection(), m_cursor, pixmap, pixmap, 0, 0, 0, 0, 0, 0, 0, 0);
-   SubscribeToXInputEvents(m_inputEventMask);
    SubscribeToRawRootEvents(m_rawInputEventMask);
 }
 
@@ -60,12 +59,10 @@ void X11Cursor::AttemptSetHidden() {
    }
 }
 
-void X11Cursor::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
-   xcb_ge_generic_event_t *inputEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-   switch (inputEvent->event_type) {
-      case XCB_INPUT_BUTTON_PRESS: {
-         xcb_input_button_press_event_t *buttonPressEvent =
-            reinterpret_cast<xcb_input_button_press_event_t *>(event);
+void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
+   switch (event->response_type & ~0x80) {
+      case XCB_BUTTON_PRESS: {
+         xcb_button_press_event_t *buttonPressEvent = reinterpret_cast<xcb_button_press_event_t *>(event);
          if (!m_boundWindow) {
             PushEvent(PackageNewButtonPressEvent(buttonPressEvent, buttonPressEvent->event));
          } else {
@@ -75,9 +72,9 @@ void X11Cursor::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          }
          break;
       }
-      case XCB_INPUT_BUTTON_RELEASE: {
-         xcb_input_button_release_event_t *buttonReleaseEvent =
-            reinterpret_cast<xcb_input_button_release_event_t *>(event);
+      case XCB_BUTTON_RELEASE: {
+         xcb_button_release_event_t *buttonReleaseEvent =
+            reinterpret_cast<xcb_button_release_event_t *>(event);
          if (!m_boundWindow) {
             PushEvent(PackageNewButtonReleaseEvent(buttonReleaseEvent, buttonReleaseEvent->event));
          } else {
@@ -87,8 +84,8 @@ void X11Cursor::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          }
          break;
       }
-      case XCB_INPUT_ENTER: {
-         xcb_input_enter_event_t *enterEvent = reinterpret_cast<xcb_input_enter_event_t *>(event);
+      case XCB_ENTER_NOTIFY: {
+         xcb_enter_notify_event_t *enterEvent = reinterpret_cast<xcb_enter_notify_event_t *>(event);
          m_inhabitedWindow = enterEvent->event;
          if (GetSubscribedWindows().count(m_inhabitedWindow)) {
             if (m_requestedHidden && !m_isHidden) {
@@ -97,8 +94,8 @@ void X11Cursor::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          }
          break;
       }
-      case XCB_INPUT_LEAVE: {
-         xcb_input_leave_event_t *leaveEvent = reinterpret_cast<xcb_input_leave_event_t *>(event);
+      case XCB_LEAVE_NOTIFY: {
+         xcb_leave_notify_event_t *leaveEvent = reinterpret_cast<xcb_leave_notify_event_t *>(event);
          if (m_boundWindow) {
             if (leaveEvent->mode == XCB_INPUT_NOTIFY_MODE_UNGRAB) {
                m_boundWindow = 0;
@@ -110,8 +107,8 @@ void X11Cursor::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          }
          break;
       }
-      case XCB_INPUT_MOTION: {
-         xcb_input_motion_event_t *motionEvent = reinterpret_cast<xcb_input_motion_event_t *>(event);
+      case XCB_MOTION_NOTIFY: {
+         xcb_motion_notify_event_t *motionEvent = reinterpret_cast<xcb_motion_notify_event_t *>(event);
          if (!m_boundWindow) {
             PushEvent(PackageNewMoveEvent(motionEvent, motionEvent->event));
          } else {
@@ -121,20 +118,26 @@ void X11Cursor::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
          }
          break;
       }
-      case XCB_INPUT_RAW_MOTION: {
-         xcb_input_raw_motion_event_t *rawEvent = reinterpret_cast<xcb_input_raw_motion_event_t *>(event);
-         // Hacky workaround to ignore duplicate motion events due to master/slave pointer issues.
-         static xcb_timestamp_t lastTimeStamp = 0;
-         if (rawEvent->time == lastTimeStamp) {
-            break;
+      case XCB_GE_GENERIC: {
+         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
+         switch (genericEvent->event_type) {
+            case XCB_INPUT_RAW_MOTION: {
+               xcb_input_raw_motion_event_t *rawEvent =
+                  reinterpret_cast<xcb_input_raw_motion_event_t *>(event);
+               // Hacky workaround to ignore duplicate motion events due to master/slave pointer issues.
+               static xcb_timestamp_t lastTimeStamp = 0;
+               if (rawEvent->time == lastTimeStamp) {
+                  break;
+               }
+               lastTimeStamp = rawEvent->time;
+               if (GetSubscribedWindows().count(m_inhabitedWindow)) {
+                  auto deltaEvents = PackageNewDeltaEvents(rawEvent);
+                  PushEvent(deltaEvents.first);
+                  PushEvent(deltaEvents.second);
+               }
+               break;
+            }
          }
-         lastTimeStamp = rawEvent->time;
-         if (GetSubscribedWindows().count(m_inhabitedWindow)) {
-            auto deltaEvents = PackageNewDeltaEvents(rawEvent);
-            PushEvent(deltaEvents.first);
-            PushEvent(deltaEvents.second);
-         }
-         break;
       }
    }
 }
@@ -147,17 +150,16 @@ void X11Cursor::BindToWindow(const Window *const window) noexcept {
    const X11Window *const x11Window = reinterpret_cast<const X11Window *const>(window);
    // Always unbind the cursor first
    xcb_ungrab_pointer(XConnection::GetConnection(), XCB_CURRENT_TIME);
-   auto cookie =
-      xcb_grab_pointer(XConnection::GetConnection(), true, x11Window->GetX11ID(), 0, XCB_GRAB_MODE_ASYNC,
-                       XCB_GRAB_MODE_ASYNC, x11Window->GetX11ID(), m_cursor, XCB_CURRENT_TIME);
+   auto cookie = xcb_grab_pointer(XConnection::GetConnection(), false, x11Window->GetX11ID(), m_xcbEventMask,
+                                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, x11Window->GetX11ID(), m_cursor,
+                                  XCB_CURRENT_TIME);
 
    m_boundWindow = x11Window->GetX11ID();
    xcb_set_input_focus(XConnection::GetConnection(), 0, m_boundWindow, XCB_CURRENT_TIME);
    xcb_flush(XConnection::GetConnection());
 }
 
-Event X11Cursor::PackageNewButtonPressEvent(xcb_input_button_press_event_t *event,
-                                            xcb_window_t sourceWindow) {
+Event X11Cursor::PackageNewButtonPressEvent(xcb_button_press_event_t *event, xcb_window_t sourceWindow) {
    if (event->detail >= 4 && event->detail <= 7) {
       MouseScrollEvent scrollEvent;
       scrollEvent.scrollType = (ScrollType)(event->detail - 4);
@@ -171,8 +173,7 @@ Event X11Cursor::PackageNewButtonPressEvent(xcb_input_button_press_event_t *even
    return mouseButtonEvent;
 }
 
-Event X11Cursor::PackageNewButtonReleaseEvent(xcb_input_button_press_event_t *event,
-                                              xcb_window_t sourceWindow) {
+Event X11Cursor::PackageNewButtonReleaseEvent(xcb_button_press_event_t *event, xcb_window_t sourceWindow) {
    MouseButtonEvent mouseButtonEvent;
    // Only process scroll events on a button press - processing both on press and release gives
    // erroneous events.
@@ -185,9 +186,9 @@ Event X11Cursor::PackageNewButtonReleaseEvent(xcb_input_button_press_event_t *ev
    return mouseButtonEvent;
 }
 
-Event X11Cursor::PackageNewMoveEvent(xcb_input_motion_event_t *event, xcb_window_t sourceWindow) {
-   float newX = TranslateXCBFloat(event->event_x);
-   float newY = TranslateXCBFloat(event->event_y);
+Event X11Cursor::PackageNewMoveEvent(xcb_motion_notify_event_t *event, xcb_window_t sourceWindow) {
+   float newX = event->event_x;
+   float newY = event->event_y;
    // Don't send an event if we've somehow recieved a motion event yet we havent moved.
    // (for example, when using the scroll wheel ??)
    if (newX == lastX && newY == lastY) {

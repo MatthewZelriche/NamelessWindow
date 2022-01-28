@@ -40,12 +40,15 @@ Event X11RawMouse::PackageNewRawButtonReleaseEvent(xcb_input_button_press_event_
    return mouseButtonEvent;
 }
 
-void X11RawMouse::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
-   xcb_ge_generic_event_t *inputEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-   switch (inputEvent->event_type) {
+void X11RawMouse::ProcessGenericEvent(xcb_generic_event_t *event) {
+   if ((event->response_type & ~0x80) != XCB_GE_GENERIC) {
+      return;
+   }
+   xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
+   switch (genericEvent->event_type) {
       case XCB_INPUT_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =
-            reinterpret_cast<xcb_input_button_press_event_t *>(inputEvent);
+            reinterpret_cast<xcb_input_button_press_event_t *>(genericEvent);
          if (buttonPressEvent->deviceid == m_deviceID) {
             PushEvent(PackageNewRawButtonPressEvent(buttonPressEvent));
          }
@@ -53,7 +56,7 @@ void X11RawMouse::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
       }
       case XCB_INPUT_BUTTON_RELEASE: {
          xcb_input_button_release_event_t *buttonReleaseEvent =
-            reinterpret_cast<xcb_input_button_release_event_t *>(inputEvent);
+            reinterpret_cast<xcb_input_button_release_event_t *>(genericEvent);
          if (buttonReleaseEvent->deviceid == m_deviceID) {
             PushEvent(PackageNewRawButtonReleaseEvent(buttonReleaseEvent));
          }
@@ -61,7 +64,7 @@ void X11RawMouse::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
       }
       case XCB_INPUT_RAW_MOTION: {
          xcb_input_raw_motion_event_t *rawEvent =
-            reinterpret_cast<xcb_input_raw_motion_event_t *>(inputEvent);
+            reinterpret_cast<xcb_input_raw_motion_event_t *>(genericEvent);
          if (rawEvent->deviceid == m_deviceID) {
             auto deltaEvents = PackageNewDeltaEvents(rawEvent);
             PushEvent(deltaEvents.first);

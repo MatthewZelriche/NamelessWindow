@@ -28,7 +28,7 @@ class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
    X11Keyboard(KeyboardDeviceInfo info);
 
    private:
-   void ProcessXInputEvent(xcb_ge_generic_event_t *event) override;
+   void ProcessGenericEvent(xcb_generic_event_t *event) override;
 
    [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
    [[nodiscard]] xkb_keysym_t GetSymFromKeyCode(unsigned int keycode);

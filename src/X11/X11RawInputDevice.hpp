@@ -31,9 +31,6 @@ class NLSWIN_API_PRIVATE X11RawInputDevice : public X11EventListener {
    // virtual void ProcessXInputEvent(xcb_ge_generic_event_t *event) = 0;
    void SubscribeToRawRootEvents(xcb_input_xi_event_mask_t masks);
 
-   private:
-   void ProcessGenericEvent(xcb_generic_event_t *event) override;
-
    protected:
    /*!
     * @brief Subscribes this listener to each XInput2 event type specified in mask. Resets any previous
@@ -42,7 +39,6 @@ class NLSWIN_API_PRIVATE X11RawInputDevice : public X11EventListener {
     * @param mask The mask of event types to subscribe to.
     */
    virtual void SubscribeToXInputEvents(xcb_input_xi_event_mask_t mask);
-   virtual void ProcessXInputEvent(xcb_ge_generic_event_t *event) = 0;
    xcb_input_xi_event_mask_t m_subscribedXInputMask {(xcb_input_xi_event_mask_t)0};
    xcb_input_device_id_t m_deviceID {0};
 };

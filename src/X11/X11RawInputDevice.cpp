@@ -17,12 +17,3 @@ void X11RawInputDevice::SubscribeToRawRootEvents(xcb_input_xi_event_mask_t masks
 void X11RawInputDevice::SubscribeToXInputEvents(xcb_input_xi_event_mask_t mask) {
    m_subscribedXInputMask = mask;
 }
-
-void X11RawInputDevice::ProcessGenericEvent(xcb_generic_event_t *event) {
-   switch (event->response_type & ~0x80) {
-      case XCB_GE_GENERIC: {
-         xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
-         ProcessXInputEvent(genericEvent);
-      }
-   }
-}

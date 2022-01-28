@@ -41,14 +41,19 @@ X11Keyboard::X11Keyboard(KeyboardDeviceInfo info) {
    SubscribeToXInputEvents(m_inputEventMask);
 }
 
-void X11Keyboard::ProcessXInputEvent(xcb_ge_generic_event_t *event) {
-   switch (event->event_type) {
+void X11Keyboard::ProcessGenericEvent(xcb_generic_event_t *event) {
+   if ((event->response_type & ~0x80) != XCB_GE_GENERIC) {
+      return;
+   }
+   xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
+   switch (genericEvent->event_type) {
       case XCB_INPUT_KEY_RELEASE:
       case XCB_INPUT_KEY_PRESS: {
-         xcb_input_key_press_event_t *keyEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
+         xcb_input_key_press_event_t *keyEvent =
+            reinterpret_cast<xcb_input_key_press_event_t *>(genericEvent);
          if (GetSubscribedWindows().count(keyEvent->event)) {
             if (m_deviceID == keyEvent->deviceid || m_deviceID == XCB_INPUT_DEVICE_ALL_MASTER) {
-               Event processedEvent = ProcessKeyEvent(event);
+               Event processedEvent = ProcessKeyEvent(genericEvent);
                PushEvent(processedEvent);
             }
          }
