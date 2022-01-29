@@ -34,7 +34,7 @@ struct NLSWIN_API_PUBLIC KeyEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with a pointer button. */
+/*! Generated whenever the user interacts with a mouse button. */
 struct NLSWIN_API_PUBLIC MouseButtonEvent {
    ButtonValue button;    /*!< Which button was pressed. @see ButtonValue */
    ButtonPressType type;  /*!< Whether the event was a press or release. */
@@ -45,7 +45,7 @@ struct NLSWIN_API_PUBLIC MouseButtonEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with a mouse button. */
+/*! Generated whenever the user interacts with a raw mouse button. */
 struct NLSWIN_API_PUBLIC RawMouseButtonEvent {
    ButtonValue button;   /*!< Which button was pressed. @see ButtonValue */
    ButtonPressType type; /*!< Whether the event was a press or release. */
@@ -53,7 +53,7 @@ struct NLSWIN_API_PUBLIC RawMouseButtonEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with the scroll wheel on a pointer. */
+/*! Generated whenever the user interacts with the scroll wheel on a mouse. */
 struct NLSWIN_API_PUBLIC MouseScrollEvent {
    ScrollType scrollType; /*!< The direction the scroll wheel was scrolled in. @see ScrollType */
    float xPos;            /*!< The X pixel coordinate where the event was generated in the source window. */
@@ -63,14 +63,14 @@ struct NLSWIN_API_PUBLIC MouseScrollEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with the scroll wheel on a mouse. */
+/*! Generated whenever the user interacts with the scroll wheel on a raw mouse. */
 struct NLSWIN_API_PUBLIC RawMouseScrollEvent {
    ScrollType scrollType; /*!< The direction the scroll wheel was scrolled in. @see ScrollType */
 };
 
 /*!
- * @brief Generated whenever the MasterPointer's cursor is moved to a new position inside a client window.
- * @see MasterPointer
+ * @brief Generated whenever a cursor is moved to a new position inside a client window.
+ * @see Cursor
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
  */
@@ -81,11 +81,11 @@ struct NLSWIN_API_PUBLIC MouseMovementEvent {
 };
 
 /*!
- * @brief Generated whenever pointer movement occurs.
+ * @brief Generated whenever mouse movement occurs.
  *
- * Provides the delta movement of the pointer, after platform-specific mouse acceleration/smoothing has been
+ * Provides the delta movement of the mouse, after platform-specific mouse acceleration/smoothing has been
  * applied. If you would look raw input data that is not impacted by mouse acceleration, use
- * MouseRawDeltaMovementEvent instead.
+ * MouseRawDeltaMovementEvent instead. RawMouse objects cannot generate these events.
  * @see MouseRawDeltaMovementEvent
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
@@ -96,9 +96,9 @@ struct NLSWIN_API_PUBLIC MouseDeltaMovementEvent {
 };
 
 /*!
- * @brief Generated whenever pointer movement occurs.
+ * @brief Generated whenever mouse movement occurs.
  *
- * Provides the raw pointer movement data, before platform-specific mouse acceleration/smoothing has been
+ * Provides the raw mouse movement data, before platform-specific mouse acceleration/smoothing has been
  * applied.
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
@@ -109,8 +109,8 @@ struct NLSWIN_API_PUBLIC RawMouseDeltaMovementEvent {
 };
 
 /*!
- * @brief Generated whenever the MasterPointer cursor enters within the bounds of an application window.
- * @see MasterPointer
+ * @brief Generated whenever a cursor enters within the bounds of an application window.
+ * @see Cursor
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
  */
@@ -121,8 +121,8 @@ struct NLSWIN_API_PUBLIC MouseEnterEvent {
 };
 
 /*!
- * @brief Generated whenever the MasterPointer cursor leaves the bounds of an application window.
- * @see MasterPointer
+ * @brief Generated whenever a cursor leaves the bounds of an application window.
+ * @see Cursor
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
  */
@@ -136,15 +136,16 @@ struct NLSWIN_API_PUBLIC MouseLeaveEvent {
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
 struct NLSWIN_API_PUBLIC WindowFocusedEvent {
-   WindowID sourceWindow;
+   WindowID sourceWindow; /*!< The window that was focused. */
 };
 
 /*! Generated whenever an application window is resized. */
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
 struct NLSWIN_API_PUBLIC WindowResizeEvent {
-   int newWidth;  /*!< The new width of the application window. */
-   int newHeight; /*!< The new height of the application window. */
+   int newWidth;          /*!< The new width of the application window. */
+   int newHeight;         /*!< The new height of the application window. */
+   WindowID sourceWindow; /*!< The window that was resized. */
 };
 
 /*! Generic NLSWIN Event. */

@@ -22,27 +22,13 @@ namespace NLSWIN {
 /*! @ingroup X11 */
 class NLSWIN_API_PRIVATE X11RawInputDevice : public X11EventListener {
    public:
-   /*!
-    * @brief Takes an Xinput2 event, and either constructs a platform-independent Event object to store in
-    * its queue, or discards the event.
-    *
-    * @param event The XInput2 event to process.
-    */
-   // virtual void ProcessXInputEvent(xcb_ge_generic_event_t *event) = 0;
    void SubscribeToRawRootEvents(xcb_input_xi_event_mask_t masks);
 
    protected:
-   /*!
-    * @brief Subscribes this listener to each XInput2 event type specified in mask. Resets any previous
-    * subscription.
-    *
-    * @param mask The mask of event types to subscribe to.
-    */
-   virtual void SubscribeToXInputEvents(xcb_input_xi_event_mask_t mask);
-   xcb_input_xi_event_mask_t m_subscribedXInputMask {(xcb_input_xi_event_mask_t)0};
    xcb_input_device_id_t m_deviceID {0};
 };
 
+/*! @ingroup X11 */
 template <typename T>
 [[nodiscard]] NLSWIN_API_PUBLIC std::vector<T> EnumerateDevicesX11(xcb_input_device_type_t type) noexcept {
    std::vector<T> devices;

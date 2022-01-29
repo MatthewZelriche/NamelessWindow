@@ -28,7 +28,7 @@ X11Keyboard::X11Keyboard() {
                                                       m_deviceID, XKB_KEYMAP_COMPILE_NO_FLAGS);
    m_KeyboardState = xkb_x11_state_new_from_device(deviceKeymap, XConnection::GetConnection(), m_deviceID);
    xkb_keymap_unref(deviceKeymap);
-   SubscribeToXInputEvents(m_inputEventMask);
+   SubscribeToWindowSpecificXInput2Events(m_inputEventMask);
 }
 
 X11Keyboard::X11Keyboard(KeyboardDeviceInfo info) {
@@ -38,7 +38,7 @@ X11Keyboard::X11Keyboard(KeyboardDeviceInfo info) {
                                                       m_deviceID, XKB_KEYMAP_COMPILE_NO_FLAGS);
    m_KeyboardState = xkb_x11_state_new_from_device(deviceKeymap, XConnection::GetConnection(), m_deviceID);
    xkb_keymap_unref(deviceKeymap);
-   SubscribeToXInputEvents(m_inputEventMask);
+   SubscribeToWindowSpecificXInput2Events(m_inputEventMask);
 }
 
 void X11Keyboard::ProcessGenericEvent(xcb_generic_event_t *event) {

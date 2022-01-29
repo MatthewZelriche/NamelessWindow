@@ -22,7 +22,7 @@ namespace NLSWIN {
  * All classes capable of processing OS events implement this interface. Each EventListener maintains its own
  * internal queue of events that the listener has processed. Registration of listeners implemented
  * by this library (eg, Window, Keyboard, etc) occurs automatically on instantiation of the listener. It is
- * currently not possible for the client to Register their own custom EventListeners.
+ * currently not possible for the client to register their own custom EventListeners.
  * @see EventDispatcher
  */
 class NLSWIN_API_PUBLIC EventListener {

@@ -179,6 +179,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    [[nodiscard]] virtual unsigned int GetWindowWidth() const noexcept = 0;
    /*! Gets the current height of the window, in pixels. */
    [[nodiscard]] virtual unsigned int GetWindowHeight() const noexcept = 0;
+   /*! Gets a platform-independent numeric value that represents this window.*/
    [[nodiscard]] virtual WindowID GetGenericID() const noexcept = 0;
    /**
     * @brief Gets a list of all detected monitors.
@@ -192,7 +193,9 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     *
     * If the window has bound the cursor while it was destroyed, the bind is released by calling the
     * UnbindFromWindows Cursor method.
+    * @see Cursor
     */
    virtual ~Window() = default;
 };
+
 }  // namespace NLSWIN

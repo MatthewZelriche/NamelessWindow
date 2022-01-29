@@ -13,7 +13,3 @@ void X11RawInputDevice::SubscribeToRawRootEvents(xcb_input_xi_event_mask_t masks
                                                     &mask.header);
    xcb_flush(XConnection::GetConnection());  // To ensure the X server definitely gets the request.
 }
-
-void X11RawInputDevice::SubscribeToXInputEvents(xcb_input_xi_event_mask_t mask) {
-   m_subscribedXInputMask = mask;
-}

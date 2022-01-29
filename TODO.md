@@ -11,3 +11,4 @@ X11<br />
 9. ~~If 2 windows overlap, and the focused (bottom) window is closed, the mouse remains hidden when leaving the overlapping window.~~<br />
 10. ~~On i3, windows that are forced floating sometimes receive focus even when the cursor should be bound to the other window.~~<br />
 11. Implement more examples.
+12. Look into supporting a larger number of mouse buttons on X11

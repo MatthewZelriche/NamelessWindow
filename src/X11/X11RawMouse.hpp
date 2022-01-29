@@ -1,3 +1,12 @@
+/*!
+ * @file
+ * @author MZelriche
+ * @date 2021-2022
+ * @copyright MIT License
+ *
+ * @addtogroup X11 Linux X11 API
+ * @brief Platform-specific X11 implementation of the API
+ */
 #pragma once
 
 #include <xcb/xcb.h>
@@ -9,6 +18,7 @@
 
 namespace NLSWIN {
 
+/*! @ingroup X11 */
 class NLSWIN_API_PRIVATE X11RawMouse : public X11GenericMouse, public X11RawInputDevice, public RawMouse {
    public:
    X11RawMouse(MouseDeviceInfo device);

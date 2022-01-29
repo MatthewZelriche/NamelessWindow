@@ -226,6 +226,7 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
                WindowResizeEvent resizeEvent;
                resizeEvent.newWidth = m_width;
                resizeEvent.newHeight = m_height;
+               resizeEvent.sourceWindow = GetGenericID();
                PushEvent(resizeEvent);
                // Set new geometry
                m_windowGeometry = GetNewGeometry();

@@ -31,7 +31,6 @@ struct NLSWIN_API_PUBLIC KeyboardDeviceInfo {
  *
  * This interface defines how the client interacts with physical keyboard devices connected to the system.
  * Construction of these objects is done through the Create factory methods.
- * @todo Add a way to un-subscribe from a window.
  */
 class NLSWIN_API_PUBLIC Keyboard : virtual public InputDevice {
    public:

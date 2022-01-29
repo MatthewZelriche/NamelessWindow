@@ -63,17 +63,20 @@ class NLSWIN_API_PUBLIC Cursor : virtual public InputDevice {
     */
    virtual void UnbindFromWindows() noexcept = 0;
    /**
-    * Requests that the cursor be visible when inside any subscribed window, if it is not already. If the
-    * cursor is already visible, calling this method does nothing. */
+    * Requests that the cursor be visible when inside any subscribed window, if it is not already.
+    *
+    * If the cursor is already visible, calling this method does nothing. */
    virtual void ShowCursor() noexcept = 0;
    /**
-    * @brief Requests that the cursor be hidden when inside any subscribed window, if it is not already. If
-    * the cursor is already set to be hidden, calling this method does nothing.
+    * @brief Requests that the cursor be hidden when inside any subscribed window, if it is not already.
     *
-    * Note that this method will not render the cursor invisible all the time, but only when the cursor enters
-    * the bounds of an application's window.
+    * If the cursor is already set to be hidden, calling this method does nothing. Note that this method will
+    * not render the cursor invisible all the time, but only when the cursor enters the bounds of an
+    * application's window.
     */
    virtual void HideCursor() noexcept = 0;
+
+   virtual ~Cursor() = default;
 };
 
 }  // namespace NLSWIN

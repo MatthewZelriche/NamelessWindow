@@ -34,11 +34,6 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    unsigned int GetWindowWidth() const noexcept override { return m_width; }
    unsigned int GetWindowHeight() const noexcept override { return m_height; }
 
-   /**
-    * @brief Construct a new X11Window object
-    * @throws PlatformInitializationException
-    * @param properties The properties that should define this window.
-    */
    X11Window(WindowProperties properties);
    ~X11Window();
    void ToggleFullscreen() noexcept;

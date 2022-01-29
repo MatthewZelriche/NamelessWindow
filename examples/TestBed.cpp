@@ -15,11 +15,12 @@ int main() {
    window2->Show();
    auto keyboard = NLSWIN::Keyboard::Create();
    keyboard->SubscribeToWindow(window2);
+   // auto mouse = NLSWIN::RawMouse::Create({"bab", 8});
    auto mouse = NLSWIN::Cursor::Create();
    mouse->SubscribeToWindow(window);
    mouse->SubscribeToWindow(window2);
    mouse->BindToWindow(window.get());
-   mouse->HideCursor();
+   // mouse->HideCursor();
    while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
 

@@ -33,12 +33,11 @@ struct NLSWIN_API_PUBLIC MouseDeviceInfo {
  *
  * This interface defines how the client interacts with physical mice connected to the system.
  * Construction of these objects is done through the Create factory method.
- * A RawMouse must always be bound to one and only one window, due to how the underlying platforms handle
- * cursors. To be bound to a window means the pointer is restricted to within the bounds of that window. Since
- * a Pointer must always be bound to a window, certain events are unavailable to it, such as cursor enter and
- * cursor leave events.
- * Clients should use this class only if they are interested in events coming from a specific physical mouse
- * only. Otherwise, you likely want to use Cursor instead.
+ * A RawMouse has no relation to any window. It receives events regardless of where the cursor is, even if
+ * events are being sent to windows not created by this application. This class can only return the following
+ * events: RawMouseScrollEvent, RawMouseButtonEvent, RawMouseDeltaMovementEvent. Clients should use this class
+ * only if they are interested in events coming from a specific physical mouse only. Otherwise, you likely
+ * want to use Cursor instead.
  * @see Cursor
  */
 class NLSWIN_API_PUBLIC RawMouse : virtual public EventListener {

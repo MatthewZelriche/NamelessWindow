@@ -18,7 +18,6 @@ namespace NLSWIN {
  * @ingroup Common
  * @brief Thrown when a MonitorInfo is passed to a Window constructor, but the specified Monitor cannot be
  * found.
- *
  * @see MonitorInfo
  */
 class NLSWIN_API_PUBLIC BadMonitorException : public std::exception {
@@ -45,7 +44,7 @@ class NLSWIN_API_PUBLIC PlatformInitializationException : public std::exception 
  * @ingroup Common
  * @brief Indicates when the OS has failed to initialize or access an input device.
  */
-class NLSWIN_API_PUBLIC InputDeviceFailure : public std::exception {
+class NLSWIN_API_PUBLIC InputDeviceFailureException : public std::exception {
    public:
    virtual const char* what() const noexcept override {
       return "An unspecified platform error has occured when constructing or attempting to use an input "
@@ -55,10 +54,8 @@ class NLSWIN_API_PUBLIC InputDeviceFailure : public std::exception {
 
 /*!
  * @ingroup Common
- * @brief Only one Master Pointer can exist at a time.
- *
- * Usually this exception would occur because an attempt was made by the client to subclass MasterPointer
- * @see MasterPointer
+ * @brief Only one Cursor can exist at a time.
+ * @see Cursor
  */
 class NLSWIN_API_PUBLIC MultipleCursorException : public std::exception {
    public:
@@ -71,7 +68,6 @@ class NLSWIN_API_PUBLIC MultipleCursorException : public std::exception {
 /*!
  * @ingroup Common
  * @brief Thrown when there is an attempt to pop an event from an empty EventListener queue.
- *
  * @see EventListener
  */
 class NLSWIN_API_PUBLIC EmptyEventQueueException : public std::exception {

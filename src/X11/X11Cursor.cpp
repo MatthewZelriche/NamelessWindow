@@ -63,31 +63,19 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       case XCB_BUTTON_PRESS: {
          xcb_button_press_event_t *buttonPressEvent = reinterpret_cast<xcb_button_press_event_t *>(event);
-         if (!m_boundWindow) {
-            PushEvent(PackageNewButtonPressEvent(buttonPressEvent, buttonPressEvent->event));
-         } else {
-            if (GetSubscribedWindows().count(buttonPressEvent->event)) {
-               PushEvent(PackageNewButtonPressEvent(buttonPressEvent, m_boundWindow));
-            }
-         }
+         PushEvent(PackageNewButtonPressEvent(buttonPressEvent, buttonPressEvent->event));
          break;
       }
       case XCB_BUTTON_RELEASE: {
          xcb_button_release_event_t *buttonReleaseEvent =
             reinterpret_cast<xcb_button_release_event_t *>(event);
-         if (!m_boundWindow) {
-            PushEvent(PackageNewButtonReleaseEvent(buttonReleaseEvent, buttonReleaseEvent->event));
-         } else {
-            if (GetSubscribedWindows().count(buttonReleaseEvent->event)) {
-               PushEvent(PackageNewButtonReleaseEvent(buttonReleaseEvent, m_boundWindow));
-            }
-         }
+         PushEvent(PackageNewButtonReleaseEvent(buttonReleaseEvent, buttonReleaseEvent->event));
          break;
       }
       case XCB_ENTER_NOTIFY: {
          xcb_enter_notify_event_t *enterEvent = reinterpret_cast<xcb_enter_notify_event_t *>(event);
          m_inhabitedWindow = enterEvent->event;
-         if (GetSubscribedWindows().count(m_inhabitedWindow)) {
+         if (WithinSubscribedWindow()) {
             if (m_requestedHidden && !m_isHidden) {
                AttemptSetHidden();
             }
@@ -109,13 +97,7 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
       }
       case XCB_MOTION_NOTIFY: {
          xcb_motion_notify_event_t *motionEvent = reinterpret_cast<xcb_motion_notify_event_t *>(event);
-         if (!m_boundWindow) {
-            PushEvent(PackageNewMoveEvent(motionEvent, motionEvent->event));
-         } else {
-            if (GetSubscribedWindows().count(motionEvent->event)) {
-               PushEvent(PackageNewMoveEvent(motionEvent, m_boundWindow));
-            }
-         }
+         PushEvent(PackageNewMoveEvent(motionEvent, motionEvent->event));
          break;
       }
       case XCB_DESTROY_NOTIFY: {
@@ -183,6 +165,8 @@ Event X11Cursor::PackageNewButtonPressEvent(xcb_button_press_event_t *event, xcb
    MouseButtonEvent mouseButtonEvent;
    mouseButtonEvent.button = TranslateButton(event->detail);
    mouseButtonEvent.type = ButtonPressType::PRESSED;
+   mouseButtonEvent.xPos = event->event_x;
+   mouseButtonEvent.yPos = event->event_y;
    mouseButtonEvent.sourceWindow = GetSubscribedWindows().at(sourceWindow).lock()->GetGenericID();
    return mouseButtonEvent;
 }
@@ -196,6 +180,8 @@ Event X11Cursor::PackageNewButtonReleaseEvent(xcb_button_press_event_t *event, x
    }
    mouseButtonEvent.button = TranslateButton(event->detail);
    mouseButtonEvent.type = ButtonPressType::RELEASED;
+   mouseButtonEvent.xPos = event->event_x;
+   mouseButtonEvent.yPos = event->event_y;
    mouseButtonEvent.sourceWindow = GetSubscribedWindows().at(sourceWindow).lock()->GetGenericID();
    return mouseButtonEvent;
 }
