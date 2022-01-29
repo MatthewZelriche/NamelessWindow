@@ -13,7 +13,7 @@ std::shared_ptr<RawMouse> RawMouse::Create(MouseDeviceInfo device) {
 
 X11RawMouse::X11RawMouse(MouseDeviceInfo device) {
    m_deviceID = device.platformSpecificIdentifier;
-   SubscribeToRawRootEvents(m_inputEventMask);
+   SubscribeToRawRootEvents(m_rawInputEventMask);
 }
 
 Event X11RawMouse::PackageNewRawButtonPressEvent(xcb_input_button_press_event_t *event) {
@@ -46,7 +46,7 @@ void X11RawMouse::ProcessGenericEvent(xcb_generic_event_t *event) {
    }
    xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
    switch (genericEvent->event_type) {
-      case XCB_INPUT_BUTTON_PRESS: {
+      case XCB_INPUT_RAW_BUTTON_PRESS: {
          xcb_input_button_press_event_t *buttonPressEvent =
             reinterpret_cast<xcb_input_button_press_event_t *>(genericEvent);
          if (buttonPressEvent->deviceid == m_deviceID) {
@@ -54,7 +54,7 @@ void X11RawMouse::ProcessGenericEvent(xcb_generic_event_t *event) {
          }
          break;
       }
-      case XCB_INPUT_BUTTON_RELEASE: {
+      case XCB_INPUT_RAW_BUTTON_RELEASE: {
          xcb_input_button_release_event_t *buttonReleaseEvent =
             reinterpret_cast<xcb_input_button_release_event_t *>(genericEvent);
          if (buttonReleaseEvent->deviceid == m_deviceID) {

@@ -15,11 +15,11 @@ int main() {
    window2->Show();
    auto keyboard = NLSWIN::Keyboard::Create();
    keyboard->SubscribeToWindow(window2);
-   // auto mouse = NLSWIN::RawMouse::Create({"bab", 8});
-   auto mouse = NLSWIN::Cursor::Create();
-   mouse->SubscribeToWindow(window);
-   mouse->SubscribeToWindow(window2);
-   mouse->BindToWindow(window.get());
+   auto mouse = NLSWIN::RawMouse::Create({"bab", 8});
+   // auto mouse = NLSWIN::Cursor::Create();
+   // mouse->SubscribeToWindow(window);
+   // mouse->SubscribeToWindow(window2);
+   // mouse->BindToWindow(window.get());
    // mouse->HideCursor();
    while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
@@ -31,13 +31,13 @@ int main() {
       while (mouse->HasEvent()) {
          auto event = mouse->GetNextEvent();
 
-         if (auto buttonEvent = std::get_if<NLSWIN::MouseButtonEvent>(&event)) {
+         if (auto buttonEvent = std::get_if<NLSWIN::RawMouseButtonEvent>(&event)) {
             if (buttonEvent->type == NLSWIN::ButtonPressType::PRESSED) {
                std::cout << "Press Button " << (int)buttonEvent->button << std::endl;
             } else {
                std::cout << "Release Button " << (int)buttonEvent->button << std::endl;
             }
-         } else if (auto scrollEvent = std::get_if<NLSWIN::MouseScrollEvent>(&event)) {
+         } else if (auto scrollEvent = std::get_if<NLSWIN::RawMouseScrollEvent>(&event)) {
             std::cout << "Scrolled!" << (int)scrollEvent->scrollType << std::endl;
          } else if (auto rawDelta = std::get_if<NLSWIN::RawMouseDeltaMovementEvent>(&event)) {
             std::cout << "Raw: " << rawDelta->deltaX << ", " << rawDelta->deltaY << std::endl;

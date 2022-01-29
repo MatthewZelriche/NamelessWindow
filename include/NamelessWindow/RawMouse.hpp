@@ -35,9 +35,9 @@ struct NLSWIN_API_PUBLIC MouseDeviceInfo {
  * Construction of these objects is done through the Create factory method.
  * A RawMouse has no relation to any window. It receives events regardless of where the cursor is, even if
  * events are being sent to windows not created by this application. This class can only return the following
- * events: RawMouseScrollEvent, RawMouseButtonEvent, RawMouseDeltaMovementEvent. Clients should use this class
- * only if they are interested in events coming from a specific physical mouse only. Otherwise, you likely
- * want to use Cursor instead.
+ * events: RawMouseScrollEvent, RawMouseButtonEvent, MouseDeltaMovementEvent, RawMouseDeltaMovementEvent.
+ * Clients should use this class only if they are interested in events coming from a specific physical mouse
+ * only. Otherwise, you likely want to use Cursor instead.
  * @see Cursor
  */
 class NLSWIN_API_PUBLIC RawMouse : virtual public EventListener {
