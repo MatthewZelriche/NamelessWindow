@@ -16,6 +16,7 @@ class NLSWIN_API_PRIVATE X11Cursor : public X11GenericMouse, public X11InputDevi
    void BindToWindow(const Window *const window) noexcept override;
    void ShowCursor() noexcept override;
    void HideCursor() noexcept override;
+   void UnbindFromWindows() noexcept override;
 
    protected:
    void ProcessGenericEvent(xcb_generic_event_t *event) override;

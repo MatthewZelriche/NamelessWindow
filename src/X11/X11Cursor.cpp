@@ -118,6 +118,15 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
          }
          break;
       }
+      case XCB_DESTROY_NOTIFY: {
+         if (m_boundWindow) {
+            xcb_destroy_notify_event_t *destroyEvent = reinterpret_cast<xcb_destroy_notify_event_t *>(event);
+            if (m_boundWindow == destroyEvent->event) {
+               UnbindFromWindows();
+            }
+         }
+         break;
+      }
       case XCB_GE_GENERIC: {
          xcb_ge_generic_event_t *genericEvent = reinterpret_cast<xcb_ge_generic_event_t *>(event);
          switch (genericEvent->event_type) {
@@ -142,6 +151,11 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
    }
 }
 
+void X11Cursor::UnbindFromWindows() noexcept {
+   xcb_ungrab_pointer(XConnection::GetConnection(), XCB_CURRENT_TIME);
+   m_boundWindow = 0;
+}
+
 bool X11Cursor::WithinSubscribedWindow() const {
    return GetSubscribedWindows().count(m_inhabitedWindow);
 }
@@ -149,7 +163,7 @@ bool X11Cursor::WithinSubscribedWindow() const {
 void X11Cursor::BindToWindow(const Window *const window) noexcept {
    const X11Window *const x11Window = reinterpret_cast<const X11Window *const>(window);
    // Always unbind the cursor first
-   xcb_ungrab_pointer(XConnection::GetConnection(), XCB_CURRENT_TIME);
+   UnbindFromWindows();
    auto cookie = xcb_grab_pointer(XConnection::GetConnection(), false, x11Window->GetX11ID(), m_xcbEventMask,
                                   XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, x11Window->GetX11ID(), m_cursor,
                                   XCB_CURRENT_TIME);

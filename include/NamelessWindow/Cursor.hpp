@@ -57,6 +57,12 @@ class NLSWIN_API_PUBLIC Cursor : virtual public InputDevice {
     */
    virtual void BindToWindow(const Window *const window) noexcept = 0;
    /**
+    * @brief Frees this cursor from any active window bind.
+    *
+    * If the cursor is not bound to any window, this request is discarded.
+    */
+   virtual void UnbindFromWindows() noexcept = 0;
+   /**
     * Requests that the cursor be visible when inside any subscribed window, if it is not already. If the
     * cursor is already visible, calling this method does nothing. */
    virtual void ShowCursor() noexcept = 0;

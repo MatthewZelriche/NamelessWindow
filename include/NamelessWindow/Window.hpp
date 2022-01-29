@@ -187,6 +187,12 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     */
    [[nodiscard]] static std::vector<MonitorInfo> EnumerateMonitors();
 
+   /**
+    * @brief Destroy the Window.
+    *
+    * If the window has bound the cursor while it was destroyed, the bind is released by calling the
+    * UnbindFromWindows Cursor method.
+    */
    virtual ~Window() = default;
 };
 }  // namespace NLSWIN
