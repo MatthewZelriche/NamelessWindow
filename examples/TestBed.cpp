@@ -8,7 +8,6 @@
 #include "NamelessWindow/Window.hpp"
 
 int main() {
-   NLSWIN::EventBus::PollEvents();
    auto window = NLSWIN::Window::Create();
    window->Show();
    auto window2 = NLSWIN::Window::Create();
@@ -29,36 +28,36 @@ int main() {
       }
 
       while (mouse->HasEvent()) {
-         auto bub = mouse->GetNextEvent();
+         auto event = mouse->GetNextEvent();
 
-         if (auto buttonEvent = std::get_if<NLSWIN::MouseButtonEvent>(&bub)) {
+         if (auto buttonEvent = std::get_if<NLSWIN::MouseButtonEvent>(&event)) {
             if (buttonEvent->type == NLSWIN::ButtonPressType::PRESSED) {
                std::cout << "Press Button " << (int)buttonEvent->button << std::endl;
             } else {
                std::cout << "Release Button " << (int)buttonEvent->button << std::endl;
             }
-         } else if (auto scrollEvent = std::get_if<NLSWIN::MouseScrollEvent>(&bub)) {
+         } else if (auto scrollEvent = std::get_if<NLSWIN::MouseScrollEvent>(&event)) {
             std::cout << "Scrolled!" << (int)scrollEvent->scrollType << std::endl;
-         } else if (auto rawDelta = std::get_if<NLSWIN::RawMouseDeltaMovementEvent>(&bub)) {
+         } else if (auto rawDelta = std::get_if<NLSWIN::RawMouseDeltaMovementEvent>(&event)) {
             std::cout << "Raw: " << rawDelta->deltaX << ", " << rawDelta->deltaY << std::endl;
-         } else if (auto accelDelta = std::get_if<NLSWIN::MouseDeltaMovementEvent>(&bub)) {
+         } else if (auto accelDelta = std::get_if<NLSWIN::MouseDeltaMovementEvent>(&event)) {
             std::cout << "Accel: " << accelDelta->deltaX << ", " << accelDelta->deltaY << std::endl;
-         } else if (auto newPos = std::get_if<NLSWIN::MouseMovementEvent>(&bub)) {
+         } else if (auto newPos = std::get_if<NLSWIN::MouseMovementEvent>(&event)) {
             std::cout << "new pos: " << newPos->newXPos << ", " << newPos->newYPos << std::endl;
          }
       }
 
       while (keyboard->HasEvent()) {
-         auto bub = keyboard->GetNextEvent();
+         auto event = keyboard->GetNextEvent();
 
-         if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&bub)) {
+         if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&event)) {
             std::cout << keyEvent->keyName << std::endl;
          }
       }
 
       while (window->HasEvent()) {
-         auto bub = window->GetNextEvent();
-         if (auto resize = std::get_if<NLSWIN::WindowResizeEvent>(&bub)) {
+         auto event = window->GetNextEvent();
+         if (auto resize = std::get_if<NLSWIN::WindowResizeEvent>(&event)) {
             std::cout << "Resize!" << std::endl;
          }
       }
