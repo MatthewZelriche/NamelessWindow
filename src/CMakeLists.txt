@@ -9,7 +9,8 @@ if (${NLSWIN_X11})
                            "X11/X11GenericMouse.cpp"
                            "X11/X11RawMouse.cpp"
                            "X11/X11Cursor.cpp"
-                           "X11/X11Util.cpp")
+                           "X11/X11Util.cpp"
+                           "X11/Rendering/X11GLContext.cpp")
 elseif(${NLSWIN_WAYLAND})
 
 elseif(${NLSWIN_WIN32})

@@ -1,3 +1,5 @@
+#include <GL/gl.h>
+
 #include <iostream>
 
 #include "NamelessWindow/Cursor.hpp"
@@ -5,6 +7,7 @@
 #include "NamelessWindow/Events/EventBus.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/RawMouse.hpp"
+#include "NamelessWindow/Rendering/GLContext.hpp"
 #include "NamelessWindow/Window.hpp"
 
 int main() {
@@ -15,12 +18,14 @@ int main() {
    window2->Show();
    auto keyboard = NLSWIN::Keyboard::Create();
    keyboard->SubscribeToWindow(window2);
-   auto mouse = NLSWIN::RawMouse::Create({"bab", 8});
-   // auto mouse = NLSWIN::Cursor::Create();
-   // mouse->SubscribeToWindow(window);
-   // mouse->SubscribeToWindow(window2);
-   // mouse->BindToWindow(window.get());
-   // mouse->HideCursor();
+   auto mouse = NLSWIN::Cursor::Create();
+   mouse->SubscribeToWindow(window);
+   mouse->SubscribeToWindow(window2);
+   mouse->BindToWindow(window.get());
+   mouse->HideCursor();
+
+   auto context = NLSWIN::GLContext::Create(window);
+   auto context2 = NLSWIN::GLContext::Create(window2);
    while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
 
@@ -31,13 +36,13 @@ int main() {
       while (mouse->HasEvent()) {
          auto event = mouse->GetNextEvent();
 
-         if (auto buttonEvent = std::get_if<NLSWIN::RawMouseButtonEvent>(&event)) {
+         if (auto buttonEvent = std::get_if<NLSWIN::MouseButtonEvent>(&event)) {
             if (buttonEvent->type == NLSWIN::ButtonPressType::PRESSED) {
                std::cout << "Press Button " << (int)buttonEvent->button << std::endl;
             } else {
                std::cout << "Release Button " << (int)buttonEvent->button << std::endl;
             }
-         } else if (auto scrollEvent = std::get_if<NLSWIN::RawMouseScrollEvent>(&event)) {
+         } else if (auto scrollEvent = std::get_if<NLSWIN::MouseScrollEvent>(&event)) {
             std::cout << "Scrolled!" << (int)scrollEvent->scrollType << std::endl;
          } else if (auto rawDelta = std::get_if<NLSWIN::RawMouseDeltaMovementEvent>(&event)) {
             std::cout << "Raw: " << rawDelta->deltaX << ", " << rawDelta->deltaY << std::endl;
@@ -62,5 +67,14 @@ int main() {
             std::cout << "Resize!" << std::endl;
          }
       }
+
+      context->MakeContextCurrent();
+      context->SwapBuffers();
+      glClearColor(1.0, 0.0, 0.0, 1.0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      context2->MakeContextCurrent();
+      glClearColor(0.0, 1.0, 0.0, 1.0);
+      glClear(GL_COLOR_BUFFER_BIT);
+      context2->SwapBuffers();
    }
 }

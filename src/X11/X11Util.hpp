@@ -29,6 +29,13 @@ struct NLSWIN_API_PRIVATE XI2EventMask {
 xcb_screen_t *GetDefaultScreen();
 
 /**
+ * @brief Gets the default X screen number.
+ * @ingroup X11
+ * @return The default X screen number.
+ */
+int GetDefaultScreenNumber();
+
+/**
  * @brief Gets the root window of the default screen.
  * @ingroup X11
  * @return The root window.

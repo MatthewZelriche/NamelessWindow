@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include <GL/glx.h>
 #include <xcb/xcb.h>
 
 #include "NamelessWindow/Window.hpp"
@@ -19,7 +20,7 @@ namespace NLSWIN {
  * @brief An instance of an X window.
  * @ingroup X11
  */
-class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
+class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListener {
    public:
    void Show() override;
    void Hide() override;
@@ -45,8 +46,16 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    [[nodiscard]] inline xcb_window_t GetX11ID() const noexcept { return m_x11WindowID; }
    [[nodiscard]] inline Rect GetWindowGeometry() const noexcept { return m_windowGeometry; }
    [[nodiscard]] inline xcb_window_t GetRootWindow() const noexcept { return m_rootWindow; }
+   [[nodiscard]] inline xcb_visualid_t GetSelectedVisualID() const noexcept { return m_selectedVisual; }
+   [[nodiscard]] inline const std::array<int, 21> &GetVisualAttributes() const noexcept {
+      return m_visualAttributesList;
+   }
 
    private:
+   xcb_visualid_t SelectAppropriateVisualIDForGL(std::optional<GLConfiguration> config);
+   void SetVisualAttributeProperty(int property, int value);
+   int m_visualDepth {0};
+   int m_selectedVisual {0};
    Rect m_windowGeometry;
    void ProcessGenericEvent(xcb_generic_event_t *event) override;
    Rect GetNewGeometry();
@@ -64,6 +73,27 @@ class NLSWIN_API_PRIVATE X11Window : public Window, public X11EventListener {
    unsigned int m_height {0};
    bool m_isMapped {false};
    bool m_shouldClose {false};
+   std::array<int, 21> m_visualAttributesList = {GLX_X_RENDERABLE,
+                                                 True,
+                                                 GLX_RENDER_TYPE,
+                                                 GLX_RGBA_BIT,
+                                                 GLX_DRAWABLE_TYPE,
+                                                 GLX_WINDOW_BIT,
+                                                 GLX_X_VISUAL_TYPE,
+                                                 GLX_TRUE_COLOR,
+                                                 GLX_DOUBLEBUFFER,
+                                                 True,
+                                                 GLX_DEPTH_SIZE,
+                                                 24,
+                                                 GLX_RED_SIZE,
+                                                 8,
+                                                 GLX_GREEN_SIZE,
+                                                 8,
+                                                 GLX_BLUE_SIZE,
+                                                 8,
+                                                 GLX_ALPHA_SIZE,
+                                                 8,
+                                                 None};
    const xcb_event_mask_t m_eventMask =
       (xcb_event_mask_t)(XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_FOCUS_CHANGE |
                          XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_ENTER_WINDOW |

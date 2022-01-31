@@ -56,14 +56,26 @@ X11Window::X11Window(WindowProperties properties) {
       m_preferredBorderWidth = properties.borderWidth;
    }
 
-   std::array<uint32_t, 1> valueMaskArray;
-   valueMaskArray[0] = m_eventMask;
+   // Get preferred visualID
+   SelectAppropriateVisualIDForGL(properties.glConfig);
+   // Get related colormap
+   xcb_colormap_t colormap = xcb_generate_id(XConnection::GetConnection());
+   xcb_create_colormap(XConnection::GetConnection(), XCB_COLORMAP_ALLOC_NONE, colormap, m_rootWindow,
+                       m_selectedVisual);
    m_x11WindowID = xcb_generate_id(XConnection::GetConnection());
-   // TODO: Look into visual. Look into masks.
-   xcb_create_window(XConnection::GetConnection(), XCB_COPY_FROM_PARENT, m_x11WindowID, m_rootWindow,
-                     m_preferredXCoord, m_preferredYCoord, m_preferredWidth, m_preferredHeight,
-                     m_preferredBorderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, XCB_COPY_FROM_PARENT,
-                     XCB_CW_EVENT_MASK, valueMaskArray.data());
+   std::array<uint32_t, 3> valueMaskArray;
+   valueMaskArray[0] = m_eventMask;
+   valueMaskArray[1] = colormap;
+   valueMaskArray[2] = None;
+   auto cookie =
+      xcb_create_window_checked(XConnection::GetConnection(), m_visualDepth, m_x11WindowID, m_rootWindow,
+                                m_preferredXCoord, m_preferredYCoord, m_preferredWidth, m_preferredHeight,
+                                m_preferredBorderWidth, XCB_WINDOW_CLASS_INPUT_OUTPUT, m_selectedVisual,
+                                XCB_CW_EVENT_MASK | XCB_CW_COLORMAP, valueMaskArray.data());
+   auto err = xcb_request_check(XConnection::GetConnection(), cookie);
+   if (err) {
+      throw PlatformInitializationException();
+   }
 
    if (!properties.isUserResizable) {
       DisableUserResizing();
@@ -100,6 +112,37 @@ X11Window::X11Window(WindowProperties properties) {
    m_windowGeometry = GetNewGeometry();
    xcb_flush(XConnection::GetConnection());
    NewID();
+}
+
+xcb_visualid_t X11Window::SelectAppropriateVisualIDForGL(std::optional<GLConfiguration> config) {
+   if (config.has_value()) {
+      SetVisualAttributeProperty(GLX_DEPTH_SIZE, config.value().glDepthSize);
+      SetVisualAttributeProperty(GLX_RED_SIZE, config.value().redBitSize);
+      SetVisualAttributeProperty(GLX_BLUE_SIZE, config.value().blueBitSize);
+      SetVisualAttributeProperty(GLX_GREEN_SIZE, config.value().greenBitSize);
+   }
+   int numItems = 0;
+   GLXFBConfig *configs = glXChooseFBConfig(XConnection::GetDisplay(), UTIL::GetDefaultScreenNumber(),
+                                            m_visualAttributesList.data(), &numItems);
+   if (!configs) {
+      return 0;
+   }
+   // All the returned FBConfigs match our criteria, just grab the first one and get the associated id
+   glXGetFBConfigAttrib(XConnection::GetDisplay(), configs[0], GLX_VISUAL_ID, &m_selectedVisual);
+   if (!m_selectedVisual) {
+      return 0;
+   }
+   glXGetFBConfigAttrib(XConnection::GetDisplay(), configs[0], GLX_DEPTH_SIZE, &m_visualDepth);
+   XFree(configs);
+   return m_selectedVisual;
+}
+
+void X11Window::SetVisualAttributeProperty(int property, int value) {
+   for (int i = 0; i < m_visualAttributesList.size(); i++) {
+      if (m_visualAttributesList[i] == property) {
+         m_visualAttributesList[i + 1] == value;
+      }
+   }
 }
 
 X11Window::~X11Window() {

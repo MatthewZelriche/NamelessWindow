@@ -77,4 +77,26 @@ class NLSWIN_API_PUBLIC EmptyEventQueueException : public std::exception {
    }
 };
 
+/*!
+ * @ingroup Common
+ * @brief Thrown when initialization of a render context fails.
+ */
+class NLSWIN_API_PUBLIC RenderContextInitFailureException : public std::exception {
+   public:
+   virtual const char* what() const noexcept override {
+      return "Underlying platform failed to initialize a valid render context.";
+   }
+};
+
+/*!
+ * @ingroup Common
+ * @brief Thrown when an operation is performed on a context with an invalid state.
+ */
+class NLSWIN_API_PUBLIC InvalidRenderContextStateException : public std::exception {
+   public:
+   virtual const char* what() const noexcept override {
+      return "A method call to a render context occured while it was an invalid state.";
+   }
+};
+
 }  // namespace NLSWIN

@@ -3,10 +3,6 @@
  * @author MZelriche
  * @date 2021-2022
  * @copyright MIT License
- * @todo: Better way of handling closing the window. What should destroying a window look like in an OOP lang?
- * @todo: Destructor implementation. Currently the window doesn't actually close if you destroy it.
- * @todo: We will pass a RenderContext for each window constructor, because x11 windows need the glcontext
- * constructed first so that we can pass the appropriate visual.
  *
  * @addtogroup Common Public API
  * @brief Documentation for public API that clients directly interact with.
@@ -48,6 +44,21 @@ struct NLSWIN_API_PUBLIC MonitorInfo {
    const std::string_view name {""};          /*!< Platform-specific name of the monitor. */
 };
 
+/**
+ * @brief Requests support from a window for certain OpenGL configurations, such as
+ * disabling double buffering, size of the depth buffer, etc.
+ * @ingroup Common
+ *
+ * @warning Absolutely no checking for correctness of values is performed on this struct. Invalid values being
+ * passed to a window will result in undefined behavior.
+ */
+struct NLSWIN_API_PUBLIC GLConfiguration {
+   int glDepthSize {24};
+   int redBitSize {8};
+   int greenBitSize {8};
+   int blueBitSize {8};
+};
+
 /*!
  * @brief Properties that can be used to configure the initial state of a newly created window.
  * @ingroup Common
@@ -67,6 +78,8 @@ struct NLSWIN_API_PUBLIC WindowProperties {
                                                  * itself is still free to resize the window. */
    WindowMode mode {WindowMode::WINDOWED};      /*!< The window mode to start in. */
    std::string windowName;                      /*!< The name to be displayed in the window's titlebar. */
+   std::optional<GLConfiguration> glConfig;     /*! A custom OpenGL configuration that this window should
+                                                 * support.*/
    std::optional<MonitorInfo> preferredMonitor; /*!< The preferred monitor to initialize the window to. If no
                                                monitor is selected, the first monitor will be preferred. */
 };
@@ -86,6 +99,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    public:
    /*!
     * @brief Construct a new window with default properties.
+    * @param context The RenderContext that will be associated with this window.
     * @post A weak pointer to this object will be given to the EventDispatcher.
     * @throws PlatformInitializationException
     * @throws BadMonitorException
@@ -97,6 +111,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    static std::shared_ptr<Window> Create();
    /*!
     * @brief Construct a new window with client-specified properties.
+    * @param context The RenderContext that will be associated with this window.
     * @param properties The client-specified WindowProperties for use in initialization of the window.
     * @post A weak pointer to this object will be given to the EventDispatcher.
     * @throws PlatformInitializationException
