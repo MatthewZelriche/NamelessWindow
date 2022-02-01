@@ -284,7 +284,7 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
          xcb_focus_in_event_t *focusEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
          if (focusEvent->event == m_x11WindowID) {
             WindowFocusedEvent windowFocusEvent;
-            windowFocusEvent.sourceWindow = m_genericID;
+            windowFocusEvent.sourceWindow = GetGenericID();
             PushEvent(windowFocusEvent);
          }
          break;
