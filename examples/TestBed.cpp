@@ -1,5 +1,3 @@
-#include <GL/gl.h>
-
 #include <iostream>
 
 #include "NamelessWindow/Cursor.hpp"
@@ -12,6 +10,7 @@
 
 int main() {
    auto window = NLSWIN::Window::Create();
+   /*
    window->Show();
    auto window2 = NLSWIN::Window::Create();
    window2->DisableUserResizing();
@@ -70,11 +69,8 @@ int main() {
 
       context->MakeContextCurrent();
       context->SwapBuffers();
-      glClearColor(1.0, 0.0, 0.0, 1.0);
-      glClear(GL_COLOR_BUFFER_BIT);
       context2->MakeContextCurrent();
-      glClearColor(0.0, 1.0, 0.0, 1.0);
-      glClear(GL_COLOR_BUFFER_BIT);
       context2->SwapBuffers();
    }
+   */
 }

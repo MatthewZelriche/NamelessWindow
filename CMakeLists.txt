@@ -1,11 +1,14 @@
 cmake_minimum_required(VERSION 3.19.0)
 project(NamelessWindow CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/build/${CMAKE_BUILD_TYPE}/bin")
 
 option(BUILD_NLSWIN_EXAMPLES "ON if you want to build examples, OFF to just build the shared library" ON)
-option(BUILD_NLSWIN_DOCUMENTATION "Build doxygen docs" ON)
+option(BUILD_NLSWIN_DOCUMENTATION "Build doxygen docs" OFF)
 option(BUILD_NLSWIN_FOR_WAYLAND "ON if you wish the library to target Wayland, off if you want to target X11" OFF)
 
 
@@ -59,7 +62,7 @@ if (UNIX)
    endif()
 elseif(WIN32)
    # TODO: Windows
-   set(NLSWIN_WIN32)
+   set(NLSWIN_WIN32 ON)
 endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")

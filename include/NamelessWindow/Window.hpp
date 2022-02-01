@@ -195,13 +195,18 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    /*! Gets the current height of the window, in pixels. */
    [[nodiscard]] virtual unsigned int GetWindowHeight() const noexcept = 0;
    /*! Gets a platform-independent numeric value that represents this window.*/
-   [[nodiscard]] virtual WindowID GetGenericID() const noexcept = 0;
+   [[nodiscard]] virtual WindowID GetGenericID() const noexcept { return m_genericID; }
    /**
     * @brief Gets a list of all detected monitors.
     * @throws PlatformInitializationException
     * @return A vector of MonitorInfos, each elementing containing information on a single monitor.
     */
    [[nodiscard]] static std::vector<MonitorInfo> EnumerateMonitors();
+
+   void NewID() {
+      static WindowID ID = 0;
+      m_genericID = ID++;
+   }
 
    /**
     * @brief Destroy the Window.
@@ -211,6 +216,9 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * @see Cursor
     */
    virtual ~Window() = default;
+
+   private:
+   WindowID m_genericID {0};
 };
 
 }  // namespace NLSWIN

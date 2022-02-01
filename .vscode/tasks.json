@@ -34,7 +34,9 @@
          "args": [
             "-S.",
             "-Bbuild/Debug",
-            "-DCMAKE_BUILD_TYPE=Debug"
+            "-DCMAKE_BUILD_TYPE=Debug",
+            "-G",
+            "Unix Makefiles"
          ],
          "group": "build"
       },
@@ -45,7 +47,9 @@
          "args": [
             "-S.",
             "-Bbuild/Release",
-            "-DCMAKE_BUILD_TYPE=Release"
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-G",
+            "Unix Makefiles"
          ],
          "group": "build"
       },
@@ -83,7 +87,10 @@
             "-S.",
             "-Bbuild/Debug",
             "-DCMAKE_BUILD_TYPE=Debug",
-            "-DBUILD_NLSWIN_EXAMPLES=ON"
+            "-DBUILD_NLSWIN_EXAMPLES=ON",
+            "-DBUILD_NLSWIN_DOCUMENTATION=ON",
+            "-G",
+            "Unix Makefiles"
          ],
          "group": "build"
       },
@@ -95,7 +102,10 @@
             "-S.",
             "-Bbuild/Release",
             "-DCMAKE_BUILD_TYPE=Release",
-            "-DBUILD_NLSWIN_EXAMPLES=ON"
+            "-DBUILD_NLSWIN_EXAMPLES=ON",
+            "-DBUILD_NLSWIN_DOCUMENTATION=ON",
+            "-G",
+            "Unix Makefiles"
          ],
          "group": "build"
       },

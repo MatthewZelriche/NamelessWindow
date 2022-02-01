@@ -11,6 +11,7 @@ int main() {
    NLSWIN::WindowProperties props;
    props.windowName = "Hello world!";
    auto window = NLSWIN::Window::Create(props);
+   /*
    window->Show();
 
    while (!window->RequestedClose()) {
@@ -18,4 +19,5 @@ int main() {
 
       while (window->HasEvent()) { auto event = window->GetNextEvent(); }
    }
+   */
 }
