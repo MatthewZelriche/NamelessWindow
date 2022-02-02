@@ -87,6 +87,12 @@ LRESULT W32Window::StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 }
 
 LRESULT W32Window::InstanceWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam) {
-   // TODO: Handle window events...
+   switch (uMsg) {
+      case WM_CLOSE: {
+         m_shouldClose = true;
+         return 0;
+      }
+   }
+
    return DefWindowProc(m_windowHandle, uMsg, wParam, lParam);
 }
