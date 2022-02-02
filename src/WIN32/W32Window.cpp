@@ -20,14 +20,14 @@ std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properti
 
 W32Window::W32Window(WindowProperties properties) {
    win32Class.lpfnWndProc = &StaticWndProc;
-   win32Class.hInstance = NLSWIN::dllInstance;
+   win32Class.hInstance = NLSWIN::GetDLLInstanceHandle();
    win32Class.lpszClassName = m_winClassName;
    if (!RegisterClass(&win32Class)) {
       throw PlatformInitializationException();
    }
    m_windowHandle =
       CreateWindowEx(0, m_winClassName, "Test window", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT,
-                     CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, NLSWIN::dllInstance, this);
+                     CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, NLSWIN::GetDLLInstanceHandle(), this);
    if (!m_windowHandle) {
       throw PlatformInitializationException();
    }

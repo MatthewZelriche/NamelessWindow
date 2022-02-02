@@ -15,10 +15,8 @@ namespace NLSWIN {
 /*! @brief The module handle for the NLSWIN DLL.
  * @ingroup WIN32
  */
-extern HINSTANCE dllInstance;
-/*! @brief Used only to get the module handle of NLSWIN's DLL.
- * @ingroup WIN32
- */
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved);
+// extern HINSTANCE dllInstance;
+
+HINSTANCE GetDLLInstanceHandle();
 
 }  // namespace NLSWIN

@@ -13,7 +13,7 @@ int main() {
    auto window = NLSWIN::Window::Create(props);
    window->Show();
 
-   while (window->RequestedClose()) {
+   while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
 
       while (window->HasEvent()) { auto event = window->GetNextEvent(); }
