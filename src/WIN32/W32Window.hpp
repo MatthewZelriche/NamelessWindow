@@ -9,11 +9,21 @@
  */
 
 #pragma once
+// clang-format off
+#include <windows.h>
+#include <WinUser.h>
+// clang-format on
+
 #include "Events/W32EventListener.hpp"
 #include "NamelessWindow/NLSAPI.hpp"
 #include "NamelessWindow/Window.hpp"
 
 namespace NLSWIN {
+/*!
+ * @brief Represents a single Win32 window.
+ * @ingroup WIN32
+ *
+ */
 class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    public:
    W32Window(WindowProperties properties);
@@ -31,9 +41,32 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    [[nodiscard]] unsigned int GetWindowHeight() const noexcept override { return m_height; }
 
    private:
+   /*!
+    * @brief Static method responsible for dispatching events to the appropriate window instance.
+    *
+    * @param hWnd The window handle that generated the event.
+    * @param uMsg The type of the message.
+    * @param wParam Message data.
+    * @param lParam Message data.
+    */
+   static LRESULT StaticWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+   /*!
+    * @brief Method responsible for handling events associated with this window instance.
+    *
+    * @param uMsg The type of message.
+    * @param wParam Message data.
+    * @param lParam Message data.
+    * @return LRESULT
+    */
+   LRESULT InstanceWndProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
    int m_width {0};
    int m_height {0};
    WindowMode m_windowMode;
-   bool m_shouldClose;
+   bool m_shouldClose {false};
+
+   const char *m_winClassName = "NLSWINCLASS";
+   HWND m_windowHandle {nullptr};
+   WNDCLASS win32Class {0};
+   WNDPROC m_messageFuncPtr;
 };
 }  // namespace NLSWIN
