@@ -1,5 +1,7 @@
 #include "W32EventBus.hpp"
 
+#include <windows.h>
+
 using namespace NLSWIN;
 
 W32EventBus &W32EventBus::GetInstance() {
@@ -8,7 +10,15 @@ W32EventBus &W32EventBus::GetInstance() {
 }
 
 void W32EventBus::PollEvents() {
-   // TODO: Events...
+   MSG event;
+   while (PeekMessage(&event, nullptr, 0, 0, PM_REMOVE)) {
+      // TODO: Redirect input events to input classes...Assuming thats possible.
+
+      TranslateMessage(&event);
+      // For some reason WindowProcedure methods won't get some unqueued events unless DispatchMessage is
+      // being called, so we must always call it.
+      DispatchMessage(&event);
+   }
 }
 
 void W32EventBus::RegisterListener(std::weak_ptr<W32EventListener> listener) {

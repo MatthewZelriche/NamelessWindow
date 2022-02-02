@@ -9,6 +9,8 @@
  */
 
 #pragma once
+#include <queue>
+
 #include "NamelessWindow/Events/EventListener.hpp"
 #include "NamelessWindow/NLSAPI.hpp"
 
@@ -17,5 +19,8 @@ class NLSWIN_API_PRIVATE W32EventListener : public virtual EventListener {
    public:
    [[nodiscard]] bool HasEvent() const noexcept override;
    [[nodiscard]] Event GetNextEvent() override;
+
+   private:
+   std::queue<Event> m_Queue;
 };
 }  // namespace NLSWIN
