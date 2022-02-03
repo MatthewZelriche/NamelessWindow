@@ -51,6 +51,11 @@ struct Win32CreationProps {
    LPVOID lpParam;
 };
 
+struct WParamWithWindowHandle {
+   WPARAM wParam {0};
+   HWND sourceWindow {nullptr};
+};
+
 const unsigned int CREATE_NLSWIN_WINDOW = WM_USER + 0x1000;
 const unsigned int DESTROY_NLSWIN_WINDOW = WM_USER + 0x1001;
 

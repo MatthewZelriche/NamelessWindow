@@ -80,9 +80,16 @@ DWORD WINAPI W32EventThreadDispatcher::EventThreadMain(LPVOID Param) {
 LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Message, WPARAM WParam,
                                                         LPARAM LParam) {
    LRESULT Result = 0;
-
+   // Don't have to worry about a delete because this var is static.
+   static WParamWithWindowHandle *wParamWithH = new WParamWithWindowHandle;
+   wParamWithH->wParam = WParam;
+   wParamWithH->sourceWindow = Window;
+   // TODO: What non-queued messages to send?
    switch (Message) {
-         // TODO: Forward nonqueued events.
+      case WM_CLOSE: {
+         PostThreadMessageA(m_mainThreadID, Message, (WPARAM)wParamWithH, LParam);
+         return 0;
+      }
       default: {
          Result = DefWindowProcA(Window, Message, WParam, LParam);
       } break;

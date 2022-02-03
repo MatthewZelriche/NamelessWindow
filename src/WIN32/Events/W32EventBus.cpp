@@ -2,6 +2,9 @@
 
 #include <windows.h>
 
+#include "../W32DllMain.hpp"
+#include "W32EventThreadDispatcher.hpp"
+
 using namespace NLSWIN;
 
 W32EventBus &W32EventBus::GetInstance() {
@@ -11,9 +14,14 @@ W32EventBus &W32EventBus::GetInstance() {
 
 void W32EventBus::PollEvents() {
    MSG event;
-   while (PeekMessage(&event, nullptr, 0, 0, PM_REMOVE)) {
-      // TODO: Redirect input events to input classes...Assuming thats possible.
-
+   while (PeekMessageA(&event, 0, 0, 0, PM_REMOVE)) {
+      switch (event.message) {
+         case WM_CLOSE: {
+            WParamWithWindowHandle *param = ((WParamWithWindowHandle *)event.wParam);
+            // TODO: Dispatch to listeners.
+            break;
+         }
+      }
       TranslateMessage(&event);
       // For some reason WindowProcedure methods won't get some unqueued events unless DispatchMessage is
       // being called, so we must always call it.
