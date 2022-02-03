@@ -17,7 +17,8 @@ elseif(${NLSWIN_WIN32})
    set(NLSWIN_SOURCE_FILES "WIN32/W32DllMain.cpp"
                            "WIN32/W32Window.cpp"
                            "WIN32/Events/W32EventListener.cpp"
-                           "WIN32/Events/W32EventBus.cpp")
+                           "WIN32/Events/W32EventBus.cpp"
+                           "WIN32/Events/W32EventThreadDispatcher.cpp")
 else()
    message(FATAL_ERROR "Unrecognized build target!")
 endif()

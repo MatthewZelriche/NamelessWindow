@@ -1,18 +1,24 @@
 #include "W32Window.hpp"
 
 #include "Events/W32EventBus.hpp"
+#include "Events/W32EventThreadDispatcher.hpp"
 #include "NamelessWindow/Exceptions.hpp"
 #include "W32DllMain.hpp"
 
 using namespace NLSWIN;
 
-std::shared_ptr<NLSWIN::Window> NLSWIN_API_PRIVATE NLSWIN::Window::Create() {
-   std::shared_ptr<W32Window> impl = std::make_shared<W32Window>(WindowProperties());
-   W32EventBus::GetInstance().RegisterListener(impl);
-   return std::move(impl);
+std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create() {
+   return Create(WindowProperties());
 }
 
 std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properties) {
+   // See W32EventThreadDispatcher class for why this exists. It has to do with
+   // win32 events being handled in a blocking manner.
+   static bool isFirstWindow = true;
+   if (isFirstWindow) {
+      W32EventThreadDispatcher::Initialize();
+      isFirstWindow = false;
+   }
    std::shared_ptr<W32Window> impl = std::make_shared<W32Window>(properties);
    W32EventBus::GetInstance().RegisterListener(impl);
    return std::move(impl);
