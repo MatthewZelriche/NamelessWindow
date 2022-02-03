@@ -38,8 +38,8 @@ namespace NLSWIN {
 
 struct Win32CreationProps {
    DWORD dwExStyle;
-   LPCWSTR lpClassName;
-   LPCWSTR lpWindowName;
+   LPCSTR lpClassName;
+   LPCSTR lpWindowName;
    DWORD dwStyle;
    int X;
    int Y;
@@ -57,9 +57,11 @@ const unsigned int DESTROY_NLSWIN_WINDOW = WM_USER + 0x1001;
 class NLSWIN_API_PRIVATE W32EventThreadDispatcher {
    public:
    static void Initialize();
+   static inline HWND GetDispatcherHandle() { return m_dispatcherHandle; }
 
    static DWORD WINAPI EventThreadMain(LPVOID Param);
    static LRESULT CALLBACK WindowBuilder(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam);
+   static LRESULT CALLBACK DispatchProc(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam);
 
    private:
    static HWND m_dispatcherHandle;

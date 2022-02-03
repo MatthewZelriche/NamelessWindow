@@ -35,11 +35,11 @@ void W32EventThreadDispatcher::Initialize() {
    // Construct a fake window just for the handle so we can create a thread with the win32 api.
    WNDCLASS windowClass = {0};
    windowClass.hInstance = GetDLLInstanceHandle();
-   windowClass.lpfnWndProc = DefWindowProc;
+   windowClass.lpfnWndProc = DefWindowProcA;
    windowClass.lpszClassName = "Dummy";
-   RegisterClass(&windowClass);
-   HWND dummyHandle = CreateWindow(windowClass.lpszClassName, "Dummy", 0, 0, 0, 0, 0, nullptr, nullptr,
-                                   GetDLLInstanceHandle(), nullptr);
+   RegisterClassA(&windowClass);
+   HWND dummyHandle = CreateWindowExA(0, windowClass.lpszClassName, "Dummy", 0, 0, 0, 0, 0, nullptr, nullptr,
+                                      GetDLLInstanceHandle(), nullptr);
 
    m_mainThreadID = GetCurrentThreadId();
 
@@ -48,6 +48,10 @@ void W32EventThreadDispatcher::Initialize() {
 
    // Don't need the window any longer.
    DestroyWindow(dummyHandle);
+
+   // Block until we are sure we've constructed the input handler window.
+   while (!m_dispatcherHandle) {}
+   int a = 0;
 }
 
 DWORD WINAPI W32EventThreadDispatcher::EventThreadMain(LPVOID Param) {
@@ -56,13 +60,35 @@ DWORD WINAPI W32EventThreadDispatcher::EventThreadMain(LPVOID Param) {
    windowClass.lpfnWndProc = &WindowBuilder;
    windowClass.hInstance = GetDLLInstanceHandle();
    windowClass.lpszClassName = "Dispatcher";
-   RegisterClass(&windowClass);
-   m_dispatcherHandle = CreateWindow(windowClass.lpszClassName, "Dispatcher", 0, 0, 0, 0, 0, nullptr, nullptr,
-                                     GetDLLInstanceHandle(), nullptr);
+   RegisterClassA(&windowClass);
+   m_dispatcherHandle = CreateWindowExA(0, windowClass.lpszClassName, "Dispatcher", 0, 0, 0, 0, 0, nullptr,
+                                        nullptr, GetDLLInstanceHandle(), nullptr);
 
    while (true) {
-      // TODO: Forward events.
+      MSG Message;
+      GetMessageA(&Message, 0, 0, 0);
+      TranslateMessage(&Message);
+      // TODO: Decide what queued messages to send.
+      if (false) {
+         PostThreadMessageA(m_mainThreadID, Message.message, Message.wParam, Message.lParam);
+      } else {
+         DispatchMessageA(&Message);
+      }
    }
+}
+
+LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Message, WPARAM WParam,
+                                                        LPARAM LParam) {
+   LRESULT Result = 0;
+
+   switch (Message) {
+         // TODO: Forward nonqueued events.
+      default: {
+         Result = DefWindowProcA(Window, Message, WParam, LParam);
+      } break;
+   }
+
+   return Result;
 }
 
 LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Message, WPARAM WParam,
@@ -72,7 +98,7 @@ LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Messa
    switch (Message) {
       case CREATE_NLSWIN_WINDOW: {
          auto windowProps = reinterpret_cast<Win32CreationProps *>(WParam);
-         Result = (LRESULT)CreateWindowExW(
+         Result = (LRESULT)CreateWindowExA(
             windowProps->dwExStyle, windowProps->lpClassName, windowProps->lpWindowName, windowProps->dwStyle,
             windowProps->X, windowProps->Y, windowProps->nWidth, windowProps->nHeight,
             windowProps->hWndParent, windowProps->hMenu, windowProps->hInstance, windowProps->lpParam);
@@ -83,7 +109,7 @@ LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Messa
          break;
       }
       default: {
-         Result = DefWindowProcW(Window, Message, WParam, LParam);
+         Result = DefWindowProcA(Window, Message, WParam, LParam);
          break;
       }
    }
