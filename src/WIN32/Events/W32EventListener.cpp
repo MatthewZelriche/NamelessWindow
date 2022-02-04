@@ -15,3 +15,7 @@ NLSWIN::Event NLSWIN::W32EventListener::GetNextEvent() {
    m_Queue.pop();
    return test;
 }
+
+void NLSWIN::W32EventListener::PushEvent(Event event) {
+   m_Queue.push(event);
+}

@@ -12,17 +12,29 @@ W32EventBus &W32EventBus::GetInstance() {
    return instance;
 }
 
+void W32EventBus::FreeOldEvents() {
+   for (auto wParam: m_eventsToFreeNextPoll) { free(wParam); }
+   m_eventsToFreeNextPoll.clear();
+}
+
 void W32EventBus::PollEvents() {
+   // The WPARAMs we received last call  MUST be freed at the start of the next next call!
+   FreeOldEvents();
    MSG event;
    while (PeekMessageA(&event, 0, 0, 0, PM_REMOVE)) {
-      switch (event.message) {
-         case WM_CLOSE: {
-            WParamWithWindowHandle *param = ((WParamWithWindowHandle *)event.wParam);
-            // TODO: Dispatch to listeners.
-            break;
+      WParamWithWindowHandle *wParam = reinterpret_cast<WParamWithWindowHandle *>(event.wParam);
+      m_eventsToFreeNextPoll.push_back(wParam);
+      TranslateMessage(&event);
+      for (auto iter = m_listeners.begin(); iter != m_listeners.end();) {
+         if (!(*iter).expired()) {
+            auto listenerSharedPtr = (*iter).lock();
+            listenerSharedPtr->ProcessGenericEvent(event);
+            iter++;
+         } else {
+            // Erase expired listeners - no longer needed.
+            iter = m_listeners.erase(iter);
          }
       }
-      TranslateMessage(&event);
       // For some reason WindowProcedure methods won't get some unqueued events unless DispatchMessage is
       // being called, so we must always call it.
       DispatchMessage(&event);

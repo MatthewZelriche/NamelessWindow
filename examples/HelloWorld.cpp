@@ -16,6 +16,13 @@ int main() {
    while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
 
-      while (window->HasEvent()) { auto event = window->GetNextEvent(); }
+      while (window->HasEvent()) {
+         auto event = window->GetNextEvent();
+
+         if (auto resizeEvent = std::get_if<NLSWIN::WindowResizeEvent>(&event)) {
+            std::cout << resizeEvent->newWidth << ", " << resizeEvent->newHeight
+                      << ", Window: " << resizeEvent->sourceWindow << std::endl;
+         }
+      }
    }
 }

@@ -15,6 +15,7 @@
 #include "NamelessWindow/Events/EventBus.hpp"
 #include "NamelessWindow/NLSAPI.hpp"
 #include "W32EventListener.hpp"
+#include "W32EventThreadDispatcher.hpp"
 
 namespace NLSWIN {
 /*!
@@ -31,7 +32,9 @@ class NLSWIN_API_PRIVATE W32EventBus {
    void RegisterListener(std::weak_ptr<W32EventListener> listener);
 
    private:
+   void FreeOldEvents();
    std::vector<std::weak_ptr<W32EventListener>> m_listeners;
+   std::vector<WParamWithWindowHandle *> m_eventsToFreeNextPoll;
 };
 
 }  // namespace NLSWIN

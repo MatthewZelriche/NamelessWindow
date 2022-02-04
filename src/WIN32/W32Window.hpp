@@ -40,6 +40,8 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    [[nodiscard]] unsigned int GetWindowWidth() const noexcept override { return m_width; }
    [[nodiscard]] unsigned int GetWindowHeight() const noexcept override { return m_height; }
 
+   void ProcessGenericEvent(MSG event) override;
+
    private:
    int m_width {0};
    int m_height {0};

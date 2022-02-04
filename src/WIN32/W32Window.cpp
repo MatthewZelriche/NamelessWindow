@@ -72,3 +72,27 @@ void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
 }
 void W32Window::Resize(uint32_t width, uint32_t height) noexcept {
 }
+
+void W32Window::ProcessGenericEvent(MSG event) {
+   // Always remember to convert the WParam to our special type
+   // @see WParamWithWindowHandle
+   WParamWithWindowHandle* wParam = reinterpret_cast<WParamWithWindowHandle*>(event.wParam);
+   if (wParam->sourceWindow == m_windowHandle) {
+      switch (event.message) {
+         case WM_CLOSE: {
+            m_shouldClose = true;
+            break;
+         }
+         case WM_SIZE: {
+            m_width = LOWORD(event.lParam);
+            m_height = HIWORD(event.lParam);
+            WindowResizeEvent resizeEvent {0};
+            resizeEvent.newWidth = m_width;
+            resizeEvent.newHeight = m_height;
+            resizeEvent.sourceWindow = GetGenericID();
+            PushEvent(resizeEvent);
+            break;
+         }
+      }
+   }
+}

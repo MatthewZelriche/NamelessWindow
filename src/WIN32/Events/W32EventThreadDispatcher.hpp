@@ -67,6 +67,7 @@ class NLSWIN_API_PRIVATE W32EventThreadDispatcher {
    static DWORD WINAPI EventThreadMain(LPVOID Param);
    static LRESULT CALLBACK WindowBuilder(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam);
    static LRESULT CALLBACK DispatchProc(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam);
+   static void PostThreadEvent(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam);
 
    private:
    static HWND m_dispatcherHandle;
