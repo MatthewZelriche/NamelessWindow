@@ -18,7 +18,8 @@ elseif(${NLSWIN_WIN32})
                            "WIN32/W32Window.cpp"
                            "WIN32/Events/W32EventListener.cpp"
                            "WIN32/Events/W32EventBus.cpp"
-                           "WIN32/Events/W32EventThreadDispatcher.cpp")
+                           "WIN32/Events/W32EventThreadDispatcher.cpp"
+                           "WIN32/W32InputDevice.cpp")
 else()
    message(FATAL_ERROR "Unrecognized build target!")
 endif()
