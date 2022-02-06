@@ -8,6 +8,8 @@
 #include "NamelessWindow/Window.hpp"
 
 int main() {
+   auto infos = NLSWIN::Keyboard::EnumerateKeyboards();
+
    NLSWIN::WindowProperties props;
    props.windowName = "Hello world!";
    auto window = NLSWIN::Window::Create(props);

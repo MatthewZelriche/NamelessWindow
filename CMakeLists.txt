@@ -63,6 +63,7 @@ if (UNIX)
 elseif(WIN32)
    # TODO: Windows
    set(NLSWIN_WIN32 ON)
+   list(APPEND NLSWIN_LIBRARIES_TO_LINK setupapi cfgmgr32 hid)
 endif()
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/src")

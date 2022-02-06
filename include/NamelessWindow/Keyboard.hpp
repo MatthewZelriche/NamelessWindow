@@ -19,8 +19,8 @@ namespace NLSWIN {
 /*! Contains information about a specific keyboard device. */
 /*! @ingroup Common */
 struct NLSWIN_API_PUBLIC KeyboardDeviceInfo {
-   const std::string_view name {""};              /*! The name the OS has given this keyboard device. */
-   const uint32_t platformSpecificIdentifier {0}; /*! A platform specific identifier for this keyboard device.
+   const std::string name {""};                   /*! The name the OS has given this keyboard device. */
+   const uint64_t platformSpecificIdentifier {0}; /*! A platform specific identifier for this keyboard device.
                                                      This cannot be relied upon to be unique across platforms
                                                      or even across different application launches. */
 };
