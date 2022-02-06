@@ -4,6 +4,7 @@
 #include "Events/W32EventThreadDispatcher.hpp"
 #include "NamelessWindow/Exceptions.hpp"
 #include "W32DllMain.hpp"
+#include "W32Util.hpp"
 
 using namespace NLSWIN;
 
@@ -27,13 +28,14 @@ std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properti
 W32Window::W32Window(WindowProperties properties) {
    win32Class.lpfnWndProc = &W32EventThreadDispatcher::DispatchProc;
    win32Class.hInstance = NLSWIN::GetDLLInstanceHandle();
-   win32Class.lpszClassName = m_winClassName;
-   if (!RegisterClass(&win32Class)) {
+   std::wstring className = ConvertToWString(m_winClassName);
+   win32Class.lpszClassName = className.c_str();
+   if (!RegisterClassW(&win32Class)) {
       throw PlatformInitializationException();
    }
 
    Win32CreationProps props {0};
-   props.lpClassName = win32Class.lpszClassName;
+   props.className = className;
    // TODO: Position
    props.X = CW_USEDEFAULT;
    props.Y = CW_USEDEFAULT;
@@ -42,9 +44,9 @@ W32Window::W32Window(WindowProperties properties) {
    props.dwStyle = WS_OVERLAPPEDWINDOW;
    props.hInstance = win32Class.hInstance;
    if (!properties.windowName.empty()) {
-      props.lpWindowName = properties.windowName.c_str();
+      props.windowName = ConvertToWString(properties.windowName).c_str();
    }
-   m_windowHandle = (HWND)SendMessageA(W32EventThreadDispatcher::GetDispatcherHandle(), CREATE_NLSWIN_WINDOW,
+   m_windowHandle = (HWND)SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CREATE_NLSWIN_WINDOW,
                                        (WPARAM)&props, 0);
    if (!m_windowHandle) {
       throw PlatformInitializationException();

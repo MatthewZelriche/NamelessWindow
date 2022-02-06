@@ -24,6 +24,7 @@
 #include "W32EventThreadDispatcher.hpp"
 
 #include "../W32DllMain.hpp"
+#include "../W32Util.hpp"
 
 using namespace NLSWIN;
 
@@ -33,12 +34,12 @@ DWORD W32EventThreadDispatcher::m_eventThreadID {0};
 
 void W32EventThreadDispatcher::Initialize() {
    // Construct a fake window just for the handle so we can create a thread with the win32 api.
-   WNDCLASS windowClass = {0};
+   WNDCLASSW windowClass = {0};
    windowClass.hInstance = GetDLLInstanceHandle();
    windowClass.lpfnWndProc = DefWindowProcA;
-   windowClass.lpszClassName = "Dummy";
-   RegisterClassA(&windowClass);
-   HWND dummyHandle = CreateWindowExA(0, windowClass.lpszClassName, "Dummy", 0, 0, 0, 0, 0, nullptr, nullptr,
+   windowClass.lpszClassName = L"Dummy";
+   RegisterClassW(&windowClass);
+   HWND dummyHandle = CreateWindowExW(0, windowClass.lpszClassName, L"Dummy", 0, 0, 0, 0, 0, nullptr, nullptr,
                                       GetDLLInstanceHandle(), nullptr);
 
    m_mainThreadID = GetCurrentThreadId();
@@ -56,23 +57,24 @@ void W32EventThreadDispatcher::Initialize() {
 
 DWORD WINAPI W32EventThreadDispatcher::EventThreadMain(LPVOID Param) {
    // Create our fake "Dispatcher" window
-   WNDCLASS windowClass = {0};
+   WNDCLASSW windowClass = {0};
    windowClass.lpfnWndProc = &WindowBuilder;
    windowClass.hInstance = GetDLLInstanceHandle();
-   windowClass.lpszClassName = "Dispatcher";
-   RegisterClassA(&windowClass);
-   m_dispatcherHandle = CreateWindowExA(0, windowClass.lpszClassName, "Dispatcher", 0, 0, 0, 0, 0, nullptr,
+   windowClass.lpszClassName = L"Dispatcher";
+   RegisterClassW(&windowClass);
+
+   m_dispatcherHandle = CreateWindowExW(0, windowClass.lpszClassName, L"Dispatcher", 0, 0, 0, 0, 0, nullptr,
                                         nullptr, GetDLLInstanceHandle(), nullptr);
 
    while (true) {
       MSG Message;
-      GetMessageA(&Message, 0, 0, 0);
+      GetMessageW(&Message, 0, 0, 0);
       TranslateMessage(&Message);
       // TODO: Decide what queued messages to send.
       if (false) {
-         PostThreadMessageA(m_mainThreadID, Message.message, Message.wParam, Message.lParam);
+         PostThreadMessageW(m_mainThreadID, Message.message, Message.wParam, Message.lParam);
       } else {
-         DispatchMessageA(&Message);
+         DispatchMessageW(&Message);
       }
    }
 }
@@ -90,7 +92,7 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
          PostThreadEvent(Window, Message, WParam, LParam);
       }
       default: {
-         Result = DefWindowProcA(Window, Message, WParam, LParam);
+         Result = DefWindowProcW(Window, Message, WParam, LParam);
       } break;
    }
 
@@ -101,7 +103,7 @@ void W32EventThreadDispatcher::PostThreadEvent(HWND Window, UINT Message, WPARAM
    WParamWithWindowHandle *wParamWithH = new WParamWithWindowHandle;
    wParamWithH->wParam = WParam;
    wParamWithH->sourceWindow = Window;
-   PostThreadMessageA(m_mainThreadID, Message, (WPARAM)wParamWithH, LParam);
+   PostThreadMessageW(m_mainThreadID, Message, (WPARAM)wParamWithH, LParam);
 }
 
 LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Message, WPARAM WParam,
@@ -111,9 +113,9 @@ LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Messa
    switch (Message) {
       case CREATE_NLSWIN_WINDOW: {
          auto windowProps = reinterpret_cast<Win32CreationProps *>(WParam);
-         Result = (LRESULT)CreateWindowExA(
-            windowProps->dwExStyle, windowProps->lpClassName, windowProps->lpWindowName, windowProps->dwStyle,
-            windowProps->X, windowProps->Y, windowProps->nWidth, windowProps->nHeight,
+         Result = (LRESULT)CreateWindowExW(
+            windowProps->dwExStyle, windowProps->className.c_str(), windowProps->windowName.c_str(),
+            windowProps->dwStyle, windowProps->X, windowProps->Y, windowProps->nWidth, windowProps->nHeight,
             windowProps->hWndParent, windowProps->hMenu, windowProps->hInstance, windowProps->lpParam);
          break;
       }
@@ -122,7 +124,7 @@ LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Messa
          break;
       }
       default: {
-         Result = DefWindowProcA(Window, Message, WParam, LParam);
+         Result = DefWindowProcW(Window, Message, WParam, LParam);
          break;
       }
    }

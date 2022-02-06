@@ -32,14 +32,14 @@
 
 #include <windows.h>
 
+#include <string>
+
 #include "NamelessWindow/NLSAPI.hpp"
 
 namespace NLSWIN {
 
 struct Win32CreationProps {
    DWORD dwExStyle;
-   LPCSTR lpClassName;
-   LPCSTR lpWindowName;
    DWORD dwStyle;
    int X;
    int Y;
@@ -49,6 +49,8 @@ struct Win32CreationProps {
    HMENU hMenu;
    HINSTANCE hInstance;
    LPVOID lpParam;
+   std::wstring className;
+   std::wstring windowName;
 };
 
 struct WParamWithWindowHandle {

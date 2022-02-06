@@ -51,7 +51,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
 
    const char *m_winClassName = "NLSWINCLASS";
    HWND m_windowHandle {nullptr};
-   WNDCLASS win32Class {0};
+   WNDCLASSW win32Class {0};
    WNDPROC m_messageFuncPtr;
 };
 }  // namespace NLSWIN
