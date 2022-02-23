@@ -33,6 +33,8 @@ DWORD W32EventThreadDispatcher::m_mainThreadID {0};
 DWORD W32EventThreadDispatcher::m_eventThreadID {0};
 
 void W32EventThreadDispatcher::Initialize() {
+   // TODO: Is this how we should handle high DPI?
+   SetProcessDPIAware();
    // Construct a fake window just for the handle so we can create a thread with the win32 api.
    WNDCLASSW windowClass = {0};
    windowClass.hInstance = GetDLLInstanceHandle();
