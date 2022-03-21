@@ -51,6 +51,8 @@ W32Window::W32Window(WindowProperties properties) {
    if (!m_windowHandle) {
       throw PlatformInitializationException();
    }
+
+   NewID();
 }
 
 void W32Window::Show() {
