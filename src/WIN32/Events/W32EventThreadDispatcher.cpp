@@ -92,6 +92,15 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
       }
       case WM_SIZE: {
          PostThreadEvent(Window, Message, WParam, LParam);
+         break;
+      }
+      case WM_INPUT: {
+         PostThreadEvent(Window, Message, WParam, LParam);
+         return 0;
+      }
+      case WM_SETFOCUS: {
+         PostThreadEvent(Window, Message, (WPARAM)GetFocus(), LParam);
+         return 0;
       }
       default: {
          Result = DefWindowProcW(Window, Message, WParam, LParam);

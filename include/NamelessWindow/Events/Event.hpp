@@ -26,10 +26,10 @@ using WindowID = uint32_t;
 /*! @headerfile "Events/Event.hpp" */
 /*! Generated whenever the user interacts with the keyboard. */
 struct NLSWIN_API_PUBLIC KeyEvent {
-   std::string_view keyName; /*!< The human-readable name of the keyboard key that generated the event. */
+   std::string keyName {"NULL"}; /*!< The human-readable name of the keyboard key that generated the event. */
    KeyCode code;             /*!< Keycode information for the event. @see KeyCode */
-   KeyPressType pressType;   /*!< Whether this event was a press, release or repeat. */
-   WindowID sourceWindow;    /*!< The ID of the window that this event came from. */
+   KeyPressType pressType {KeyPressType::UNKNOWN};   /*!< Whether this event was a press, release or repeat. */
+   WindowID sourceWindow {0};    /*!< The ID of the window that this event came from. */
 };
 
 /*! @ingroup Common */

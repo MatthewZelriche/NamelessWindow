@@ -18,7 +18,7 @@ namespace NLSWIN {
  * @ingroup Common
  * @headerfile "Events/Key.hpp"
  */
-enum class KeyPressType { PRESSED = 0, RELEASED = 1, REPEAT = 2 };
+enum class KeyPressType { UNKNOWN = -1, PRESSED = 0, RELEASED = 1, REPEAT = 2 };
 
 /*!
  * @brief Defines the state of a pointer button at the moment the event was generated.
@@ -37,7 +37,9 @@ struct NLSWIN_API_PUBLIC KeyModifiers {
    bool super : 1; /*! Also known as the Meta or Windows key. */
    bool alt : 1;
    bool shift : 1;
-   bool capslock : 1;
+   bool capsLock : 1;
+   bool scrollLock : 1;
+   bool numLock : 1;
 };
 
 /*!
@@ -46,9 +48,8 @@ struct NLSWIN_API_PUBLIC KeyModifiers {
  * @headerfile "Events/Key.hpp"
  */
 struct NLSWIN_API_PUBLIC KeyCode {
-   KeyValue value;         /*! The keyboard key that resulted in this event. */
-   KeyPressType pressType; /*! Whether the key was pressed, released, or a repeat event. */
-   KeyModifiers modifiers; /*! State of modifier keys at time of event generation */
+   KeyValue value {(KeyValue)-1};         /*! The keyboard key that resulted in this event. */
+   KeyModifiers modifiers {false}; /*! State of modifier keys at time of event generation */
 };
 
 }  // namespace NLSWIN
