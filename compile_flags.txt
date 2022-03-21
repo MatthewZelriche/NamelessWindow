@@ -1,0 +1,5 @@
+-I
+include/
+-I
+Vendor/
+-std=gnu++17

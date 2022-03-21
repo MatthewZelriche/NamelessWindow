@@ -5,7 +5,15 @@
    "version": "0.2.0",
    "configurations": [
       {
-         "name": "(gdb) Launch",
+         "type": "gdb",
+         "request": "launch",
+         "name": "NativeDebug Launch",
+         "target": "./build/Debug/bin/Example_HelloWindow",
+         "cwd": "${workspaceRoot}",
+         "valuesFormatting": "parseText"
+      },
+      {
+         "name": "(gdb) cpptools Launch",
          "type": "cppdbg",
          "request": "launch",
          "program": "${workspaceFolder}/build/Debug/bin/TestBed",

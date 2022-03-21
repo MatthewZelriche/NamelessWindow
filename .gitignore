@@ -2,3 +2,4 @@ build/*
 examples/TestBed/*
 docs/*
 .vscode/settings.json
+.cache/
