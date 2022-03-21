@@ -204,7 +204,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    [[nodiscard]] static std::vector<MonitorInfo> EnumerateMonitors();
 
    void NewID() {
-      static WindowID ID = 0;
+      static WindowID ID = 1;
       m_genericID = ID++;
    }
 
