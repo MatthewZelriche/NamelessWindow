@@ -67,14 +67,18 @@ W32Window::W32Window(WindowProperties properties) {
    }
 
    // Store size & pos, in case windows couldnt construct our desired size & pos.
+   UpdateRectProperties();
+
+   NewID();
+}
+
+void W32Window::UpdateRectProperties() {
    RECT rect;
    GetWindowRect(m_windowHandle, &rect);
    m_width = rect.left - rect.right;
    m_height = rect.top - rect.bottom;
    m_xPos = rect.left;
    m_yPos = rect.top;
-
-   NewID();
 }
 
 void W32Window::Show() {
@@ -98,11 +102,20 @@ void W32Window::EnableUserResizing() {
 }
 void W32Window::SetFullscreen(bool borderless) noexcept {
 }
+
 void W32Window::SetWindowed() noexcept {
 }
+
 void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
+   SetWindowPos(m_windowHandle, 0, newX, newY, m_width, m_height, SWP_FRAMECHANGED | SWP_NOOWNERZORDER 
+                                                                        | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+   UpdateRectProperties();
 }
+
 void W32Window::Resize(uint32_t width, uint32_t height) noexcept {
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
+                                                                        | SWP_NOZORDER | SWP_SHOWWINDOW);
+   UpdateRectProperties();
 }
 
 void W32Window::ProcessGenericEvent(MSG event) {

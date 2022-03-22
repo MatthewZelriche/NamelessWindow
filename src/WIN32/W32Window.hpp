@@ -44,6 +44,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    [[nodiscard]] inline HWND GetWin32Handle() const noexcept { return m_windowHandle; }
 
    private:
+   void UpdateRectProperties();
    int m_width {0};
    int m_height {0};
    int m_xPos {0};
