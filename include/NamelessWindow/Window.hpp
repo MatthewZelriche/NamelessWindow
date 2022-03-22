@@ -41,7 +41,7 @@ struct NLSWIN_API_PUBLIC MonitorInfo {
                                                * monitor. Each monitor exists in a "virtual screen" that
                                                * contains within it all monitors. This is relevant only
                                                * for multi-monitor setups.*/
-   const std::string_view name {""};          /*!< Platform-specific name of the monitor. */
+   const std::string name {""};          /*!< Platform-specific name of the monitor. */
 };
 
 /**
@@ -72,7 +72,8 @@ struct NLSWIN_API_PUBLIC WindowProperties {
                                                  * relative to the given monitor's global space coordinates. */
    unsigned int yCoordinate {0};                /*!< The Y coordinate for the top-right corner of the window,
                                                  * relative to the given monitor's global space coordinates. */
-   unsigned int borderWidth {0};                /*!< Thickness of the border decorations. */
+   unsigned int borderWidth {0};                /*!< Thickness of the border decorations. 
+                                                 * TODO: Can this be implemented on windows? We may need to remove this.*/
    bool isUserResizable {true};                 /*!< Whether the application user should be allowed to
                                                  * manually resize the window. Note that the application
                                                  * itself is still free to resize the window. */

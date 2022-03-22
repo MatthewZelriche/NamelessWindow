@@ -10,7 +10,6 @@
 int main() {
    auto infos = NLSWIN::Keyboard::EnumerateKeyboards();
    auto kb = NLSWIN::Keyboard::Create(infos[0]);
-   auto kb2 = NLSWIN::Keyboard::Create(infos[2]);
 
    NLSWIN::WindowProperties props;
    props.windowName = "Hello world!";
@@ -18,7 +17,7 @@ int main() {
    window->Show();
 
    kb->SubscribeToWindow(window);
-   kb2->SubscribeToWindow(window);
+   //kb2->SubscribeToWindow(window);
    while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
 
@@ -36,11 +35,13 @@ int main() {
             std::cout << "Hello from keyboard one: " << keyEvent->keyName << std::endl;
          }
       }
+      /*
       while (kb2->HasEvent()) {
           auto event = kb2->GetNextEvent();
          if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&event)) {
             std::cout << "Hello from keyboard two: " << keyEvent->keyName << std::endl;
          }
       }
+      */
    }
 }

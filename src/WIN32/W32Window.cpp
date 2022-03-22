@@ -36,16 +36,30 @@ W32Window::W32Window(WindowProperties properties) {
 
    Win32CreationProps props {0};
    props.className = className;
-   // TODO: Position
-   props.X = CW_USEDEFAULT;
-   props.Y = CW_USEDEFAULT;
+
+   // Determine where to spawn the window.
+   if (properties.preferredMonitor.has_value()) {
+      props.X = properties.preferredMonitor.value().screenXCord;
+      props.Y = properties.preferredMonitor.value().screenYCord;
+   } else {
+      props.X = CW_USEDEFAULT;
+      props.Y = CW_USEDEFAULT;
+   }
    props.nWidth = properties.horzResolution;
    props.nHeight = properties.vertResolution;
+
+   // Determine whether this window is resizable. 
    props.dwStyle = WS_OVERLAPPEDWINDOW;
+   if (!properties.isUserResizable) {
+      props.dwStyle = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
+   }
    props.hInstance = win32Class.hInstance;
    if (!properties.windowName.empty()) {
       props.windowName = ConvertToWString(properties.windowName).c_str();
    }
+
+   // TODO: Respect application choice of starting windowed or fullscreen.
+
    m_windowHandle = (HWND)SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CREATE_NLSWIN_WINDOW,
                                        (WPARAM)&props, 0);
    if (!m_windowHandle) {
@@ -99,4 +113,28 @@ void W32Window::ProcessGenericEvent(MSG event) {
          }
       }
    }
+}
+
+static BOOL CALLBACK MonitorEnumerationCallback(HMONITOR monitor, HDC deviceContext, RECT* rect, LPARAM lParam) {
+   std::vector<MonitorInfo> *monitors = reinterpret_cast<std::vector<MonitorInfo> *>(lParam);
+   MONITORINFOEX info;
+   info.cbSize = sizeof(MONITORINFOEX);
+   GetMonitorInfo(monitor, &info);
+
+   // Calculate resolution from rect
+   unsigned int xRes = abs(info.rcMonitor.left - info.rcMonitor.right);
+   unsigned int yRes = abs(info.rcMonitor.top - info.rcMonitor.bottom);
+
+   MonitorInfo monitorInfo {xRes, yRes, info.rcMonitor.left, info.rcMonitor.top, info.szDevice};
+   monitors->push_back(monitorInfo);
+   // Keep enumerating until there's nothing left.
+   return true;
+}
+
+
+std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
+   SetProcessDPIAware();
+   std::vector<MonitorInfo> monitors;
+   EnumDisplayMonitors(nullptr, nullptr, MonitorEnumerationCallback, (LPARAM)&monitors);
+   return monitors;
 }

@@ -5,6 +5,16 @@
    "version": "0.2.0",
    "configurations": [
       {
+         "name": "(Windows) Launch",
+         "type": "cppvsdbg",
+         "request": "launch",
+         "program": "${workspaceFolder}/build/Debug/bin/Example_HelloWindow.exe",
+         "args": [],
+         "stopAtEntry": false,
+         "cwd": "${fileDirname}",
+         "environment": []
+      },
+      {
          "type": "gdb",
          "request": "launch",
          "name": "NativeDebug Launch",
