@@ -45,8 +45,9 @@ template <typename T>
          if (type == XCB_INPUT_DEVICE_TYPE_SLAVE_KEYBOARD &&
              element->type == XCB_INPUT_DEVICE_TYPE_SLAVE_KEYBOARD) {
             // Ignore xtest devices
+            // TODO: Proper handling of "Fake" keyboards such as power buttons.
             const char *name = xcb_input_xi_device_info_name(element);
-            if (!std::strstr(name, "XTEST")) {
+            if (!std::strstr(name, "XTEST") && !std::strstr(name, "Power Button")) {
                devices.push_back({name, element->deviceid});
             }
          } else if (type == XCB_INPUT_DEVICE_TYPE_SLAVE_POINTER &&
