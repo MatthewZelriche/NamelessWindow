@@ -66,6 +66,14 @@ W32Window::W32Window(WindowProperties properties) {
       throw PlatformInitializationException();
    }
 
+   // Store size & pos, in case windows couldnt construct our desired size & pos.
+   RECT rect;
+   GetWindowRect(m_windowHandle, &rect);
+   m_width = rect.left - rect.right;
+   m_height = rect.top - rect.bottom;
+   m_xPos = rect.left;
+   m_yPos = rect.top;
+
    NewID();
 }
 
@@ -79,8 +87,14 @@ void W32Window::Hide() {
 }
 
 void W32Window::DisableUserResizing() {
+   SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX);
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
+                                                                        | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 void W32Window::EnableUserResizing() {
+   SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
+                                                                        | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 void W32Window::SetFullscreen(bool borderless) noexcept {
 }
@@ -109,6 +123,11 @@ void W32Window::ProcessGenericEvent(MSG event) {
             resizeEvent.newHeight = m_height;
             resizeEvent.sourceWindow = GetGenericID();
             PushEvent(resizeEvent);
+            break;
+         }
+         case WM_MOVE: {
+            m_xPos = LOWORD(event.lParam);
+            m_yPos = HIWORD(event.lParam);
             break;
          }
       }

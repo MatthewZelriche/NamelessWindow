@@ -46,6 +46,8 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    private:
    int m_width {0};
    int m_height {0};
+   int m_xPos {0};
+   int m_yPos {0};
    WindowMode m_windowMode;
    bool m_shouldClose {false};
 

@@ -102,6 +102,10 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
          PostThreadEvent(Window, Message, (WPARAM)GetFocus(), LParam);
          return 0;
       }
+      case WM_MOVE: {
+         PostThreadEvent(Window, Message, WParam, LParam);
+         return 0;
+      }
       default: {
          Result = DefWindowProcW(Window, Message, WParam, LParam);
       } break;
