@@ -10,5 +10,9 @@ X11<br />
 8. ~~If 2 windows overlap, the cursor is shown when it should be hidden.~~<br />
 9. ~~If 2 windows overlap, and the focused (bottom) window is closed, the mouse remains hidden when leaving the overlapping window.~~<br />
 10. ~~On i3, windows that are forced floating sometimes receive focus even when the cursor should be bound to the other window.~~<br />
-11. Implement more examples.
-12. Look into supporting a larger number of mouse buttons on X11
+11. Implement more examples.<br />
+12. Look into supporting a larger number of mouse buttons on X11<br />
+13. Better method of determining key name on X11.<br />
+14. Better method of enumerating keyboards on X11.<br />
+15. Certain modifiers (NumLock) are not handled globally on X11, but they are in Win32.<br />
+16. User-readable key names stored in KeyEvents are not uniform across platforms.<br />
