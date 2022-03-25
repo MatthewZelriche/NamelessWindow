@@ -1,5 +1,8 @@
 #include "X11Window.hpp"
 
+#include <X11/X.h>
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
 #include <xcb/randr.h>
 #include <xcb/xcb_icccm.h>
 
@@ -102,11 +105,11 @@ X11Window::X11Window(WindowProperties properties) {
    free(protocolsAtomReply);
    free(deleteWindowAtomReply);
 
-   // X defaults to windowed
+   // Prep a fullscreen toggle for when we are first mapped.
    if (properties.mode == WindowMode::FULLSCREEN) {
-      SetFullscreen(false);
+      m_firstMapCachedMode = WindowMode::FULLSCREEN;
    } else if (properties.mode == WindowMode::BORDERLESS) {
-      SetFullscreen(true);
+      m_firstMapCachedMode = WindowMode::BORDERLESS;
    }
 
    m_windowGeometry = GetNewGeometry();
@@ -221,40 +224,24 @@ void X11Window::Resize(uint32_t width, uint32_t height) noexcept {
 }
 
 void X11Window::ToggleFullscreen() noexcept {
-   bool fullScreen = 0;
-   if (m_windowMode == WindowMode::FULLSCREEN || m_windowMode == WindowMode::BORDERLESS) {
-      fullScreen = 0;
-   } else {
-      fullScreen = 1;
-   }
+   // Switched to Xlib impl due to unknown difficulties with xcb.
+   Atom messageType = XInternAtom(XConnection::GetDisplay(), "_NET_WM_STATE", false);
+   Atom fullscreen = XInternAtom(XConnection::GetDisplay(), "_NET_WM_STATE_FULLSCREEN", false);
 
-   xcb_intern_atom_cookie_t stateCookie =
-      xcb_intern_atom(XConnection::GetConnection(), 1, std::strlen("_NET_WM_STATE"), "_NET_WM_STATE");
-   xcb_intern_atom_cookie_t fullscreenCookie = xcb_intern_atom(
-      XConnection::GetConnection(), 1, std::strlen("_NET_WM_STATE_FULLSCREEN"), "_NET_WM_STATE_FULLSCREEN");
+   XClientMessageEvent fullscreenToggleEvent {0};
+   fullscreenToggleEvent.type = ClientMessage;
+   fullscreenToggleEvent.window = m_x11WindowID;
+   fullscreenToggleEvent.message_type = messageType;
+   fullscreenToggleEvent.format = 32;
+   fullscreenToggleEvent.data.l[0] = 2;  // 2 is the atom value for toggling.
+   fullscreenToggleEvent.data.l[1] = fullscreen;
+   fullscreenToggleEvent.data.l[2] = 0;  // Unused
+   fullscreenToggleEvent.data.l[3] = 1;  // Application event
+   fullscreenToggleEvent.data.l[4] = 0;  // Unused?
 
-   xcb_client_message_event_t message {0};
-   message.response_type = XCB_CLIENT_MESSAGE;
-
-   xcb_intern_atom_reply_t *stateReply =
-      xcb_intern_atom_reply(XConnection::GetConnection(), stateCookie, nullptr);
-   xcb_intern_atom_reply_t *fullscreenReply =
-      xcb_intern_atom_reply(XConnection::GetConnection(), fullscreenCookie, nullptr);
-
-   message.type = stateReply->atom;
-   message.format = 32;
-   message.window = m_x11WindowID;
-   message.data.data32[0] = fullScreen;
-   message.data.data32[1] = fullscreenReply->atom;
-   message.data.data32[2] = 0;
-
-   xcb_send_event(XConnection::GetConnection(), true, m_x11WindowID,
-                  XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
-                  (const char *)&message);
-
-   xcb_flush(XConnection::GetConnection());
-   free(stateReply);
-   free(fullscreenReply);
+   XSendEvent(XConnection::GetDisplay(), UTIL::GetRootWindow(), false,
+                    SubstructureRedirectMask | SubstructureNotifyMask, (XEvent*)&fullscreenToggleEvent);
+   XFlush(XConnection::GetDisplay());
 }
 
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
@@ -291,6 +278,15 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
       }
       case XCB_MAP_NOTIFY: {
          m_isMapped = true;
+         if (m_firstMapCachedMode == WindowMode::FULLSCREEN) {
+            ToggleFullscreen();
+            m_windowMode = WindowMode::FULLSCREEN;
+            m_firstMapCachedMode = WindowMode::WINDOWED;
+         } else if (m_firstMapCachedMode == WindowMode::BORDERLESS) {
+            ToggleFullscreen();
+            m_windowMode = WindowMode::BORDERLESS;
+            m_firstMapCachedMode = WindowMode::WINDOWED;
+         }
          break;
       }
       case XCB_UNMAP_NOTIFY: {

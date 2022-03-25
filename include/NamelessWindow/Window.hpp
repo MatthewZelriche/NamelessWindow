@@ -153,11 +153,16 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    virtual void EnableUserResizing() = 0;
    /*!
     * @brief Request that the window be drawn fullscreen.
+    * 
+    * Must be called while the window is shown, else undefined behavior occurs.
     * @param borderless Whether the window should be drawn in borderless fullscreen. This does not impact
     * whether windows in the WINDOWMODE::Windowed state are drawn with borders.
     */
    virtual void SetFullscreen(bool borderless = true) noexcept = 0;
-   /*! Request that the window be drawn as a regular window, not in fullscreen. */
+   /*! @brief Request that the window be drawn as a regular window, not in fullscreen. 
+    * 
+    * Must be called while the window is shown, else undefined behavior occurs.
+    */
    virtual void SetWindowed() noexcept = 0;
    /*!
     * @brief Request that the monitor be drawn at a new position.
