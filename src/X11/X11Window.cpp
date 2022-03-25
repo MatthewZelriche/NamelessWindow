@@ -143,7 +143,7 @@ xcb_visualid_t X11Window::SelectAppropriateVisualIDForGL(std::optional<GLConfigu
 void X11Window::SetVisualAttributeProperty(int property, int value) {
    for (int i = 0; i < m_visualAttributesList.size(); i++) {
       if (m_visualAttributesList[i] == property) {
-         m_visualAttributesList[i + 1] == value;
+         m_visualAttributesList[i + 1] = value;
       }
    }
 }
