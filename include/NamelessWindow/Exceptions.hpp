@@ -99,4 +99,15 @@ class NLSWIN_API_PUBLIC InvalidRenderContextStateException : public std::excepti
    }
 };
 
+/*!
+ * @ingroup Common
+ * @brief Thrown when an operation was given a video mode that is considered invalid by the underlying platform.
+ */
+class NLSWIN_API_PUBLIC InvalidVideoModeException : public std::exception {
+   public:
+   virtual const char* what() const noexcept override {
+      return "A method was given a video mode deemed invalid by the platform.";
+   }
+};
+
 }  // namespace NLSWIN

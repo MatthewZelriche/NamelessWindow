@@ -9,7 +9,7 @@
 
 int main() {
    auto infos = NLSWIN::Keyboard::EnumerateKeyboards();
-   auto kb = NLSWIN::Keyboard::Create(infos[0]);
+   auto kb = NLSWIN::Keyboard::Create();
 
    NLSWIN::WindowProperties props;
    props.windowName = "Hello world!";

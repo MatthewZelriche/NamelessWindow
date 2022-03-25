@@ -38,6 +38,7 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
    X11Window(WindowProperties properties);
    ~X11Window();
    void ToggleFullscreen() noexcept;
+   void SetVideoMode(uint32_t width, uint32_t height);
 
    [[nodiscard]] inline xcb_window_t GetX11ID() const noexcept { return m_x11WindowID; }
    [[nodiscard]] inline Rect GetWindowGeometry() const noexcept { return m_windowGeometry; }
@@ -48,6 +49,8 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
    }
 
    private:
+   // Used only on window creation.
+   WindowMode m_firstMapCachedMode {WindowMode::WINDOWED};
    xcb_visualid_t SelectAppropriateVisualIDForGL(std::optional<GLConfiguration> config);
    void SetVisualAttributeProperty(int property, int value);
    int m_visualDepth {0};

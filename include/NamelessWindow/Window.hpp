@@ -26,22 +26,39 @@ enum class WindowMode { FULLSCREEN = 0, BORDERLESS = 1, WINDOWED = 2 };
 struct Rect {
    int x {0};
    int y {0};
+   int width {0};
+   int height {0};
+};
+
+struct Point {
+   int x {0};
+   int y {0};
+};
+
+/*! Information about a video mode supported by a specific Monitor.*/
+/*! @ingroup Common */
+struct NLSWIN_API_PUBLIC VideoMode {
+   const int horzResolution {0};                      /*!< The horizontal pixel resolution of this mode. */
+   const int vertResolution {0};                      /*!< The vertical pixel resolution of this mode. */
+   const float refreshRate {0};                       /*!< The refresh rate of this mode. */
+   const unsigned int platformSpecificIdentifier {0}; /*!< Platform-specific ID, for internal use only. */
 };
 
 /*! Information about a physical monitor connected to the system. */
 /*! @ingroup Common */
 struct NLSWIN_API_PUBLIC MonitorInfo {
-   const unsigned int horzResolution {0};     /*!< The horizontal pixel resolution of the monitor */
-   const unsigned int verticalResolution {0}; /*!< The vertical pixel resolution of the monitor */
-   const int16_t screenXCord {0};             /*!< X Coordinate location of the top-left hand corner of this
+   const int horzResolution {0};               /*!< The horizontal pixel resolution of the monitor */
+   const int verticalResolution {0};           /*!< The vertical pixel resolution of the monitor */
+   const long int screenXCord {0};             /*!< X Coordinate location of the top-left hand corner of this
                                                * monitor. Each monitor exists in a "virtual screen" that
                                                * contains within it all monitors. This is relevant only
                                                * for multi-monitor setups.*/
-   const int16_t screenYCord {0};             /*!< Y Coordinate location of the top-left hand corner of this
+   const long int screenYCord {0};             /*!< Y Coordinate location of the top-left hand corner of this
                                                * monitor. Each monitor exists in a "virtual screen" that
                                                * contains within it all monitors. This is relevant only
                                                * for multi-monitor setups.*/
-   const std::string name {""};          /*!< Platform-specific name of the monitor. */
+   const std::string name {""};                /*!< Platform-specific name of the monitor. */
+   const std::vector<VideoMode> modes;         /*!< A list of video modes supported by this monitor. */
 };
 
 /**
@@ -175,13 +192,18 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     */
    virtual void Reposition(uint32_t newX, uint32_t newY) noexcept = 0;
    /*!
-    * @brief Request that the monitor be drawn with new dimensions.
+    * @brief Request that the window be drawn with new dimensions.
     *
     * Note that some platforms will ignore this if they handle window sizing in a specific fashion (eg, tiling
     * window managers).
+    * If the window is true fullscreen, this method will attempt to set a new video mode matching the given width and height for
+    * the monitor that the window is currently residing in. If no suitable videomode is found, an exception is thrown.
+    * Must be called while the window is shown, else undefined behavior occurs.
     *
     * @param width The new width of the monitor.
     * @param height The new height of the monitor.
+    * @throws InvalidVideoModeException If an attempt is made to change the video mode for a fullscreen window, but no suitable
+    * video mode is found.
     */
    virtual void Resize(uint32_t width, uint32_t height) noexcept = 0;
    /**

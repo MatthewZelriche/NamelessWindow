@@ -3,13 +3,22 @@
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
+#include <X11/extensions/randr.h>
 #include <xcb/randr.h>
+#include <X11/extensions/Xrandr.h>
+#include <xcb/xcb.h>
 #include <xcb/xcb_icccm.h>
 
+#include <cmath>
 #include <cstring>
 #include <memory>
+#include <unordered_set>
+#include <unordered_map>
+#include <math.h>
+#include <xcb/xproto.h>
 
 #include "NamelessWindow/Exceptions.hpp"
+#include "NamelessWindow/Window.hpp"
 #include "X11EventBus.hpp"
 #include "X11Util.hpp"
 #include "XConnection.h"
@@ -210,7 +219,84 @@ void X11Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
    xcb_flush(XConnection::GetConnection());
 }
 
+void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
+   std::vector<MonitorInfo> infoVector = EnumerateMonitors();
+   XRRMonitorInfo *currentMonitor = UTIL::GetCurrentMonitor(m_x11WindowID, {m_windowGeometry.x, m_windowGeometry.y});
+
+   XRRScreenResources * resources = XRRGetScreenResources(XConnection::GetDisplay(), m_x11WindowID);
+   // TODO: Currently only assuming one output per monitor. Could be problematic?
+   XRROutputInfo *info = XRRGetOutputInfo(XConnection::GetDisplay(), resources, currentMonitor->outputs[0]);
+   XRRCrtcInfo *crtcInfo = XRRGetCrtcInfo(XConnection::GetDisplay(), resources, info->crtc);
+
+   // Get the current modeinfo
+   XRRModeInfo *currentModeInfo = nullptr;
+   for (int i = 0; i < resources->nmode; i++) {
+      if (crtcInfo->mode == resources->modes[i].id) {
+         currentModeInfo = &resources->modes[i];
+         break;
+      }
+   }
+
+   // We need a list of valid modes and their refresh rates to find a suitable RRMode.
+   std::unordered_map<RRMode, float> validModes;
+   for (auto monitor : infoVector) {
+      if (std::strcmp(monitor.name.c_str(), info->name) == 0) {
+         for (auto mode : monitor.modes) {
+            validModes.insert({mode.platformSpecificIdentifier, mode.refreshRate});
+         }
+      }
+   }
+
+   XRRModeInfo *exactMatch = nullptr;
+   RRMode highestRefreshRate = 0;
+   XRRModeInfo *highestRefreshRateMode = nullptr;
+   for (int i = 0; i < resources->nmode; i++) {
+      XRRModeInfo modeInfo = resources->modes[i];
+      // Calculate refresh rate of the queried mode.
+      float refresh = (float) modeInfo.dotClock / (modeInfo.hTotal * modeInfo.vTotal);
+      float truncatedRefresh = std::round(refresh * 100.0) / 100.0;
+
+      if (validModes.count(modeInfo.id) && modeInfo.height == height && modeInfo.width == width && validModes[modeInfo.id] == truncatedRefresh) {
+         // The user-requested resolution has a mode with the same refresh rate as now, we've found a perfect match.
+         exactMatch = &modeInfo;
+         break;
+      } else if (validModes.count(modeInfo.id) && modeInfo.height == height && modeInfo.width == width && truncatedRefresh > highestRefreshRate) {
+         // We found a mode with a matching resolution, but it will require changing the refresh rate, so it is not preferable.
+         highestRefreshRate = truncatedRefresh;
+         highestRefreshRateMode = &modeInfo;
+      }
+   }
+
+   XRRModeInfo *finalRRMode = nullptr;
+   if (exactMatch) {
+      finalRRMode = exactMatch;
+   } else if (highestRefreshRateMode) {
+      finalRRMode = highestRefreshRateMode;
+   }
+
+   XRRPanning *panning = XRRGetPanning(XConnection::GetDisplay(), resources, info->crtc);
+   panning->left = crtcInfo->x;
+   panning->top = crtcInfo->y;
+   panning->width = 0;
+   panning->height = 0;
+
+   if (finalRRMode) {
+      // Actually apply the new video mode.
+      XRRSetCrtcConfig(XConnection::GetDisplay(), resources, info->crtc, CurrentTime, crtcInfo->x, crtcInfo->x, finalRRMode->id, crtcInfo->rotation, crtcInfo->outputs, crtcInfo->noutput);
+      XRRSetScreenSize(XConnection::GetDisplay(), m_x11WindowID, finalRRMode->width, finalRRMode->height, 100, 100);
+      // Disable panning so the desktop properly fits.
+      XRRSetPanning(XConnection::GetDisplay(), resources, info->crtc, panning);
+      XFlush(XConnection::GetDisplay());
+   } else {
+      // We could find a matching resolution anywhere
+      throw InvalidVideoModeException();
+   }
+}
+
 void X11Window::Resize(uint32_t width, uint32_t height) noexcept {
+   if (m_windowMode == WindowMode::FULLSCREEN) {
+      SetVideoMode(width, height);
+   } 
    uint32_t newSize[] = {width, height};
    // Set the new desired width and height in case the wm doesn't respect it.
    m_preferredWidth = width;
@@ -319,29 +405,55 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
 Rect X11Window::GetNewGeometry() {
    auto geomCookie = xcb_get_geometry(XConnection::GetConnection(), m_x11WindowID);
    auto geomReply = xcb_get_geometry_reply(XConnection::GetConnection(), geomCookie, nullptr);
-   return {geomReply->x, geomReply->y};
+   return {geomReply->x, geomReply->y, geomReply->width, geomReply->height};
 }
 
 std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
+   std::vector<MonitorInfo> platIndependentMonitorInfos;
    xcb_screen_t *defaultScreen = UTIL::GetDefaultScreen();
    if (!defaultScreen) {
       return {};
    }
-   // Fill the list with monitor info structs.
-   std::vector<MonitorInfo> listOfMonitors;
-   auto monitorsCookie = xcb_randr_get_monitors(XConnection::GetConnection(), defaultScreen->root, true);
-   auto monitorsReply = xcb_randr_get_monitors_reply(XConnection::GetConnection(), monitorsCookie, nullptr);
-   auto monitorIter = xcb_randr_get_monitors_monitors_iterator(monitorsReply);
-   while (monitorIter.rem > 0) {
-      char *monitorName = xcb_get_atom_name_name(xcb_get_atom_name_reply(
-         XConnection::GetConnection(),
-         xcb_get_atom_name(XConnection::GetConnection(), monitorIter.data->name), nullptr));
-      MonitorInfo monitor {monitorIter.data->width, monitorIter.data->height, monitorIter.data->x,
-                           monitorIter.data->y, monitorName};
-      listOfMonitors.push_back(monitor);
-      xcb_randr_monitor_info_next(&monitorIter);
+   XRRScreenResources * resources = XRRGetScreenResources(XConnection::GetDisplay(), UTIL::GetRootWindow());
+
+   int numMonitors = 0;
+   XRRMonitorInfo *monitorInfos = XRRGetMonitors(XConnection::GetDisplay(), UTIL::GetRootWindow(), true, &numMonitors);
+   for (int i = 0; i < numMonitors; i++) {
+      
+      // TODO: Currently only assuming one output per monitor. Could be problematic?
+      XRROutputInfo *info = XRRGetOutputInfo(XConnection::GetDisplay(), resources, monitorInfos[i].outputs[0]);
+
+      std::unordered_set<XID> supportedOutputModeIDs;
+      // Get mode IDs supported by this monitor.
+      for (int j = 0; j < info->nmode; j++) {
+         supportedOutputModeIDs.emplace(info->modes[j]);
+      }
+
+      std::vector<VideoMode> modes;
+      // Contrast supported ID's with known modes
+      for (int j = 0; j < resources->nmode; j++) {
+         if (supportedOutputModeIDs.count(resources->modes[j].id)) {
+            XRRModeInfo modeInfo = resources->modes[j];
+            // If doublescan is set, each scanline needs to be doubled, otherwise we end up
+            // with a refreshrate thats twice as high as it should be.
+            if (modeInfo.modeFlags & RR_DoubleScan) {
+               modeInfo.vTotal = modeInfo.vTotal * 2;
+            }
+            // Calculate refresh rate.
+            float refresh = (float) modeInfo.dotClock / (modeInfo.hTotal * modeInfo.vTotal);
+            float truncatedRefresh = std::round(refresh * 100.0) / 100.0;
+
+            // Construct and store the supported video mode information.
+            VideoMode processedMode {static_cast<int>(modeInfo.width), static_cast<int>(modeInfo.height), truncatedRefresh, static_cast<unsigned int>(modeInfo.id)};
+            modes.emplace_back(processedMode);
+         }
+      }
+
+      // We are done processing one monitor.
+      MonitorInfo monitor {monitorInfos[i].width, monitorInfos[i].height, monitorInfos[i].x,
+                           monitorInfos[i].y, info->name, modes};
+      platIndependentMonitorInfos.emplace_back(monitor);
    }
 
-   free(monitorsReply);
-   return listOfMonitors;
+   return platIndependentMonitorInfos;
 }

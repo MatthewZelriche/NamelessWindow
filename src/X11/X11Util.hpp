@@ -11,8 +11,11 @@
 
 #include <xcb/xcb.h>
 #include <xcb/xinput.h>
+#include <string>
+#include <X11/extensions/Xrandr.h>
 
 #include "NamelessWindow/NLSAPI.hpp"
+#include "NamelessWindow/Window.hpp"
 
 namespace NLSWIN::UTIL {
 /*! @ingroup X11 */
@@ -41,5 +44,24 @@ int GetDefaultScreenNumber();
  * @return The root window.
  */
 xcb_window_t GetRootWindow();
+
+/**
+ * @brief Gets the monitor info struct whose area the top-right corner of a given window falls within.
+ * If the given window does not fall within any monitor area, this function will return the primary monitor.
+ * @ingroup X11
+ * @param topRightWindowPos The x,y coordinate of the top-right corner of the window.
+ * @param window The X11 ID for the window.
+ * @return X11 Info struct about the monitor. 
+ */
+XRRMonitorInfo *GetCurrentMonitor(xcb_window_t window, Point topRightWindowPos);
+
+/**
+ * @brief Determines if an x,y point lies within a rectangle.
+ * @ingroup X11
+ * @param rectangle The area to check.
+ * @param position The position to look for within rectangle.
+ * @return True if the point falls within the rectangle.
+ */
+bool IsPointInRect(Rect rectangle, Point position);
 
 }  // namespace NLSWIN::UTIL

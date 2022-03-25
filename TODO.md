@@ -17,3 +17,5 @@ X11<br />
 15. Certain modifiers (NumLock) are not handled globally on X11, but they are in Win32.<br />
 16. User-readable key names stored in KeyEvents are not uniform across platforms.<br />
 17. ~~Fix fullscreen regression on X11, hopefully.~~<br />
+18. Major modifications on X11 to track currently connected monitors and input devices.<br />
+19. On X11, store original video mode for each monitor on launch, so that original video mode can be restored.<br />
