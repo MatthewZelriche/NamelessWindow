@@ -274,18 +274,9 @@ void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
       finalRRMode = highestRefreshRateMode;
    }
 
-   XRRPanning *panning = XRRGetPanning(XConnection::GetDisplay(), resources, info->crtc);
-   panning->left = crtcInfo->x;
-   panning->top = crtcInfo->y;
-   panning->width = 0;
-   panning->height = 0;
-
    if (finalRRMode) {
       // Actually apply the new video mode.
-      XRRSetCrtcConfig(XConnection::GetDisplay(), resources, info->crtc, CurrentTime, crtcInfo->x, crtcInfo->x, finalRRMode->id, crtcInfo->rotation, crtcInfo->outputs, crtcInfo->noutput);
-      XRRSetScreenSize(XConnection::GetDisplay(), m_x11WindowID, finalRRMode->width, finalRRMode->height, 100, 100);
-      // Disable panning so the desktop properly fits.
-      XRRSetPanning(XConnection::GetDisplay(), resources, info->crtc, panning);
+      XRRSetCrtcConfig(XConnection::GetDisplay(), resources, info->crtc, CurrentTime, crtcInfo->x, crtcInfo->y, finalRRMode->id, crtcInfo->rotation, crtcInfo->outputs, crtcInfo->noutput);
       XFlush(XConnection::GetDisplay());
    } else {
       // We could find a matching resolution anywhere
@@ -310,24 +301,35 @@ void X11Window::Resize(uint32_t width, uint32_t height) noexcept {
 }
 
 void X11Window::ToggleFullscreen() noexcept {
-   // Switched to Xlib impl due to unknown difficulties with xcb.
-   Atom messageType = XInternAtom(XConnection::GetDisplay(), "_NET_WM_STATE", false);
-   Atom fullscreen = XInternAtom(XConnection::GetDisplay(), "_NET_WM_STATE_FULLSCREEN", false);
+   xcb_intern_atom_cookie_t stateCookie =
+      xcb_intern_atom(XConnection::GetConnection(), 1, std::strlen("_NET_WM_STATE"), "_NET_WM_STATE");
+   xcb_intern_atom_cookie_t fullscreenCookie = xcb_intern_atom(
+      XConnection::GetConnection(), 1, std::strlen("_NET_WM_STATE_FULLSCREEN"), "_NET_WM_STATE_FULLSCREEN");
 
-   XClientMessageEvent fullscreenToggleEvent {0};
-   fullscreenToggleEvent.type = ClientMessage;
-   fullscreenToggleEvent.window = m_x11WindowID;
-   fullscreenToggleEvent.message_type = messageType;
-   fullscreenToggleEvent.format = 32;
-   fullscreenToggleEvent.data.l[0] = 2;  // 2 is the atom value for toggling.
-   fullscreenToggleEvent.data.l[1] = fullscreen;
-   fullscreenToggleEvent.data.l[2] = 0;  // Unused
-   fullscreenToggleEvent.data.l[3] = 1;  // Application event
-   fullscreenToggleEvent.data.l[4] = 0;  // Unused?
+   xcb_client_message_event_t message {0};
+   message.response_type = XCB_CLIENT_MESSAGE;
 
-   XSendEvent(XConnection::GetDisplay(), UTIL::GetRootWindow(), false,
-                    SubstructureRedirectMask | SubstructureNotifyMask, (XEvent*)&fullscreenToggleEvent);
-   XFlush(XConnection::GetDisplay());
+   xcb_intern_atom_reply_t *stateReply =
+      xcb_intern_atom_reply(XConnection::GetConnection(), stateCookie, nullptr);
+   xcb_intern_atom_reply_t *fullscreenReply =
+      xcb_intern_atom_reply(XConnection::GetConnection(), fullscreenCookie, nullptr);
+
+   xcb_atom_t stateAtom = stateReply->atom;
+   xcb_atom_t fullscreenAtom = fullscreenReply->atom;
+
+   message.window = m_x11WindowID;
+   message.type = stateAtom;
+   message.format = 32;
+   message.data.data32[0] = 2; // 2 is the atom value for toggling.
+   message.data.data32[1] = fullscreenAtom;
+   message.data.data32[2] = 0; // Unused
+   message.data.data32[3] = 1; // App event
+   message.data.data32[4] = 0; // Unused?
+
+   xcb_send_event(XConnection::GetConnection(), false, UTIL::GetRootWindow(), 
+                     XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT, 
+                     (const char *)&message);
+   xcb_flush(XConnection::GetConnection());
 }
 
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
@@ -405,7 +407,21 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
 Rect X11Window::GetNewGeometry() {
    auto geomCookie = xcb_get_geometry(XConnection::GetConnection(), m_x11WindowID);
    auto geomReply = xcb_get_geometry_reply(XConnection::GetConnection(), geomCookie, nullptr);
-   return {geomReply->x, geomReply->y, geomReply->width, geomReply->height};
+
+   // We have to translate to root window coordinates. 
+   xcb_query_tree_cookie_t queryTreeCookie = xcb_query_tree(XConnection::GetConnection(),
+                                                  m_x11WindowID);
+   xcb_query_tree_reply_t *queryTree = xcb_query_tree_reply(XConnection::GetConnection(),
+                                                  queryTreeCookie, nullptr);
+
+   auto translateCookie = xcb_translate_coordinates(XConnection::GetConnection(),
+                                                      m_x11WindowID,
+                                                      m_rootWindow,
+                                                      geomReply->x, geomReply->y );
+   auto translatedCoordinates = xcb_translate_coordinates_reply(XConnection::GetConnection(), 
+                                                                  translateCookie,
+                                                                  nullptr);
+   return {translatedCoordinates->dst_x, translatedCoordinates->dst_y, geomReply->width, geomReply->height};
 }
 
 std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
