@@ -128,26 +128,25 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
 Event W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
    KeyEvent keyEvent;
    USHORT finalVKey = DeobfuscateWindowsVKey(event);
-   keyEvent.code.value = (KeyValue)finalVKey;
-   // TODO: Performance? This is in a hot loop after all.
-   keyEvent.keyName = magic_enum::enum_name((KeyValue)finalVKey);
-
-   // Manually construct an unsupported key event.
-   if (keyEvent.keyName.empty()) {
-      KeyEvent null {};
-      return null;
+   //keyEvent.code.value = (KeyValue)finalVKey;
+   if (m_translationTable.count(finalVKey)) {
+      keyEvent.code.value = m_translationTable[finalVKey];
+   } else {
+      return KeyEvent();
    }
+   // TODO: Performance? This is in a hot loop after all.
+   keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
 
    // Determine press type
    if (event.Flags & RI_KEY_BREAK) {
-      m_InternalKeyState[finalVKey] = false;
+      m_InternalKeyState[keyEvent.code.value] = false;
       keyEvent.pressType = KeyPressType::RELEASED;
    } else {
-      if (m_InternalKeyState[finalVKey] == true) {
+      if (m_InternalKeyState[keyEvent.code.value] == true) {
          keyEvent.pressType = KeyPressType::REPEAT;
       } else {
          keyEvent.pressType = KeyPressType::PRESSED;
-         m_InternalKeyState[finalVKey] = true;
+         m_InternalKeyState[keyEvent.code.value] = true;
       }
    }
 
@@ -215,12 +214,6 @@ USHORT W32Keyboard::DeobfuscateWindowsVKey(RAWKEYBOARD obfuscatedEvent) {
             vkey = VK_LMENU;
          }
          break;
-      case VK_RETURN:
-         if (obfuscatedEvent.Flags & RI_KEY_E0) {
-            vkey = KeyValue::KEY_NUMPAD_ENTER;
-         } else {
-            vkey = VK_RETURN;
-         }
    }
    return vkey;
 }

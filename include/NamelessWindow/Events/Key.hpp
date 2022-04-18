@@ -42,18 +42,8 @@ struct NLSWIN_API_PUBLIC KeyModifiers {
    bool numLock : 1;
 };
 
-/*!
- * Represents the physical state of the keyboard at the time of the key event.
- * @ingroup Common
- * @headerfile "Events/Key.hpp"
- */
-struct NLSWIN_API_PUBLIC KeyCode {
-   KeyValue value {(KeyValue)-1};         /*! The keyboard key that resulted in this event. */
-   KeyModifiers modifiers {false}; /*! State of modifier keys at time of event generation */
-};
 
-
-enum KeyValue: int {
+enum KeyValue : int {
    KEY_NULL = -1,
    KEY_0,
    KEY_1,
@@ -115,15 +105,15 @@ enum KeyValue: int {
    KEY_EQUALS,
    KEY_BACKSPACE,
    KEY_TILDE,
-   KEY_F1, 
-   KEY_F2, 
-   KEY_F3, 
-   KEY_F4, 
-   KEY_F5, 
-   KEY_F6, 
-   KEY_F7, 
-   KEY_F8, 
-   KEY_F9, 
+   KEY_F1,
+   KEY_F2,
+   KEY_F3,
+   KEY_F4,
+   KEY_F5,
+   KEY_F6,
+   KEY_F7,
+   KEY_F8,
+   KEY_F9,
    KEY_F10,
    KEY_F11,
    KEY_F12,
@@ -159,6 +149,16 @@ enum KeyValue: int {
    KEY_NUMPAD_SUBTRACT,
    KEY_NUMPAD_ADD,
    KEY_NUMPAD_ENTER
+};
+
+/*!
+ * Represents the physical state of the keyboard at the time of the key event.
+ * @ingroup Common
+ * @headerfile "Events/Key.hpp"
+ */
+struct NLSWIN_API_PUBLIC KeyCode {
+   KeyValue value {KeyValue::KEY_NULL};         /*! The keyboard key that resulted in this event. */
+   KeyModifiers modifiers {false}; /*! State of modifier keys at time of event generation */
 };
 
 }  // namespace NLSWIN
