@@ -4,7 +4,7 @@ X11<br />
 ~~2. Fix bug where minimizing a window doesn't unbind master cursor.~~<br />
 ~~3. Figure out why xcb_xfixes_show_cursor sometimes has to be called many times.~~<br />
 4. Attempting to construct a window on a second monitor on i3 (and probably other tiling managers) fails.<br />
-~~5. On i3, forcing a window to floating results in the pointer not being grabbed.~~<br />
+5. ~~On i3, forcing a window to floating results in the pointer not being grabbed.~~<br />
 6. If a resize is performed and the cursor falls outside the area of the new size, the mouse is ungrabbed.<br />
 7. ~~Fix bug where cursor is not unhidden if a window is destroyed.~~ <br />
 8. ~~If 2 windows overlap, the cursor is shown when it should be hidden.~~<br />
@@ -12,10 +12,8 @@ X11<br />
 10. ~~On i3, windows that are forced floating sometimes receive focus even when the cursor should be bound to the other window.~~<br />
 11. Implement more examples.<br />
 12. Look into supporting a larger number of mouse buttons on X11<br />
-13. Better method of determining key name on X11.<br />
-14. Better method of enumerating keyboards on X11.<br />
+13. ~~Better method of determining key name on X11.~~<br />
+14. Better method of enumerating keyboards on X11 (ignoring fake keyboards).<br />
 15. Certain modifiers (NumLock) are not handled globally on X11, but they are in Win32.<br />
-16. User-readable key names stored in KeyEvents are not uniform across platforms.<br />
+16. ~~User-readable key names stored in KeyEvents are not uniform across platforms.~~<br />
 17. ~~Fix fullscreen regression on X11, hopefully.~~<br />
-18. Major modifications on X11 to track currently connected monitors and input devices.<br />
-19. On X11, store original video mode for each monitor on launch, so that original video mode can be restored.<br />
