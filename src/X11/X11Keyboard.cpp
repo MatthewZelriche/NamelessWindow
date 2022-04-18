@@ -1,9 +1,14 @@
 #include "X11Keyboard.hpp"
+#include <X11/Xlib.h>
+#include <xcb/xproto.h>
 #include <xkbcommon/xkbcommon-compat.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "NamelessWindow/Events/Event.hpp"
+#include "NamelessWindow/Events/Key.hpp"
 #include "X11EventBus.hpp"
 #include "XConnection.h"
+#include "MagicEnum/magic_enum.hpp"
 
 using namespace NLSWIN;
 
@@ -68,19 +73,21 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    switch (event->event_type) {
       case XCB_INPUT_KEY_PRESS: {
          xcb_input_key_press_event_t *pressEvent = reinterpret_cast<xcb_input_key_press_event_t *>(event);
-         keyEvent.code.value = (KeyValue)GetSymFromKeyCode(pressEvent->detail);
+         xkb_keysym_t keySym = GetSymFromKeyCode(pressEvent->detail);
+         if (m_keyTranslationTable.count(keySym)) {
+            keyEvent.code.value = (KeyValue)m_keyTranslationTable[keySym];
+         } else {
+            // Return null key event.
+            return KeyEvent();
+         }
 
          // Special case: If we've pressed numlock, update the state.
          if (keyEvent.code.value == KEY_NUMLOCK) {
             xkb_state_update_key(m_KeyboardState, pressEvent->detail, XKB_KEY_DOWN);
          }
 
-         keyEvent.keyName = XKeysymToString(keyEvent.code.value);
-         if (keyEvent.keyName.empty()) {
-            KeyEvent null {};
-            return null;
-         }
-         keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.base);
+         keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
+         keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.effective);
          keyEvent.sourceWindow = GetSubscribedWindows().at(pressEvent->event).lock()->GetGenericID();
          if (m_InternalKeyState[pressEvent->detail] == true) {
             keyEvent.pressType = KeyPressType::REPEAT;
@@ -93,18 +100,21 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
       case XCB_INPUT_KEY_RELEASE: {
          xcb_input_key_release_event_t *releaseEvent =
             reinterpret_cast<xcb_input_key_release_event_t *>(event);
-         keyEvent.code.value = (KeyValue)GetSymFromKeyCode(releaseEvent->detail);
+         xkb_keysym_t keySym = GetSymFromKeyCode(releaseEvent->detail);
+         if (m_keyTranslationTable.count(keySym)) {
+            keyEvent.code.value = (KeyValue)m_keyTranslationTable[keySym];
+         } else {
+            // Return null key event.
+            return KeyEvent();
+         }
 
          // Special case: If we've pressed numlock, update the state.
          if (keyEvent.code.value == KEY_NUMLOCK) {
             xkb_state_update_key(m_KeyboardState, releaseEvent->detail, XKB_KEY_UP);
          }
 
-         keyEvent.keyName = XKeysymToString(keyEvent.code.value);
-         if (keyEvent.keyName.empty()) {
-            KeyEvent null {};
-            return null;
-         }
+         keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
+         keyEvent.code.modifiers = ParseModifierState(releaseEvent->mods.effective);
          keyEvent.pressType = KeyPressType::RELEASED;
          keyEvent.sourceWindow = GetSubscribedWindows().at(releaseEvent->event).lock()->GetGenericID();
          m_InternalKeyState[releaseEvent->detail] = false;
