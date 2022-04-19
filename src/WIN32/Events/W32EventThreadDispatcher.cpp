@@ -23,6 +23,8 @@
  */
 #include "W32EventThreadDispatcher.hpp"
 
+#include <ShellScalingApi.h>
+
 #include "../W32DllMain.hpp"
 #include "../W32Util.hpp"
 
@@ -33,8 +35,7 @@ DWORD W32EventThreadDispatcher::m_mainThreadID {0};
 DWORD W32EventThreadDispatcher::m_eventThreadID {0};
 
 void W32EventThreadDispatcher::Initialize() {
-   // TODO: Is this how we should handle high DPI?
-   SetProcessDPIAware();
+   SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
    // Construct a fake window just for the handle so we can create a thread with the win32 api.
    WNDCLASSW windowClass = {0};
    windowClass.hInstance = GetDLLInstanceHandle();
