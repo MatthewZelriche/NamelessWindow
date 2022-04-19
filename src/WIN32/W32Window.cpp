@@ -59,12 +59,20 @@ W32Window::W32Window(WindowProperties properties) {
       props.windowName = ConvertToWString(properties.windowName).c_str();
    }
 
-   // TODO: Respect application choice of starting windowed or fullscreen.
-
    m_windowHandle = (HWND)SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CREATE_NLSWIN_WINDOW,
                                        (WPARAM)&props, 0);
    if (!m_windowHandle) {
       throw PlatformInitializationException();
+   }
+
+   if (properties.mode == WindowMode::FULLSCREEN) {
+      Show();
+      SetFullscreen(false);
+      Hide();
+   } else if (properties.mode == WindowMode::BORDERLESS) {
+      Show();
+      SetFullscreen(true);
+      Hide();
    }
 
    // Store size & pos, in case windows couldnt construct our desired size & pos.
