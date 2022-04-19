@@ -1,5 +1,7 @@
 build/*
 examples/TestBed/*
 docs/*
+.vs/*
+out/*
 .vscode/settings.json
 .cache/

@@ -1,4 +1,3 @@
-X11<br />
 ~~1. Fix bug where cursor doesn't always get repositioned within a window immediately after the cursor is bound.~~<br />
 ~~1a. Even when cursor gets repositioned within window, first movement causes an instant "jump" of cursor pos.~~<br />
 ~~2. Fix bug where minimizing a window doesn't unbind master cursor.~~<br />
@@ -17,3 +16,4 @@ X11<br />
 15. Certain modifiers (NumLock) are not handled globally on X11, but they are in Win32.<br />
 16. ~~User-readable key names stored in KeyEvents are not uniform across platforms.~~<br />
 17. ~~Fix fullscreen regression on X11, hopefully.~~<br />
+18. Consider exposing SetVideoMode to the public API.

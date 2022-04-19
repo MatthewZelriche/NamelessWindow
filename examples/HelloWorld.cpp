@@ -13,6 +13,7 @@ int main() {
 
    NLSWIN::WindowProperties props;
    props.windowName = "Hello world!";
+   //props.mode = NLSWIN::WindowMode::BORDERLESS;
    auto window = NLSWIN::Window::Create(props);
    window->Show();
 
@@ -32,6 +33,13 @@ int main() {
       while (kb->HasEvent()) {
           auto event = kb->GetNextEvent();
          if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&event)) {
+             if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {
+               window->SetFullscreen(false);
+                window->Resize(1920, 1080);
+             } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
+                //window->SetWindowed();
+                //window->Resize(680, 480);
+             }
             std::cout << "Hello from keyboard one: " << keyEvent->keyName << std::endl;
          }
       }

@@ -52,6 +52,7 @@ W32Window::W32Window(WindowProperties properties) {
    props.dwStyle = WS_OVERLAPPEDWINDOW;
    if (!properties.isUserResizable) {
       props.dwStyle = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
+      m_userResizable = true;
    }
    props.hInstance = win32Class.hInstance;
    if (!properties.windowName.empty()) {
@@ -91,19 +92,63 @@ void W32Window::Hide() {
 }
 
 void W32Window::DisableUserResizing() {
+   m_userResizable = false;
    SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX);
    SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
                                                                         | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 void W32Window::EnableUserResizing() {
+   m_userResizable = true;
    SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
    SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
                                                                         | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 void W32Window::SetFullscreen(bool borderless) noexcept {
+   if (m_windowMode == WindowMode::WINDOWED) {
+      return;
+   } else if (m_windowMode == WindowMode::FULLSCREEN && !borderless) {
+      return;
+   } else if (m_windowMode == WindowMode::BORDERLESS && borderless) {
+      return;
+   }
+
+   HMONITOR monitor = MonitorFromWindow(m_windowHandle, MONITOR_DEFAULTTONEAREST);
+   MONITORINFO info;
+   info.cbSize = sizeof(MONITORINFO);
+   GetMonitorInfo(monitor, &info);
+   SetWindowLong(m_windowHandle, GWL_STYLE,
+                 GetWindowLong(m_windowHandle, GWL_STYLE) & WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
+   int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
+   int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
+   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, resX, resY, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
+   if (borderless) {
+      m_windowMode = WindowMode::BORDERLESS;
+   } else {
+      m_windowMode = WindowMode::FULLSCREEN;
+   }
 }
 
 void W32Window::SetWindowed() noexcept {
+   if (m_windowMode == WindowMode::WINDOWED) {
+      return;
+   }
+
+   HMONITOR monitor = MonitorFromWindow(m_windowHandle, MONITOR_DEFAULTTONEAREST);
+   MONITORINFO info;
+   info.cbSize = sizeof(MONITORINFO);
+   GetMonitorInfo(monitor, &info);
+
+   // Set correct window style.
+   if (m_userResizable) {
+      SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX);
+   } else {
+      SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+   }
+   int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
+   int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
+   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, resX, resY,
+                SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 }
 
 void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
@@ -112,9 +157,38 @@ void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
    UpdateRectProperties();
 }
 
+void W32Window::SetNewVideoMode(int width, int height, int bitsPerPixel) {
+   // Get the monitor name we should change the video mode for.
+   HMONITOR monitor = MonitorFromWindow(m_windowHandle, MONITOR_DEFAULTTONEAREST);
+   MONITORINFO info;
+   info.cbSize = sizeof(MONITORINFO);
+   MONITORINFOEX infoWithName;
+   infoWithName.cbSize = sizeof(MONITORINFOEX);
+   GetMonitorInfo(monitor, &infoWithName);
+
+   // Request a new devmode.
+   DEVMODE mode {};
+   mode.dmSize = sizeof(mode);
+   mode.dmPelsWidth = width;
+   mode.dmPelsHeight = height;
+   mode.dmBitsPerPel = bitsPerPixel;
+   mode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
+   int returnCode = ChangeDisplaySettingsEx(infoWithName.szDevice, &mode, nullptr, CDS_TEST | CDS_FULLSCREEN, nullptr);
+   if (returnCode != DISP_CHANGE_SUCCESSFUL) {
+      throw NLSWIN::InvalidVideoModeException();
+   }
+   // No issue, we can set new mode.
+   ChangeDisplaySettingsEx(infoWithName.szDevice, &mode, nullptr, CDS_FULLSCREEN, nullptr);
+}
+
 void W32Window::Resize(uint32_t width, uint32_t height) noexcept {
-   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
-                                                                        | SWP_NOZORDER | SWP_SHOWWINDOW);
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height,
+                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+
+   if (m_windowMode == WindowMode::FULLSCREEN) {
+      SetNewVideoMode(width, height, 32);
+   }
+
    UpdateRectProperties();
 }
 
