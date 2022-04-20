@@ -26,16 +26,20 @@ std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create(WindowProperties properti
 }
 
 W32Window::W32Window(WindowProperties properties) {
-   win32Class.lpfnWndProc = &W32EventThreadDispatcher::DispatchProc;
-   win32Class.hInstance = NLSWIN::GetDLLInstanceHandle();
-   std::wstring className = ConvertToWString(m_winClassName);
-   win32Class.lpszClassName = className.c_str();
-   if (!RegisterClassW(&win32Class)) {
-      throw PlatformInitializationException();
+   // Only register this new window class once.
+   static bool isFirstWindow = true;
+   if (isFirstWindow) {
+      win32Class.lpfnWndProc = &W32EventThreadDispatcher::DispatchProc;
+      win32Class.hInstance = NLSWIN::GetDLLInstanceHandle();
+      win32Class.lpszClassName = m_winClassName.c_str();
+      if (!RegisterClassW(&win32Class)) {
+         throw PlatformInitializationException();
+      }
+      isFirstWindow = false;
    }
 
    Win32CreationProps props {0};
-   props.className = className;
+   props.className = m_winClassName;
 
    // Determine where to spawn the window.
    if (properties.preferredMonitor.has_value()) {
@@ -48,7 +52,7 @@ W32Window::W32Window(WindowProperties properties) {
    props.nWidth = properties.horzResolution;
    props.nHeight = properties.vertResolution;
 
-   // Determine whether this window is resizable. 
+   // Determine whether this window is resizable.
    props.dwStyle = WS_OVERLAPPEDWINDOW;
    if (!properties.isUserResizable) {
       props.dwStyle = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
@@ -102,14 +106,16 @@ void W32Window::Hide() {
 void W32Window::DisableUserResizing() {
    m_userResizable = false;
    SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX);
-   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
-                                                                        | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+   SetWindowPos(
+      m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
+      SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 void W32Window::EnableUserResizing() {
    m_userResizable = true;
    SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER 
-                                                                        | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+   SetWindowPos(
+      m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
+      SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 void W32Window::SetFullscreen(bool borderless) noexcept {
    if (m_windowMode == WindowMode::WINDOWED) {
@@ -124,11 +130,13 @@ void W32Window::SetFullscreen(bool borderless) noexcept {
    MONITORINFO info;
    info.cbSize = sizeof(MONITORINFO);
    GetMonitorInfo(monitor, &info);
-   SetWindowLong(m_windowHandle, GWL_STYLE,
-                 GetWindowLong(m_windowHandle, GWL_STYLE) & WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
+   SetWindowLong(
+      m_windowHandle, GWL_STYLE,
+      GetWindowLong(m_windowHandle, GWL_STYLE) & WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
    int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
    int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
-   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, resX, resY, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, resX, resY,
+                SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
    if (borderless) {
       m_windowMode = WindowMode::BORDERLESS;
@@ -160,8 +168,8 @@ void W32Window::SetWindowed() noexcept {
 }
 
 void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
-   SetWindowPos(m_windowHandle, 0, newX, newY, m_width, m_height, SWP_FRAMECHANGED | SWP_NOOWNERZORDER 
-                                                                        | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+   SetWindowPos(m_windowHandle, 0, newX, newY, m_width, m_height,
+                SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
    UpdateRectProperties();
 }
 
@@ -181,7 +189,8 @@ void W32Window::SetNewVideoMode(int width, int height, int bitsPerPixel) {
    mode.dmPelsHeight = height;
    mode.dmBitsPerPel = bitsPerPixel;
    mode.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
-   int returnCode = ChangeDisplaySettingsEx(infoWithName.szDevice, &mode, nullptr, CDS_TEST | CDS_FULLSCREEN, nullptr);
+   int returnCode =
+      ChangeDisplaySettingsEx(infoWithName.szDevice, &mode, nullptr, CDS_TEST | CDS_FULLSCREEN, nullptr);
    if (returnCode != DISP_CHANGE_SUCCESSFUL) {
       throw NLSWIN::InvalidVideoModeException();
    }
@@ -229,8 +238,9 @@ void W32Window::ProcessGenericEvent(MSG event) {
    }
 }
 
-static BOOL CALLBACK MonitorEnumerationCallback(HMONITOR monitor, HDC deviceContext, RECT* rect, LPARAM lParam) {
-   std::vector<MonitorInfo> *monitors = reinterpret_cast<std::vector<MonitorInfo> *>(lParam);
+static BOOL CALLBACK MonitorEnumerationCallback(HMONITOR monitor, HDC deviceContext, RECT* rect,
+                                                LPARAM lParam) {
+   std::vector<MonitorInfo>* monitors = reinterpret_cast<std::vector<MonitorInfo>*>(lParam);
    MONITORINFOEX info;
    info.cbSize = sizeof(MONITORINFOEX);
    GetMonitorInfo(monitor, &info);
@@ -244,7 +254,6 @@ static BOOL CALLBACK MonitorEnumerationCallback(HMONITOR monitor, HDC deviceCont
    // Keep enumerating until there's nothing left.
    return true;
 }
-
 
 std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
    SetProcessDPIAware();

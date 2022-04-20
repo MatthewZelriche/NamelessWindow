@@ -53,7 +53,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    WindowMode m_windowMode;
    bool m_shouldClose {false};
 
-   const char *m_winClassName = "NLSWINCLASS";
+   std::wstring m_winClassName = L"NLSWINCLASS";
    HWND m_windowHandle {nullptr};
    WNDCLASSW win32Class {0};
    WNDPROC m_messageFuncPtr;
