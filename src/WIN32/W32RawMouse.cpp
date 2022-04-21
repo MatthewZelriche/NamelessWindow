@@ -61,14 +61,29 @@ void W32RawMouse::ProcessGenericEvent(MSG event) {
                          sizeof(RAWINPUTHEADER));
          RAWINPUT* inputStruct = reinterpret_cast<RAWINPUT*>(inputStructBuf.data());
          if (inputStruct->header.dwType == RIM_TYPEMOUSE) {
-            if (inputStruct->data.mouse.lLastX != 0 || inputStruct->data.mouse.lLastY) {
-               // We got some new raw mouse input.
-               // Is this the hardware device we are listening for?
-               if ((uint64_t)inputStruct->header.hDevice == m_deviceSpecifier) {
+            // We got some new raw mouse input.
+            // Is this the hardware device we are listening for?
+            if ((uint64_t)inputStruct->header.hDevice == m_deviceSpecifier) {
+               if (inputStruct->data.mouse.lLastX != 0 || inputStruct->data.mouse.lLastY) {
                   RawMouseDeltaMovementEvent rawMouseEvent {};
                   rawMouseEvent.deltaX = inputStruct->data.mouse.lLastX;
                   rawMouseEvent.deltaY = inputStruct->data.mouse.lLastY;
                   PushEvent(rawMouseEvent);
+               }
+               // Has the button state changed?
+               if (inputStruct->data.mouse.usButtonFlags != 0) {
+                  if (inputStruct->data.mouse.usButtonFlags == RI_MOUSE_WHEEL) {
+                     RawMouseScrollEvent scrollEvent;
+                     short signedDir = inputStruct->data.mouse.usButtonData;
+                     if (signedDir > 0) {
+                        scrollEvent.scrollType = ScrollType::UP;
+                     } else {
+                        scrollEvent.scrollType = ScrollType::DOWN;
+                     }
+                     PushEvent(scrollEvent);
+                  } else {
+                      // Handle regular buttons.
+                  }
                }
             }
          }
