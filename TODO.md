@@ -17,3 +17,4 @@
 16. ~~User-readable key names stored in KeyEvents are not uniform across platforms.~~<br />
 17. ~~Fix fullscreen regression on X11, hopefully.~~<br />
 18. Consider exposing SetVideoMode to the public API.
+19. Update X11 to confirm with RawMouse & Cursor API changes.

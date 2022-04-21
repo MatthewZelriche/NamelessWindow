@@ -27,7 +27,7 @@ std::wstring ConvertToWString(std::string originalString);
 
 /**
  * @brief Enumerates a list of currently connected devices, based on device type.
- * 
+ *
  * @param deviceType The type of device to get a list of. Valid values are RIM_TYPEKEYBOARD
  * and RIM_TYPEMOUSE.
  * @return A variant containing a vector of keyboard or mouse device infos, depending on deviceType.
