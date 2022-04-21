@@ -83,21 +83,6 @@ struct NLSWIN_API_PUBLIC MouseMovementEvent {
 /*!
  * @brief Generated whenever mouse movement occurs.
  *
- * Provides the delta movement of the mouse, after platform-specific mouse acceleration/smoothing has been
- * applied. If you would look raw input data that is not impacted by mouse acceleration, use
- * MouseRawDeltaMovementEvent instead. RawMouse objects cannot generate these events.
- * @see MouseRawDeltaMovementEvent
- * @ingroup Common
- * @headerfile "Events/Event.hpp"
- */
-struct NLSWIN_API_PUBLIC MouseDeltaMovementEvent {
-   float deltaX;
-   float deltaY;
-};
-
-/*!
- * @brief Generated whenever mouse movement occurs.
- *
  * Provides the raw mouse movement data, before platform-specific mouse acceleration/smoothing has been
  * applied.
  * @ingroup Common
@@ -154,6 +139,6 @@ struct NLSWIN_API_PUBLIC WindowResizeEvent {
 using Event =
    std::variant<std::monostate, KeyEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent,
                 RawMouseButtonEvent, MouseScrollEvent, RawMouseScrollEvent, MouseMovementEvent,
-                MouseDeltaMovementEvent, MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent>;
+                MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent>;
 
 }  // namespace NLSWIN

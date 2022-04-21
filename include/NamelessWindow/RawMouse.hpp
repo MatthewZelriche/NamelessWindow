@@ -21,8 +21,8 @@ namespace NLSWIN {
 /*! Contains information about a specific pointer device. */
 /*! @ingroup Common */
 struct NLSWIN_API_PUBLIC MouseDeviceInfo {
-   const std::string_view name {""};              /*! The name the OS has given this pointer device. */
-   const uint32_t platformSpecificIdentifier {0}; /*! A platform specific identifier for this pointer device.
+   const std::string name {""};              /*! The name the OS has given this pointer device. */
+   const uint64_t platformSpecificIdentifier {0}; /*! A platform specific identifier for this pointer device.
                                                      This cannot be relied upon to be unique across platforms
                                                      or even across different application launches. */
 };
@@ -31,11 +31,10 @@ struct NLSWIN_API_PUBLIC MouseDeviceInfo {
  * @ingroup Common
  * @brief Represents a specific physical mouse device that can read raw device data.
  *
- * This interface defines how the client interacts with physical mice connected to the system.
- * Construction of these objects is done through the Create factory method.
+ * This class defines how the client interacts with physical mice connected to the system.
  * A RawMouse has no relation to any window. It receives events regardless of where the cursor is, even if
  * events are being sent to windows not created by this application. This class can only return the following
- * events: RawMouseScrollEvent, RawMouseButtonEvent, MouseDeltaMovementEvent, RawMouseDeltaMovementEvent.
+ * events: RawMouseScrollEvent, RawMouseButtonEvent, RawMouseDeltaMovementEvent.
  * Clients should use this class only if they are interested in events coming from a specific physical mouse
  * only. Otherwise, you likely want to use Cursor instead.
  * @see Cursor

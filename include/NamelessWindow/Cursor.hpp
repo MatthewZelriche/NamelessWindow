@@ -20,8 +20,12 @@ namespace NLSWIN {
  * @brief Represents the physical cursor seen on the screen.
  * @ingroup Common
  *
+ * This class lets you query information related to the physical cursor that is displayed to the user on the screen. 
  * The cursor is impacted by all physical mouse devices connected to the system. If you wish to get
- * events from a specific physical device, you should use a RawMouse object.
+ * raw information from a specific physical mouse device, you should instead use a RawMouse object. 
+ * 
+ * The Cursor can return the following event types: MouseButtonEvent, MouseScrollEvent, MouseMovementEvent, 
+ * RawMouseDeltaMovementEvent, MouseEnterEvent, MouseLeaveEvent.
  * @warning Currently, only a single Cursor per application is supported. Attempts to construct more than one
  * cursor will fail. Multiple-cursor setups controlled by distinct physical devices as a form of multiseating
  * may be supported in the future.
@@ -37,22 +41,20 @@ class NLSWIN_API_PUBLIC Cursor : virtual public InputDevice {
     * @post A weak pointer to this object will be given to the EventDispatcher.
     * @throws PlatformInitializationException
     * @throws MultipleCursorException
-    * @return A shared pointer to the newly constructed Cursor. Caller owns this resource and is
+    * @return A shared pointer to the newly constructed instance of this class. Caller owns this resource and is
     * expected to manage its lifetime.
     */
    static std::shared_ptr<Cursor> Create();
 
    /*!
-    * @brief Binds this cursor to a specified window, locking it within that window's bounds. It also sets the
-    * window focus to the bound window.
+    * @brief Binds this cursor to a specified window, locking it within that window's bounds.
     *
+    * After calling this method, the cursor will be confined to the specified window's area. If focus 
+    * on that window is lost, the cursor will be temporarily freed, until focus returns to the bound window.
     * A cursor can only be bound to one window, so multiple calls of this method will switch the bound
-    * window. Multiple attempts to bind the pointer to the window its already bound to does nothing. If the
-    * window is not visible at the time of this call, the cursor will be bound as soon as the window becomes
-    * visible.
+    * window. Multiple attempts to bind the pointer to the window its already bound to does nothing.
     * @warning If the cursor is currently grabbed by another application, this request is discarded. If this
-    * method is called before the window has been shown, this request is discarded. If the window is shown,
-    * but completely obscured (eg, entirely hidden by another window), this request is discarded.
+    * method is called before the window has been shown, behavior is undefined.
     * @param window The window to bind to.
     */
    virtual void BindToWindow(const Window *const window) noexcept = 0;
