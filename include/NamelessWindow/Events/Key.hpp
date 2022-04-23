@@ -25,7 +25,7 @@ enum class KeyPressType { UNKNOWN = -1, PRESSED = 0, RELEASED = 1, REPEAT = 2 };
  * @ingroup Common
  * @headerfile "Events/Key.hpp"
  */
-enum class ButtonPressType { PRESSED = 0, RELEASED = 1 };
+enum class ButtonPressType { UNKNOWN = -1, PRESSED = 0, RELEASED = 1 };
 
 /*!
  * Defines which modifier keys were active during a KeyEvent

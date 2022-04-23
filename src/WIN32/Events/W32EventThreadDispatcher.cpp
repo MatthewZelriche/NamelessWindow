@@ -93,10 +93,17 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
       }
       case WM_SIZE: {
          PostThreadEvent(Window, Message, WParam, LParam);
-         break;
+         return 0;
       }
       case WM_INPUT: {
-         PostThreadEvent(Window, Message, WParam, LParam);
+         // For reasons I cannot explain, if I send the unmodified LPARAM with PostThreadMessage,
+         // the data in LPARAM becomes incorrect at some point before retrieving it on the main thread
+         // with PeekMessage. In order to prevent this, I need to copy the LPARAM into a new location in
+         // memory to prevent Windows (?) from messing with it.
+         static unsigned int dataSize = 80;
+         RAWINPUT *inputStructBuf = (RAWINPUT *)new uint8_t[dataSize];
+         GetRawInputData((HRAWINPUT)LParam, RID_INPUT, inputStructBuf, &dataSize, sizeof(RAWINPUTHEADER));
+         PostThreadEvent(Window, Message, WParam, (LPARAM)inputStructBuf);
          return 0;
       }
       case WM_SETFOCUS: {
@@ -109,7 +116,8 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
       }
       default: {
          Result = DefWindowProcW(Window, Message, WParam, LParam);
-      } break;
+         break;
+      }
    }
 
    return Result;

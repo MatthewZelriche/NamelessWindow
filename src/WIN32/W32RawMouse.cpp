@@ -51,43 +51,82 @@ void W32RawMouse::ProcessGenericEvent(MSG event) {
    // Always remember to convert the WParam to our special type
    // @see WParamWithWindowHandle
    WParamWithWindowHandle* wParam = reinterpret_cast<WParamWithWindowHandle*>(event.wParam);
-   switch (event.message) {
-      case WM_INPUT: {
-         // My understanding is that WM_INPUT data structs never exceed 80 bytes.
-         // We statically allocate a buffer of memory to avoid frequent new/delete calls.
-         static unsigned int dataSize = 80;
-         static std::vector<uint8_t> inputStructBuf(dataSize);
-         GetRawInputData((HRAWINPUT)event.lParam, RID_INPUT, inputStructBuf.data(), &dataSize,
-                         sizeof(RAWINPUTHEADER));
-         RAWINPUT* inputStruct = reinterpret_cast<RAWINPUT*>(inputStructBuf.data());
-         if (inputStruct->header.dwType == RIM_TYPEMOUSE) {
-            // We got some new raw mouse input.
-            // Is this the hardware device we are listening for?
-            if ((uint64_t)inputStruct->header.hDevice == m_deviceSpecifier) {
-               if (inputStruct->data.mouse.lLastX != 0 || inputStruct->data.mouse.lLastY) {
-                  RawMouseDeltaMovementEvent rawMouseEvent {};
-                  rawMouseEvent.deltaX = inputStruct->data.mouse.lLastX;
-                  rawMouseEvent.deltaY = inputStruct->data.mouse.lLastY;
-                  PushEvent(rawMouseEvent);
-               }
-               // Has the button state changed?
-               if (inputStruct->data.mouse.usButtonFlags != 0) {
-                  if (inputStruct->data.mouse.usButtonFlags == RI_MOUSE_WHEEL) {
-                     RawMouseScrollEvent scrollEvent;
-                     short signedDir = inputStruct->data.mouse.usButtonData;
-                     if (signedDir > 0) {
-                        scrollEvent.scrollType = ScrollType::UP;
-                     } else {
-                        scrollEvent.scrollType = ScrollType::DOWN;
-                     }
-                     PushEvent(scrollEvent);
+   if (event.message == WM_INPUT) {
+       // WM_INPUT is a special case, we we transform the raw input on the event thread. 
+       // This requires a heap allocation and we must be careful to delete it at the end of this method. 
+       // See W32EventThreadDispatcher for details.
+      RAWINPUT* inputStruct = reinterpret_cast<RAWINPUT*>(event.lParam);
+      if (inputStruct->header.dwType == RIM_TYPEMOUSE) {
+         // We got some new raw mouse input.
+         // Is this the hardware device we are listening for?
+         if ((uint64_t)inputStruct->header.hDevice == m_deviceSpecifier) {
+            if (inputStruct->data.mouse.lLastX != 0 || inputStruct->data.mouse.lLastY) {
+               RawMouseDeltaMovementEvent rawMouseEvent {};
+               rawMouseEvent.deltaX = inputStruct->data.mouse.lLastX;
+               rawMouseEvent.deltaY = inputStruct->data.mouse.lLastY;
+               PushEvent(rawMouseEvent);
+            }
+            // Has the button state changed?
+            if (inputStruct->data.mouse.usButtonFlags) {
+               if (inputStruct->data.mouse.usButtonFlags == RI_MOUSE_WHEEL) {
+                  RawMouseScrollEvent scrollEvent;
+                  short signedDir = inputStruct->data.mouse.usButtonData;
+                  if (signedDir > 0) {
+                     scrollEvent.scrollType = ScrollType::UP;
                   } else {
-                      // Handle regular buttons.
+                     scrollEvent.scrollType = ScrollType::DOWN;
                   }
+                  PushEvent(scrollEvent);
+               } else {
+                  // Handle regular buttons.
+                  PushEvent(PackageButtonEvent(inputStruct->data.mouse));
                }
             }
          }
+      }
+      delete (void*)(event.lParam);
+   }
+}
+
+ButtonValue W32RawMouse::TranslateButton(unsigned int win32ButtonID) {
+   if (!m_buttonTranslationTable.count(win32ButtonID)) {
+      return ButtonValue::NULLCLICK;
+   }
+   return m_buttonTranslationTable[win32ButtonID];
+}
+
+Event W32RawMouse::PackageButtonEvent(RAWMOUSE event) {
+   RawMouseButtonEvent buttonEvent;
+   switch (event.usButtonFlags) {
+      case RI_MOUSE_LEFT_BUTTON_DOWN:
+      case RI_MOUSE_RIGHT_BUTTON_DOWN:
+      case RI_MOUSE_MIDDLE_BUTTON_DOWN:
+      case RI_MOUSE_BUTTON_4_DOWN:
+      case RI_MOUSE_BUTTON_5_DOWN: {
+         buttonEvent.type = ButtonPressType::PRESSED;
          break;
       }
+      case RI_MOUSE_LEFT_BUTTON_UP:
+      case RI_MOUSE_RIGHT_BUTTON_UP:
+      case RI_MOUSE_MIDDLE_BUTTON_UP:
+      case RI_MOUSE_BUTTON_4_UP:
+      case RI_MOUSE_BUTTON_5_UP: {
+         buttonEvent.type = ButtonPressType::RELEASED;
+         break;
+      }
+      default: {
+         buttonEvent.type = ButtonPressType::UNKNOWN;
+      }
+   }
+   buttonEvent.button = TranslateButton(event.usButtonFlags);
+   int buttonIndex = (int)buttonEvent.button;
+   if (!m_rawButtonState[buttonIndex] && buttonEvent.type == ButtonPressType::PRESSED) {
+      m_rawButtonState[buttonIndex] = true;
+      return buttonEvent;
+   } else if (m_rawButtonState[buttonIndex] && buttonEvent.type == ButtonPressType::RELEASED) {
+      m_rawButtonState[buttonIndex] = false;
+      return buttonEvent;
+   } else {
+      return std::monostate();
    }
 }
