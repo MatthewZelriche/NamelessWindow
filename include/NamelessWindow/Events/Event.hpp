@@ -45,7 +45,8 @@ struct NLSWIN_API_PUBLIC MouseButtonEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with a raw mouse button. */
+/*! Generated whenever the user interacts with a raw mouse button. 
+    Does not include button events on window border/title.*/
 struct NLSWIN_API_PUBLIC RawMouseButtonEvent {
    ButtonValue button;   /*!< Which button was pressed. @see ButtonValue */
    ButtonPressType type; /*!< Whether the event was a press or release. */
@@ -53,7 +54,8 @@ struct NLSWIN_API_PUBLIC RawMouseButtonEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with the scroll wheel on a mouse. */
+/*! Generated whenever the user interacts with the scroll wheel on a mouse within a user-created window.
+    Does not include scrolls on window border/title. */
 struct NLSWIN_API_PUBLIC MouseScrollEvent {
    ScrollType scrollType; /*!< The direction the scroll wheel was scrolled in. @see ScrollType */
    float xPos;            /*!< The X pixel coordinate where the event was generated in the source window. */

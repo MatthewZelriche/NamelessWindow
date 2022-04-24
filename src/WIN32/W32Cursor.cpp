@@ -98,6 +98,31 @@ void W32Cursor::ProcessGenericEvent(MSG event) {
                                       wParam->sourceWindow));
          break;
       }
+      case WM_MOUSEWHEEL: {
+         MouseScrollEvent scrollEvent;
+          if (GET_WHEEL_DELTA_WPARAM(wParam->wParam) > 0) {
+            scrollEvent.scrollType = ScrollType::UP;
+          } else {
+             scrollEvent.scrollType = ScrollType::DOWN;
+          }
+          scrollEvent.sourceWindow = W32Window::IDFromHWND(wParam->sourceWindow);
+
+          // Need to convert to client coordinates.
+          POINT coords {GET_X_LPARAM(event.lParam), GET_Y_LPARAM(event.lParam)};
+          ScreenToClient(wParam->sourceWindow, &coords);
+          scrollEvent.xPos = coords.x;
+          scrollEvent.yPos = coords.y;
+
+          // Scroll wheel events normally trigger on the ENTIRE window, including non-client area.
+          // We need to avoid this to conform to the NLSWIN API.
+          RECT clientRect;
+          GetClientRect(wParam->sourceWindow, &clientRect);
+          if (scrollEvent.xPos < 0 || scrollEvent.xPos > clientRect.right || scrollEvent.yPos < 0 ||
+              scrollEvent.yPos > clientRect.bottom) {
+             break;
+          }
+          PushEvent(scrollEvent);
+      }
    }
 }
 
