@@ -243,6 +243,12 @@ void W32Window::ProcessGenericEvent(MSG event) {
             m_yPos = HIWORD(event.lParam);
             break;
          }
+         case WM_SETFOCUS: {
+             if ((HWND)(wParam->wParam) == m_windowHandle) {
+               PushEvent(WindowFocusedEvent {GetGenericID()});
+            }
+            break;
+         }
       }
    }
 }

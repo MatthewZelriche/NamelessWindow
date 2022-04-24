@@ -99,7 +99,7 @@ struct NLSWIN_API_PUBLIC RawMouseDeltaMovementEvent {
 };
 
 /*!
- * @brief Generated whenever a cursor enters within the bounds of an application window's client area (excluding titlebar/decorations).
+ * @brief Generated whenever a cursor enters within the bounds of an application window's client area.
  * @see Cursor
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
@@ -111,7 +111,7 @@ struct NLSWIN_API_PUBLIC MouseEnterEvent {
 };
 
 /*!
- * @brief Generated whenever a cursor leaves the bounds of an application window.
+ * @brief Generated whenever a cursor leaves the bounds of an application window's client area.
  * @see Cursor
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
