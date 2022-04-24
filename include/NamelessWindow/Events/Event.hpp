@@ -34,7 +34,8 @@ struct NLSWIN_API_PUBLIC KeyEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with a mouse button. */
+/*! Generated whenever the user interacts with a mouse button. 
+    Does not include button events on window border/title.*/
 struct NLSWIN_API_PUBLIC MouseButtonEvent {
    ButtonValue button;    /*!< Which button was pressed. @see ButtonValue */
    ButtonPressType type;  /*!< Whether the event was a press or release. */
@@ -45,8 +46,7 @@ struct NLSWIN_API_PUBLIC MouseButtonEvent {
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with a raw mouse button. 
-    Does not include button events on window border/title.*/
+/*! Generated whenever the user interacts with a raw mouse button. */
 struct NLSWIN_API_PUBLIC RawMouseButtonEvent {
    ButtonValue button;   /*!< Which button was pressed. @see ButtonValue */
    ButtonPressType type; /*!< Whether the event was a press or release. */
@@ -72,6 +72,9 @@ struct NLSWIN_API_PUBLIC RawMouseScrollEvent {
 
 /*!
  * @brief Generated whenever a cursor is moved to a new position inside a client window.
+ * 
+ * Does not include button events on window border/title.
+ * @todo Should window need to be focused to get this event?
  * @see Cursor
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
@@ -96,7 +99,7 @@ struct NLSWIN_API_PUBLIC RawMouseDeltaMovementEvent {
 };
 
 /*!
- * @brief Generated whenever a cursor enters within the bounds of an application window.
+ * @brief Generated whenever a cursor enters within the bounds of an application window's client area (excluding titlebar/decorations).
  * @see Cursor
  * @ingroup Common
  * @headerfile "Events/Event.hpp"
@@ -114,8 +117,6 @@ struct NLSWIN_API_PUBLIC MouseEnterEvent {
  * @headerfile "Events/Event.hpp"
  */
 struct NLSWIN_API_PUBLIC MouseLeaveEvent {
-   float xPos;            /*!< The X coordinate where the cursor left the window. */
-   float yPos;            /*!< The Y coordinate where the cursor left the window. */
    WindowID sourceWindow; /*!< The window the cursor left. */
 };
 

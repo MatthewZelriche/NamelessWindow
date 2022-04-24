@@ -30,6 +30,8 @@ class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32InputDevice, publi
 
    private:
    Event PackageButtonEvent(MSG event, ButtonValue value, ButtonPressType type, HWND window);
+
+   WindowID m_inhabitedWindow {0};
 };
 
 }  // namespace NLSWIN

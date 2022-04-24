@@ -116,13 +116,15 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
       }
       case WM_XBUTTONDOWN:
       case WM_XBUTTONUP:
-      case WM_LBUTTONDOWN: 
+      case WM_LBUTTONDOWN:
       case WM_LBUTTONUP:
       case WM_MBUTTONDOWN:
       case WM_MBUTTONUP:
       case WM_RBUTTONDOWN:
       case WM_RBUTTONUP:
-      case WM_MOUSEWHEEL: {
+      case WM_MOUSEWHEEL:
+      case WM_MOUSEMOVE:
+      case WM_MOUSELEAVE: {
          PostThreadEvent(Window, Message, WParam, LParam);
          return 0;
       }
