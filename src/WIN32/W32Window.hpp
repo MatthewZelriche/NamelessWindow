@@ -13,6 +13,7 @@
 #include <windows.h>
 #include <WinUser.h>
 // clang-format on
+#include <unordered_map>
 
 #include "Events/W32EventListener.hpp"
 #include "NamelessWindow/NLSAPI.hpp"
@@ -44,6 +45,8 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    void ProcessGenericEvent(MSG event) override;
    [[nodiscard]] inline HWND GetWin32Handle() const noexcept { return m_windowHandle; }
 
+   [[nodiscard]] static inline WindowID IDFromHWND(HWND handle) { return m_handleMap.at(handle); }
+
    private:
    void SetNewVideoMode(int width, int height, int bitsPerPixel);
    void UpdateRectProperties();
@@ -59,5 +62,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    WNDCLASSW win32Class {0};
    WNDPROC m_messageFuncPtr;
    bool m_userResizable {false};
+
+   static std::unordered_map<HWND, WindowID> m_handleMap;
 };
 }  // namespace NLSWIN

@@ -114,6 +114,18 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
          PostThreadEvent(Window, Message, WParam, LParam);
          return 0;
       }
+      case WM_XBUTTONDOWN:
+      case WM_XBUTTONUP:
+      case WM_LBUTTONDOWN: 
+      case WM_LBUTTONUP:
+      case WM_MBUTTONDOWN:
+      case WM_MBUTTONUP:
+      case WM_RBUTTONDOWN:
+      case WM_RBUTTONUP:
+      case WM_MOUSEWHEEL: {
+         PostThreadEvent(Window, Message, WParam, LParam);
+         return 0;
+      }
       default: {
          Result = DefWindowProcW(Window, Message, WParam, LParam);
          break;

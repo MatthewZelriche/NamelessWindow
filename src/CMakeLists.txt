@@ -22,7 +22,9 @@ elseif(${NLSWIN_WIN32})
                            "WIN32/W32InputDevice.cpp"
                            "WIN32/W32Keyboard.cpp"
                            "WIN32/W32Util.cpp"
-                           "WIN32/W32RawMouse.cpp")
+                           "WIN32/W32RawMouse.cpp"
+                           "WIN32/W32Cursor.cpp"
+                           "WIN32/W32BaseMouse.cpp")
 else()
    message(FATAL_ERROR "Unrecognized build target!")
 endif()

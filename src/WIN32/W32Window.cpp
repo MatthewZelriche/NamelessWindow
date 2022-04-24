@@ -8,6 +8,8 @@
 
 using namespace NLSWIN;
 
+std::unordered_map<HWND, WindowID> W32Window::m_handleMap;
+
 std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create() {
    return Create(WindowProperties());
 }
@@ -83,11 +85,13 @@ W32Window::W32Window(WindowProperties properties) {
    UpdateRectProperties();
 
    NewID();
+   m_handleMap.insert({m_windowHandle, GetGenericID()});
 }
 
 W32Window::~W32Window() {
    SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), DESTROY_NLSWIN_WINDOW,
                 (WPARAM)m_windowHandle, 0);
+   m_handleMap.erase(m_windowHandle);
 }
 
 void W32Window::UpdateRectProperties() {
