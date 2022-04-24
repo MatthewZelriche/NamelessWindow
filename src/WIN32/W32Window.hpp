@@ -27,6 +27,7 @@ namespace NLSWIN {
 class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    public:
    W32Window(WindowProperties properties);
+   ~W32Window();
    void Show() override;
    void Hide() override;
    void DisableUserResizing() override;

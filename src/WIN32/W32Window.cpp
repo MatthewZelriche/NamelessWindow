@@ -85,6 +85,11 @@ W32Window::W32Window(WindowProperties properties) {
    NewID();
 }
 
+W32Window::~W32Window() {
+   SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), DESTROY_NLSWIN_WINDOW,
+                (WPARAM)m_windowHandle, 0);
+}
+
 void W32Window::UpdateRectProperties() {
    RECT rect;
    GetWindowRect(m_windowHandle, &rect);
