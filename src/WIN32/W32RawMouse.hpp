@@ -14,12 +14,13 @@
 
 #include "Events/W32EventListener.hpp"
 #include "NamelessWindow/RawMouse.hpp"
+#include "W32BaseMouse.hpp"
 #include "W32Window.hpp"
 
 namespace NLSWIN {
 
 /*! @ingroup WIN32 */
-class NLSWIN_API_PRIVATE W32RawMouse : public RawMouse, public W32EventListener {
+class NLSWIN_API_PRIVATE W32RawMouse : public RawMouse, public W32EventListener, public W32BaseMouse {
    public:
    W32RawMouse(MouseDeviceInfo device);
    ButtonValue TranslateButton(unsigned int win32ButtonID);

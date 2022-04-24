@@ -24,27 +24,7 @@ std::shared_ptr<RawMouse> RawMouse::Create(MouseDeviceInfo device) {
 }
 
 W32RawMouse::W32RawMouse(MouseDeviceInfo device) {
-   // Set up a dummy window once that will be used for all raw mouse instances.
-   if (s_firstInit) {
-      std::shared_ptr<Window> test = Window::Create();
-      s_rawInputHandle = std::static_pointer_cast<W32Window>(Window::Create());
-      s_firstInit = false;
-   }
-
    m_deviceSpecifier = device.platformSpecificIdentifier;
-
-   // Register our raw mouse device.
-   RAWINPUTDEVICE rawDevice {0};
-   rawDevice.usUsage = HID_USAGE_GENERIC_MOUSE;
-   rawDevice.usUsagePage = HID_USAGE_PAGE_GENERIC;
-   // Use RIDEV_INPUTSINK to get raw mouse events from our dummy window even when
-   // its not in focus.
-   rawDevice.dwFlags = RIDEV_INPUTSINK;
-   rawDevice.hwndTarget = s_rawInputHandle->GetWin32Handle();
-
-   if (!RegisterRawInputDevices(&rawDevice, 1, sizeof(rawDevice))) {
-      throw PlatformInitializationException();
-   }
 }
 
 void W32RawMouse::ProcessGenericEvent(MSG event) {
@@ -52,19 +32,16 @@ void W32RawMouse::ProcessGenericEvent(MSG event) {
    // @see WParamWithWindowHandle
    WParamWithWindowHandle* wParam = reinterpret_cast<WParamWithWindowHandle*>(event.wParam);
    if (event.message == WM_INPUT) {
-       // WM_INPUT is a special case, we we transform the raw input on the event thread. 
-       // This requires a heap allocation and we must be careful to delete it at the end of this method. 
-       // See W32EventThreadDispatcher for details.
+      // WM_INPUT is a special case, we we transform the raw input on the event thread.
+      // This requires a heap allocation and we must be careful to delete it at the end of this method.
+      // See W32EventThreadDispatcher for details.
       RAWINPUT* inputStruct = reinterpret_cast<RAWINPUT*>(event.lParam);
       if (inputStruct->header.dwType == RIM_TYPEMOUSE) {
          // We got some new raw mouse input.
          // Is this the hardware device we are listening for?
          if ((uint64_t)inputStruct->header.hDevice == m_deviceSpecifier) {
-            if (inputStruct->data.mouse.lLastX != 0 || inputStruct->data.mouse.lLastY) {
-               RawMouseDeltaMovementEvent rawMouseEvent {};
-               rawMouseEvent.deltaX = inputStruct->data.mouse.lLastX;
-               rawMouseEvent.deltaY = inputStruct->data.mouse.lLastY;
-               PushEvent(rawMouseEvent);
+            if (inputStruct->data.mouse.lLastX || inputStruct->data.mouse.lLastY) {
+               PushEvent(PackageRawDeltaEvent(inputStruct->data.mouse));
             }
             // Has the button state changed?
             if (inputStruct->data.mouse.usButtonFlags) {
