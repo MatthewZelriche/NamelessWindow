@@ -73,13 +73,10 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
       }
       case WM_INPUT: {
          if (GetSubscribedWindows().count(keyboardFocusedWindow)) {
-            // My understanding is that WM_INPUT data structs never exceed 80 bytes.
-            // We statically allocate a buffer of memory to avoid frequent new/delete calls.
-            static unsigned int dataSize = 80;
-            static std::vector<uint8_t> inputStructBuf(dataSize);
-            GetRawInputData((HRAWINPUT)event.lParam, RID_INPUT, inputStructBuf.data(),
-                  &dataSize, sizeof(RAWINPUTHEADER));
-            RAWINPUT *inputStruct = reinterpret_cast<RAWINPUT*>(inputStructBuf.data());
+            // WM_INPUT is a special case, we we transform the raw input on the event thread.
+            // This requires a heap allocation and we must be careful to delete it at the end of this method.
+            // See W32EventThreadDispatcher for details.
+            RAWINPUT* inputStruct = reinterpret_cast<RAWINPUT*>(event.lParam);
             if (inputStruct->header.dwType == RIM_TYPEKEYBOARD) {
                // Only process if we are specifically interested in this device, or its a master device.
                // We additionally ignore inputs of 255/0xff, because windows sends fake input events with 
