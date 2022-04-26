@@ -73,27 +73,21 @@ DWORD WINAPI W32EventThreadDispatcher::EventThreadMain(LPVOID Param) {
       MSG Message;
       GetMessageW(&Message, 0, 0, 0);
       TranslateMessage(&Message);
-      // TODO: Decide what queued messages to send.
-      if (false) {
-         PostThreadMessageW(m_mainThreadID, Message.message, Message.wParam, Message.lParam);
-      } else {
-         DispatchMessageW(&Message);
-      }
+      DispatchMessageW(&Message);
    }
 }
 
 LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Message, WPARAM WParam,
                                                         LPARAM LParam) {
    LRESULT Result = 0;
-   // TODO: What non-queued messages to send?
    switch (Message) {
       case WM_CLOSE: {
          PostThreadEvent(Window, Message, WParam, LParam);
          return 0;
       }
-      case WM_SIZE: {
+      case WM_MOUSEACTIVATE: {
          PostThreadEvent(Window, Message, WParam, LParam);
-         return 0;
+         return MA_ACTIVATE;
       }
       case WM_INPUT: {
          // For reasons I cannot explain, if I send the unmodified LPARAM with PostThreadMessage,
@@ -104,16 +98,13 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
          RAWINPUT *inputStructBuf = (RAWINPUT *)new uint8_t[dataSize];
          GetRawInputData((HRAWINPUT)LParam, RID_INPUT, inputStructBuf, &dataSize, sizeof(RAWINPUTHEADER));
          PostThreadEvent(Window, Message, WParam, (LPARAM)inputStructBuf);
-         return 0;
+         break;
       }
-      case WM_SETFOCUS: {
-         PostThreadEvent(Window, Message, (WPARAM)GetFocus(), LParam);
-         return 0;
-      }
-      case WM_MOVE: {
-         PostThreadEvent(Window, Message, WParam, LParam);
-         return 0;
-      }
+      case WM_SETFOCUS:
+      case WM_NCMOUSEMOVE:
+      case WM_MOVE:
+      case WM_SIZE:
+      case WM_NCLBUTTONDOWN:
       case WM_XBUTTONDOWN:
       case WM_XBUTTONUP:
       case WM_LBUTTONDOWN:
@@ -124,17 +115,21 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
       case WM_RBUTTONUP:
       case WM_MOUSEWHEEL:
       case WM_MOUSEMOVE:
-      case WM_MOUSELEAVE: {
+      case WM_MOUSELEAVE:
+      case WM_DESTROY:
+      case WM_ACTIVATE:
+      case WM_EXITSIZEMOVE:
+      case WM_ENTERSIZEMOVE:
+      case WM_KILLFOCUS: {
          PostThreadEvent(Window, Message, WParam, LParam);
-         return 0;
+         break;
       }
       default: {
-         Result = DefWindowProcW(Window, Message, WParam, LParam);
          break;
       }
    }
 
-   return Result;
+   return DefWindowProcW(Window, Message, WParam, LParam);
 }
 
 void W32EventThreadDispatcher::PostThreadEvent(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam) {

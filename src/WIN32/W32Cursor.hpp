@@ -20,7 +20,7 @@ namespace NLSWIN {
 /*! @ingroup WIN32 */
 class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32InputDevice, public W32BaseMouse {
    public:
-   W32Cursor();
+   W32Cursor() = default;
 
    void BindToWindow(const Window *const window) noexcept override;
    void UnbindFromWindows() noexcept override;
@@ -30,8 +30,13 @@ class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32InputDevice, publi
 
    private:
    Event PackageButtonEvent(MSG event, ButtonValue value, ButtonPressType type, HWND window);
+   void ConfineCursorToRect(HWND handle, RECT rect);
 
+   bool m_blockCursorClip {false};
+   bool m_beginClickOnNCArea {false};
    WindowID m_inhabitedWindow {0};
+   WindowID m_focusedWindow {0};
+   std::pair<WindowID, HWND> m_boundWindow {0, 0};
 };
 
 }  // namespace NLSWIN

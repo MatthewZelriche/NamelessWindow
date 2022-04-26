@@ -15,13 +15,40 @@ std::shared_ptr<Cursor> Cursor::Create() {
    return std::move(impl);
 }
 
-W32Cursor::W32Cursor() {
+void W32Cursor::BindToWindow(const Window* const window) noexcept {
+   auto w32Window = reinterpret_cast<const W32Window*>(window);
+   // Set the window we are meant to be bound to when the window is focused.
+   m_boundWindow.first = w32Window->GetGenericID();
+   m_boundWindow.second = w32Window->GetWin32Handle();
+
+   // If we are attempting to rebind to the same window, no need to do anything.
+   if (w32Window->GetGenericID() != m_boundWindow.first) {
+      RECT rect;
+      GetClientRect(w32Window->GetWin32Handle(), &rect);
+      ConfineCursorToRect(w32Window->GetWin32Handle(), rect);
+   }
 }
 
-void W32Cursor::BindToWindow(const Window* const window) noexcept {
+void W32Cursor::ConfineCursorToRect(HWND handle, RECT rect) {
+   // If the bound window isn't focused, disregard this attempt to clip the cursor.
+   if ((W32Window::IDFromHWND(handle) != m_focusedWindow)) {
+      return;
+   }
+   POINT topLeft {rect.left, rect.top};
+   ClientToScreen(handle, &topLeft);
+
+   POINT bottomRight {rect.right, rect.bottom};
+   ClientToScreen(handle, &bottomRight);
+
+   RECT screenRect {topLeft.x, topLeft.y, bottomRight.x, bottomRight.y};
+   ClipCursor(&screenRect);
 }
 
 void W32Cursor::UnbindFromWindows() noexcept {
+   if (m_boundWindow.first) {
+      ClipCursor(nullptr);
+      m_boundWindow = {0, 0};
+   }
 }
 
 void W32Cursor::ShowCursor() noexcept {
@@ -31,8 +58,8 @@ void W32Cursor::HideCursor() noexcept {
 }
 
 void W32Cursor::ProcessGenericEvent(MSG event) {
-   // Always remember to convert the WParam to our special type
-   // @see WParamWithWindowHandle
+   //  Always remember to convert the WParam to our special type
+   //  @see WParamWithWindowHandle
    WParamWithWindowHandle* wParam = reinterpret_cast<WParamWithWindowHandle*>(event.wParam);
    switch (event.message) {
       case WM_INPUT: {
@@ -132,7 +159,7 @@ void W32Cursor::ProcessGenericEvent(MSG event) {
          PushEvent(moveEvent);
 
          if (m_inhabitedWindow != moveEvent.sourceWindow) {
-             // Set up a tracking event for our next leave event. 
+            // Set up a tracking event for our next leave event.
             TRACKMOUSEEVENT trackInfo {0};
             trackInfo.cbSize = sizeof(TRACKMOUSEEVENT);
             trackInfo.dwFlags = TME_LEAVE;
@@ -156,6 +183,85 @@ void W32Cursor::ProcessGenericEvent(MSG event) {
          leaveEvent.sourceWindow = W32Window::IDFromHWND(wParam->sourceWindow);
          m_inhabitedWindow = 0;
          PushEvent(leaveEvent);
+         break;
+      }
+      case WM_EXITSIZEMOVE: {
+         // This message is received when the user has stopped click-and-drag operation on the nonclient area.
+         // We block attempts to confine the cursor until the user is done this operation.
+         m_blockCursorClip = false;
+         m_beginClickOnNCArea = false;
+         if (wParam->sourceWindow == m_boundWindow.second) {
+            // Rebind the window now that the user is done their move or size operation.
+            RECT rect;
+            GetClientRect(m_boundWindow.second, &rect);
+            ConfineCursorToRect(m_boundWindow.second, rect);
+         }
+         break;
+      }
+      case WM_NCMOUSEMOVE: {
+         // This mess is because no matter what I do, I cannot get WM_NCLBUTTONUP events to occur
+         // during a quick click-and-release of the title bar. This registers as a move, but never actually
+         // calls WM_EXITSIZEMOVE, so we can't test for it there.
+         // This event doesn't fire while the mouse button is held down, so we can exploit this to determine
+         // when the user actually releases the mouse in the nc area. This doesn't work for testing for mouse
+         // release after pressing the maximize button; see WM_NCLBUTTONDOWN.
+         if (m_beginClickOnNCArea) {
+            m_blockCursorClip = false;
+            m_beginClickOnNCArea = false;
+            if (wParam->sourceWindow == m_boundWindow.second) {
+               // Rebind the window now that the user has completed a quick click-and-release, that
+               // results in the bound window receiving focus.
+               RECT rect;
+               GetClientRect(m_boundWindow.second, &rect);
+               ConfineCursorToRect(m_boundWindow.second, rect);
+            }
+         }
+         break;
+      }
+      case WM_NCLBUTTONDOWN: {
+         // This event is received when the user clicks down on the nc area. Tracking this is necessary for
+         // the maximize button and certain quick clicks; see WM_NCMOUSEMOVE.
+         m_beginClickOnNCArea = true;
+         if (wParam->wParam == HTMAXBUTTON) {
+            // Max button is a special case to ensure mouse is clipped after performing a "restore" op.
+            m_beginClickOnNCArea = false;
+            m_blockCursorClip = false;
+         }
+         break;
+      }
+      case WM_MOUSEACTIVATE: {
+         // When looking for an activate, we do some additional processing here.
+         // We prevent clipping of the cursor while the user is actively doing something with the nc area.
+         if (LOWORD(event.lParam) != HTCLIENT) {
+            m_blockCursorClip = true;
+         }
+         break;
+      }
+      case WM_SETFOCUS: {
+         // Set the window with focus.
+         m_focusedWindow = W32Window::IDFromHWND(wParam->sourceWindow);
+         [[fallthrough]];
+      }
+      case WM_MOVE:
+      case WM_SIZE: {
+         if ((wParam->sourceWindow == m_boundWindow.second) && !m_blockCursorClip) {
+            RECT rect;
+            GetClientRect(m_boundWindow.second, &rect);
+            ConfineCursorToRect(m_boundWindow.second, rect);
+         }
+         break;
+      }
+      case WM_KILLFOCUS: {
+         // Release the clip while the bound window isn't focused.
+         ClipCursor(nullptr);
+         break;
+      }
+      case WM_DESTROY: {
+         // Windows unlocks the cursor for us when the window is destroyed, but we need
+         // to reset our internal tracking as well.
+         if (wParam->sourceWindow == m_boundWindow.second) {
+            UnbindFromWindows();
+         }
          break;
       }
    }
