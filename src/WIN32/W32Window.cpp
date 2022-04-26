@@ -244,7 +244,7 @@ void W32Window::ProcessGenericEvent(MSG event) {
             break;
          }
          case WM_SETFOCUS: {
-             if ((HWND)(wParam->wParam) == m_windowHandle) {
+             if (wParam->sourceWindow == m_windowHandle) {
                PushEvent(WindowFocusedEvent {GetGenericID()});
             }
             break;

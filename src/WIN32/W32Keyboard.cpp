@@ -68,7 +68,7 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
 
    switch (event.message) {
       case WM_SETFOCUS: {
-         keyboardFocusedWindow = (HWND)wParam->wParam;
+         keyboardFocusedWindow = wParam->sourceWindow;
          break;
       }
       case WM_INPUT: {
