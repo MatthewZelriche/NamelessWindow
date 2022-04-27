@@ -51,7 +51,7 @@ class NLSWIN_API_PUBLIC GLContext {
     * @throws InvalidRenderContextStateException if this method is called after its associated window has been
     * destroyed.
     */
-   virtual void SwapBuffers() = 0;
+   virtual void SwapContextBuffers() = 0;
 };
 
 }  // namespace NLSWIN

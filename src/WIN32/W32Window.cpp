@@ -34,6 +34,7 @@ W32Window::W32Window(WindowProperties properties) {
       win32Class.lpfnWndProc = &W32EventThreadDispatcher::DispatchProc;
       win32Class.hInstance = NLSWIN::GetDLLInstanceHandle();
       win32Class.lpszClassName = m_winClassName.c_str();
+      win32Class.style = CS_OWNDC;
       if (!RegisterClassW(&win32Class)) {
          throw PlatformInitializationException();
       }
@@ -80,6 +81,11 @@ W32Window::W32Window(WindowProperties properties) {
       SetFullscreen(true);
       Hide();
    }
+
+   // Set up pixel format for OGL.
+   m_deviceContext = GetDC(m_windowHandle);
+   m_formatID = ChoosePixelFormat(m_deviceContext, &pixelFormatDesc);
+   SetPixelFormat(m_deviceContext, m_formatID, &pixelFormatDesc);
 
    // Store size & pos, in case windows couldnt construct our desired size & pos.
    UpdateRectProperties();

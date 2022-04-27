@@ -42,6 +42,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
    [[nodiscard]] unsigned int GetWindowWidth() const noexcept override { return m_width; }
    [[nodiscard]] unsigned int GetWindowHeight() const noexcept override { return m_height; }
+   [[nodiscard]] HDC GetDeviceContext() const noexcept { return m_deviceContext; }
 
    void ProcessGenericEvent(MSG event) override;
    [[nodiscard]] inline HWND GetWin32Handle() const noexcept { return m_windowHandle; }
@@ -62,8 +63,40 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    HWND m_windowHandle {nullptr};
    WNDCLASSW win32Class {0};
    WNDPROC m_messageFuncPtr;
+   HDC m_deviceContext {0};
+
    bool m_userResizable {false};
 
    static std::unordered_map<HWND, WindowID> m_handleMap;
+
+   int m_formatID {0};
+   PIXELFORMATDESCRIPTOR pixelFormatDesc = {
+      sizeof(PIXELFORMATDESCRIPTOR),
+      1,
+      PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+      PFD_TYPE_RGBA,
+      32,  // On glx this is the addition of the res, green, blue, and alpha bit size = 32.
+      8,
+      0,
+      8,
+      0,
+      8,
+      0,
+      8,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      24, 
+      8, 
+      0,
+      0, 
+      0,
+      0,
+      0,
+      0
+   };
 };
 }  // namespace NLSWIN

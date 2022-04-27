@@ -16,5 +16,6 @@
 15. Certain modifiers (NumLock) are not handled globally on X11, but they are in Win32.<br />
 16. ~~User-readable key names stored in KeyEvents are not uniform across platforms.~~<br />
 17. ~~Fix fullscreen regression on X11, hopefully.~~<br />
-18. Consider exposing SetVideoMode to the public API.
-19. Update X11 to confirm with RawMouse & Cursor API changes.
+18. Consider exposing SetVideoMode to the public API.<br />
+19. Update X11 to confirm with RawMouse & Cursor API changes.<br />
+20. Better GL Context creation on WIN32.<br />
