@@ -218,6 +218,13 @@ void W32Window::Resize(uint32_t width, uint32_t height) noexcept {
    UpdateRectProperties();
 }
 
+void W32Window::Focus() noexcept {
+   // SetFocus has to be called on the thread that the window was created on.
+   // So we must pass this message to our message thread.
+   SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), USER_FOCUS_WINDOW, (WPARAM)m_windowHandle,
+                0);
+}
+
 void W32Window::ProcessGenericEvent(MSG event) {
    // Always remember to convert the WParam to our special type
    // @see WParamWithWindowHandle
@@ -244,7 +251,7 @@ void W32Window::ProcessGenericEvent(MSG event) {
             break;
          }
          case WM_SETFOCUS: {
-             if (wParam->sourceWindow == m_windowHandle) {
+            if (wParam->sourceWindow == m_windowHandle) {
                PushEvent(WindowFocusedEvent {GetGenericID()});
             }
             break;

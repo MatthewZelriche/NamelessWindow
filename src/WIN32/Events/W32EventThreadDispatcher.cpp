@@ -167,6 +167,10 @@ LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Messa
          }
          break;
       }
+      case USER_FOCUS_WINDOW: {
+         HWND bab = SetFocus((HWND)WParam);
+         break;
+      }
       default: {
          Result = DefWindowProcW(Window, Message, WParam, LParam);
          break;

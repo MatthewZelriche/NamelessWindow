@@ -37,6 +37,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    void SetWindowed() noexcept override;
    void Reposition(uint32_t newX, uint32_t newY) noexcept override;
    void Resize(uint32_t width, uint32_t height) noexcept override;
+   void Focus() noexcept override;
    [[nodiscard]] inline bool RequestedClose() const noexcept override { return m_shouldClose; }
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
    [[nodiscard]] unsigned int GetWindowWidth() const noexcept override { return m_width; }

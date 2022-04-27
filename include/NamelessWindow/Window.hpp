@@ -206,6 +206,10 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * video mode is found.
     */
    virtual void Resize(uint32_t width, uint32_t height) noexcept = 0;
+
+   /*! @brief Sets this window as the active window. */
+   virtual void Focus() noexcept = 0;
+
    /**
     * @brief Whether a request to close the window has been made.
     *
