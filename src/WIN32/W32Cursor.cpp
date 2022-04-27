@@ -17,12 +17,12 @@ std::shared_ptr<Cursor> Cursor::Create() {
 
 void W32Cursor::BindToWindow(const Window* const window) noexcept {
    auto w32Window = reinterpret_cast<const W32Window*>(window);
-   // Set the window we are meant to be bound to when the window is focused.
-   m_boundWindow.first = w32Window->GetGenericID();
-   m_boundWindow.second = w32Window->GetWin32Handle();
 
    // If we are attempting to rebind to the same window, no need to do anything.
    if (w32Window->GetGenericID() != m_boundWindow.first) {
+      // Set the window we are meant to be bound to when the window is focused.
+      m_boundWindow.first = w32Window->GetGenericID();
+      m_boundWindow.second = w32Window->GetWin32Handle();
       RECT rect;
       GetClientRect(w32Window->GetWin32Handle(), &rect);
       ConfineCursorToRect(w32Window->GetWin32Handle(), rect);
@@ -51,10 +51,18 @@ void W32Cursor::UnbindFromWindows() noexcept {
    }
 }
 
-void W32Cursor::ShowCursor() noexcept {
+void W32Cursor::Show() noexcept {
+   m_hideCursor = false;
+   SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CURSOR_VISIBILITY, (WPARAM)true, 0);
 }
 
-void W32Cursor::HideCursor() noexcept {
+void W32Cursor::Hide() noexcept {
+   m_hideCursor = true;
+   if (m_focusedWindow) {
+      if (m_hideCursor) {
+         SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CURSOR_VISIBILITY, (WPARAM)false, 0);
+      }
+   }
 }
 
 void W32Cursor::ProcessGenericEvent(MSG event) {
@@ -175,6 +183,12 @@ void W32Cursor::ProcessGenericEvent(MSG event) {
             enterEvent.xPos = moveEvent.newXPos;
             enterEvent.yPos = moveEvent.newYPos;
             PushEvent(enterEvent);
+
+            // Handle cursor hiding.
+            if (m_hideCursor) {
+               SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CURSOR_VISIBILITY, (WPARAM)false,
+                            0);
+            }
          }
          break;
       }
@@ -183,6 +197,12 @@ void W32Cursor::ProcessGenericEvent(MSG event) {
          leaveEvent.sourceWindow = W32Window::IDFromHWND(wParam->sourceWindow);
          m_inhabitedWindow = 0;
          PushEvent(leaveEvent);
+
+         // Handle cursor hiding
+         if (m_hideCursor) {
+            SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CURSOR_VISIBILITY, (WPARAM)true,
+                         0);
+         }
          break;
       }
       case WM_EXITSIZEMOVE: {

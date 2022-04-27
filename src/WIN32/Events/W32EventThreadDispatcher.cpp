@@ -156,6 +156,17 @@ LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Messa
          DestroyWindow((HWND)WParam);
          break;
       }
+      case CURSOR_VISIBILITY: {
+         bool shouldBeVisible = (bool)WParam;
+         if (!shouldBeVisible) {
+            int displayCount = ShowCursor(false);
+            while (displayCount > -1) { displayCount = ShowCursor(false); }
+         } else {
+            int displayCount = ShowCursor(true);
+            while (displayCount < 0) { displayCount = ShowCursor(true); }
+         }
+         break;
+      }
       default: {
          Result = DefWindowProcW(Window, Message, WParam, LParam);
          break;

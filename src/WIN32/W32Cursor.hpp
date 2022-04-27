@@ -24,8 +24,8 @@ class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32InputDevice, publi
 
    void BindToWindow(const Window *const window) noexcept override;
    void UnbindFromWindows() noexcept override;
-   void ShowCursor() noexcept override;
-   void HideCursor() noexcept override;
+   void Show() noexcept override;
+   void Hide() noexcept override;
    void ProcessGenericEvent(MSG event) override;
 
    private:
@@ -34,6 +34,7 @@ class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32InputDevice, publi
 
    bool m_blockCursorClip {false};
    bool m_beginClickOnNCArea {false};
+   bool m_hideCursor {false};
    WindowID m_inhabitedWindow {0};
    WindowID m_focusedWindow {0};
    std::pair<WindowID, HWND> m_boundWindow {0, 0};
