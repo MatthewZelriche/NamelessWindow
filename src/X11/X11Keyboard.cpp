@@ -36,6 +36,8 @@ X11Keyboard::X11Keyboard() {
    m_KeyboardState = xkb_x11_state_new_from_device(deviceKeymap, XConnection::GetConnection(), m_deviceID);
    xkb_keymap_unref(deviceKeymap);
    SubscribeToWindowSpecificXInput2Events(m_inputEventMask);
+
+   m_InternalKeyState.fill(false);
 }
 
 X11Keyboard::X11Keyboard(KeyboardDeviceInfo info) {
