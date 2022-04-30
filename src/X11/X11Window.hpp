@@ -11,6 +11,7 @@
 
 #include <GL/glx.h>
 #include <xcb/xcb.h>
+#include <unordered_map>
 
 #include "NamelessWindow/Window.hpp"
 #include "X11EventListener.hpp"
@@ -49,6 +50,10 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
       return m_visualAttributesList;
    }
 
+   static std::unordered_map<xcb_window_t, WindowID> m_handleMap;
+   [[nodiscard]] static inline bool IsUserWindow(xcb_window_t handle) { return m_handleMap.count(handle); }
+   [[nodiscard]] static inline WindowID IDFromHWND(xcb_window_t handle) { return m_handleMap.at(handle); }
+
    private:
    // Used only on window creation.
    WindowMode m_firstMapCachedMode {WindowMode::WINDOWED};
@@ -72,6 +77,7 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
    unsigned int m_height {0};
    bool m_isMapped {false};
    bool m_shouldClose {false};
+
    std::array<int, 21> m_visualAttributesList = {GLX_X_RENDERABLE,
                                                  True,
                                                  GLX_RENDER_TYPE,

@@ -31,7 +31,7 @@ void X11Cursor::Show() noexcept {
 
 void X11Cursor::Hide() noexcept {
    m_requestedHidden = true;
-   if (WithinSubscribedWindow()) {
+   if (X11Window::IsUserWindow(m_inhabitedWindow)) {
       AttemptSetHidden();
    }
 }
@@ -75,7 +75,7 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
       case XCB_ENTER_NOTIFY: {
          xcb_enter_notify_event_t *enterEvent = reinterpret_cast<xcb_enter_notify_event_t *>(event);
          m_inhabitedWindow = enterEvent->event;
-         if (WithinSubscribedWindow()) {
+         if (X11Window::IsUserWindow(m_inhabitedWindow)) {
             if (m_requestedHidden && !m_isHidden) {
                AttemptSetHidden();
             }
@@ -121,9 +121,7 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
                   break;
                }
                lastTimeStamp = rawEvent->time;
-               if (GetSubscribedWindows().count(m_inhabitedWindow)) {
-                  PushEvent(PackageNewDeltaEvents(rawEvent));
-               }
+               PushEvent(PackageNewDeltaEvents(rawEvent));
                break;
             }
          }
@@ -134,10 +132,6 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
 void X11Cursor::UnbindFromWindows() noexcept {
    xcb_ungrab_pointer(XConnection::GetConnection(), XCB_CURRENT_TIME);
    m_boundWindow = 0;
-}
-
-bool X11Cursor::WithinSubscribedWindow() const {
-   return GetSubscribedWindows().count(m_inhabitedWindow);
 }
 
 void X11Cursor::BindToWindow(const Window *const window) noexcept {
@@ -157,7 +151,7 @@ Event X11Cursor::PackageNewButtonPressEvent(xcb_button_press_event_t *event, xcb
    if (event->detail >= 4 && event->detail <= 7) {
       MouseScrollEvent scrollEvent;
       scrollEvent.scrollType = (ScrollType)(event->detail - 4);
-      scrollEvent.sourceWindow = GetSubscribedWindows().at(sourceWindow).lock()->GetGenericID();
+      scrollEvent.sourceWindow = X11Window::IDFromHWND(sourceWindow);
       return scrollEvent;
    }
    MouseButtonEvent mouseButtonEvent;
@@ -165,7 +159,7 @@ Event X11Cursor::PackageNewButtonPressEvent(xcb_button_press_event_t *event, xcb
    mouseButtonEvent.type = ButtonPressType::PRESSED;
    mouseButtonEvent.xPos = event->event_x;
    mouseButtonEvent.yPos = event->event_y;
-   mouseButtonEvent.sourceWindow = GetSubscribedWindows().at(sourceWindow).lock()->GetGenericID();
+   mouseButtonEvent.sourceWindow = X11Window::IDFromHWND(sourceWindow);
    return mouseButtonEvent;
 }
 
@@ -180,7 +174,7 @@ Event X11Cursor::PackageNewButtonReleaseEvent(xcb_button_press_event_t *event, x
    mouseButtonEvent.type = ButtonPressType::RELEASED;
    mouseButtonEvent.xPos = event->event_x;
    mouseButtonEvent.yPos = event->event_y;
-   mouseButtonEvent.sourceWindow = GetSubscribedWindows().at(sourceWindow).lock()->GetGenericID();
+   mouseButtonEvent.sourceWindow = X11Window::IDFromHWND(sourceWindow);
    return mouseButtonEvent;
 }
 
@@ -195,7 +189,7 @@ Event X11Cursor::PackageNewMoveEvent(xcb_motion_notify_event_t *event, xcb_windo
    MouseMovementEvent moveEvent;
    moveEvent.newXPos = newX;
    moveEvent.newYPos = newY;
-   moveEvent.sourceWindow = GetSubscribedWindows().at(event->event).lock()->GetGenericID();
+   moveEvent.sourceWindow = X11Window::IDFromHWND(sourceWindow);
    lastX = newX;
    lastY = newY;
    return moveEvent;

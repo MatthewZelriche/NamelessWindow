@@ -25,6 +25,8 @@
 
 using namespace NLSWIN;
 
+std::unordered_map<xcb_window_t, WindowID> X11Window::m_handleMap;
+
 std::shared_ptr<NLSWIN::Window> NLSWIN::Window::Create() {
    std::shared_ptr<X11Window> impl = std::make_shared<X11Window>(WindowProperties());
    X11EventBus::GetInstance().RegisterListener(impl);
@@ -124,6 +126,8 @@ X11Window::X11Window(WindowProperties properties) {
    m_windowGeometry = GetNewGeometry();
    xcb_flush(XConnection::GetConnection());
    NewID();
+
+   m_handleMap.insert({m_x11WindowID, GetGenericID()});
 }
 
 xcb_visualid_t X11Window::SelectAppropriateVisualIDForGL(std::optional<GLConfiguration> config) {
@@ -160,6 +164,7 @@ void X11Window::SetVisualAttributeProperty(int property, int value) {
 X11Window::~X11Window() {
    xcb_destroy_window(XConnection::GetConnection(), m_x11WindowID);
    xcb_flush(XConnection::GetConnection());
+   m_handleMap.erase(m_x11WindowID);
 }
 
 void X11Window::DisableUserResizing() {

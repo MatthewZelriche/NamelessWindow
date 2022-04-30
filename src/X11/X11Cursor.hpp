@@ -56,8 +56,6 @@ class NLSWIN_API_PRIVATE X11Cursor : public X11GenericMouse, public X11InputDevi
    xcb_window_t m_inhabitedWindow;
    /*! @todo Will need to update this if we support multiple cursors. Right now it only expects one. */
    static xcb_input_device_id_t GetMasterPointerDeviceID() noexcept;
-   /*! @brief Whether the cursor is within a window it's been subscribed to. */
-   bool WithinSubscribedWindow() const;
    const xcb_event_mask_t m_xcbEventMask {
       (xcb_event_mask_t)(XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
                          XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_ENTER_WINDOW |
