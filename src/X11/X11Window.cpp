@@ -338,7 +338,8 @@ void X11Window::ToggleFullscreen() noexcept {
 }
 
 void X11Window::Focus() noexcept {
-
+   xcb_set_input_focus(XConnection::GetConnection(), 0, m_x11WindowID, XCB_CURRENT_TIME);
+   xcb_flush(XConnection::GetConnection());
 }
 
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
