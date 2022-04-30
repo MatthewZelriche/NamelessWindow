@@ -17,5 +17,7 @@
 16. ~~User-readable key names stored in KeyEvents are not uniform across platforms.~~<br />
 17. ~~Fix fullscreen regression on X11, hopefully.~~<br />
 18. Consider exposing SetVideoMode to the public API.<br />
-19. Update X11 to confirm with RawMouse & Cursor API changes.<br />
+19. ~~Update X11 to confirm with RawMouse & Cursor API changes.~~<br />
 20. Better GL Context creation on WIN32.<br />
+21. Bug on i3 where cursor isn't rebound on focus via keyboard shortcut.<br />
+22. On Win32, BindToWindow() doesn't automatically switch focus, but it does on linux. Which behavior should be kept?<br />

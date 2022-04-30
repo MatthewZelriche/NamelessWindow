@@ -1,4 +1,7 @@
 #include "X11Cursor.hpp"
+#include <X11/X.h>
+#include <xcb/xcb.h>
+#include <xcb/xproto.h>
 
 #include "NamelessWindow/Exceptions.hpp"
 #include "X11EventBus.hpp"
@@ -95,6 +98,26 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
          }
          break;
       }
+      case XCB_FOCUS_OUT: {
+         xcb_focus_out_event_t *focusOutEvent = reinterpret_cast<xcb_focus_out_event_t *>(event);
+         if (focusOutEvent->event == m_boundWindow) {
+            xcb_ungrab_pointer(XConnection::GetConnection(), XCB_CURRENT_TIME);
+            xcb_flush(XConnection::GetConnection());
+            m_isTempUnbound = true;
+         }
+         break;
+      }
+      case XCB_FOCUS_IN: {
+         xcb_focus_in_event_t *focusInEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
+         if (focusInEvent->event == m_boundWindow && m_isTempUnbound) {
+               auto cookie = xcb_grab_pointer(XConnection::GetConnection(), false, m_boundWindow, m_xcbEventMask,
+                                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, m_boundWindow, m_cursor,
+                                  XCB_CURRENT_TIME);
+               xcb_flush(XConnection::GetConnection());
+               m_isTempUnbound = false;
+         }
+         break;
+      }
       case XCB_MOTION_NOTIFY: {
          xcb_motion_notify_event_t *motionEvent = reinterpret_cast<xcb_motion_notify_event_t *>(event);
          PushEvent(PackageNewMoveEvent(motionEvent, motionEvent->event));
@@ -132,6 +155,8 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
 void X11Cursor::UnbindFromWindows() noexcept {
    xcb_ungrab_pointer(XConnection::GetConnection(), XCB_CURRENT_TIME);
    m_boundWindow = 0;
+   m_isTempUnbound = false;
+   xcb_flush(XConnection::GetConnection());
 }
 
 void X11Cursor::BindToWindow(const Window *const window) noexcept {
@@ -143,7 +168,6 @@ void X11Cursor::BindToWindow(const Window *const window) noexcept {
                                   XCB_CURRENT_TIME);
 
    m_boundWindow = x11Window->GetX11ID();
-   xcb_set_input_focus(XConnection::GetConnection(), 0, m_boundWindow, XCB_CURRENT_TIME);
    xcb_flush(XConnection::GetConnection());
 }
 

@@ -51,6 +51,7 @@ class NLSWIN_API_PRIVATE X11Cursor : public X11GenericMouse, public X11InputDevi
    float lastY {0};
    /*! The X11 window that the cursor is currently bound to, or 0. */
    xcb_window_t m_boundWindow;
+   bool m_isTempUnbound {false};
    /*! The X11 window the cursor is currently inside. Value is 0 when not within a window that has been
     * subscribed to. */
    xcb_window_t m_inhabitedWindow;
@@ -59,7 +60,7 @@ class NLSWIN_API_PRIVATE X11Cursor : public X11GenericMouse, public X11InputDevi
    const xcb_event_mask_t m_xcbEventMask {
       (xcb_event_mask_t)(XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
                          XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_ENTER_WINDOW |
-                         XCB_EVENT_MASK_LEAVE_WINDOW)};
+                         XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE)};
    const xcb_input_xi_event_mask_t m_rawInputEventMask {
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_RAW_MOTION | XCB_INPUT_XI_EVENT_MASK_ENTER)};
 };
