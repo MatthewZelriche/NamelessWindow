@@ -22,7 +22,7 @@ namespace NLSWIN {
 class NLSWIN_API_PRIVATE X11GLContext : public GLContext {
    public:
    void MakeContextCurrent() override;
-   void SwapBuffers() override;
+   void SwapContextBuffers() override;
 
    X11GLContext(std::weak_ptr<const X11Window> window);
 

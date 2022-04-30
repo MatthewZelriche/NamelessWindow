@@ -28,8 +28,9 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
    void EnableUserResizing() override;
    void SetFullscreen(bool borderless = true) noexcept override;
    void SetWindowed() noexcept override;
-   void Reposition(uint32_t newX, uint32_t newY) noexcept;
-   void Resize(uint32_t width, uint32_t height) noexcept;
+   void Reposition(uint32_t newX, uint32_t newY) noexcept override;
+   void Resize(uint32_t width, uint32_t height) noexcept override;
+   void Focus() noexcept override;
    inline bool RequestedClose() const noexcept override { return m_shouldClose; }
    inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
    unsigned int GetWindowWidth() const noexcept override { return m_width; }

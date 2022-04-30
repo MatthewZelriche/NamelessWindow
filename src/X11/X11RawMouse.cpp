@@ -1,9 +1,16 @@
 #include "X11RawMouse.hpp"
+#include <xcb/xinput.h>
 
+#include "NamelessWindow/Events/Event.hpp"
+#include "NamelessWindow/RawMouse.hpp"
 #include "X11EventBus.hpp"
 #include "X11Window.hpp"
 
 using namespace NLSWIN;
+
+[[nodiscard]] std::vector<MouseDeviceInfo> RawMouse::EnumeratePointers() noexcept {
+   return EnumerateDevicesX11<MouseDeviceInfo>(XCB_INPUT_DEVICE_TYPE_SLAVE_POINTER);
+}
 
 std::shared_ptr<RawMouse> RawMouse::Create(MouseDeviceInfo device) {
    std::shared_ptr<X11RawMouse> impl = std::make_shared<X11RawMouse>(device);
@@ -66,9 +73,7 @@ void X11RawMouse::ProcessGenericEvent(xcb_generic_event_t *event) {
          xcb_input_raw_motion_event_t *rawEvent =
             reinterpret_cast<xcb_input_raw_motion_event_t *>(genericEvent);
          if (rawEvent->deviceid == m_deviceID) {
-            auto deltaEvents = PackageNewDeltaEvents(rawEvent);
-            PushEvent(deltaEvents.first);
-            PushEvent(deltaEvents.second);
+            PushEvent(PackageNewDeltaEvents(rawEvent));
          }
          break;
       }

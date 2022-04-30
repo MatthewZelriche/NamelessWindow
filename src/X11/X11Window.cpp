@@ -332,6 +332,10 @@ void X11Window::ToggleFullscreen() noexcept {
    xcb_flush(XConnection::GetConnection());
 }
 
+void X11Window::Focus() noexcept {
+
+}
+
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       case XCB_CONFIGURE_NOTIFY: {

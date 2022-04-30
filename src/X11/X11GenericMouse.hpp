@@ -12,7 +12,7 @@ class NLSWIN_API_PRIVATE X11GenericMouse {
    protected:
    float TranslateXCBFloat(xcb_input_fp1616_t inval) const noexcept;
    float TranslateXCBFloat(xcb_input_fp3232_t inval) const noexcept;
-   std::pair<Event, Event> PackageNewDeltaEvents(xcb_input_raw_button_press_event_t *event);
+   Event PackageNewDeltaEvents(xcb_input_raw_button_press_event_t *event);
    ButtonValue TranslateButton(uint16_t detail);
 
    private:

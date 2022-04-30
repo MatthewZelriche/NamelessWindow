@@ -55,7 +55,7 @@ void X11GLContext::MakeContextCurrent() {
    glXMakeContextCurrent(XConnection::GetDisplay(), m_glxWindow, m_glxWindow, m_context);
 }
 
-void X11GLContext::SwapBuffers() {
+void X11GLContext::SwapContextBuffers() {
    if (m_xcbWindow.expired()) {
       throw InvalidRenderContextStateException();
    }

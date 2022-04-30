@@ -24,12 +24,12 @@ X11Cursor::X11Cursor() {
    SubscribeToRawRootEvents(m_rawInputEventMask);
 }
 
-void X11Cursor::ShowCursor() noexcept {
+void X11Cursor::Show() noexcept {
    m_requestedHidden = false;
    AttemptSetVisible();
 }
 
-void X11Cursor::HideCursor() noexcept {
+void X11Cursor::Hide() noexcept {
    m_requestedHidden = true;
    if (WithinSubscribedWindow()) {
       AttemptSetHidden();
@@ -122,9 +122,7 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
                }
                lastTimeStamp = rawEvent->time;
                if (GetSubscribedWindows().count(m_inhabitedWindow)) {
-                  auto deltaEvents = PackageNewDeltaEvents(rawEvent);
-                  PushEvent(deltaEvents.first);
-                  PushEvent(deltaEvents.second);
+                  PushEvent(PackageNewDeltaEvents(rawEvent));
                }
                break;
             }

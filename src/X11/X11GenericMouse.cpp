@@ -1,4 +1,5 @@
 #include "X11GenericMouse.hpp"
+#include <variant>
 
 #include "X11InputDevice.hpp"
 #include "X11Util.hpp"
@@ -20,7 +21,7 @@ ButtonValue X11GenericMouse::TranslateButton(uint16_t detail) {
    return m_buttonTranslationTable.at(detail);
 }
 
-std::pair<Event, Event> X11GenericMouse::PackageNewDeltaEvents(xcb_input_raw_button_press_event_t *event) {
+Event X11GenericMouse::PackageNewDeltaEvents(xcb_input_raw_button_press_event_t *event) {
    xcb_input_raw_button_press_event_t *buttonEvent =
       reinterpret_cast<xcb_input_raw_button_press_event_t *>(event);
 
@@ -29,7 +30,7 @@ std::pair<Event, Event> X11GenericMouse::PackageNewDeltaEvents(xcb_input_raw_but
    // real mouse motion events, while 2 and 3 appear to be horz/vertical valuators for scroll.
    auto mask = xcb_input_raw_button_press_valuator_mask(buttonEvent);
    if ((mask[0] & (1 << 2)) || (mask[0] & (1 << 3))) {
-      return std::make_pair(std::monostate(), std::monostate());
+      return std::monostate();
    }
    auto rawAxisValues =
       xcb_input_raw_button_press_axisvalues_raw((xcb_input_raw_button_press_event_t *)event);
@@ -37,11 +38,5 @@ std::pair<Event, Event> X11GenericMouse::PackageNewDeltaEvents(xcb_input_raw_but
    rawDeltaMoveEvent.deltaX = TranslateXCBFloat(rawAxisValues[0]);
    rawDeltaMoveEvent.deltaY = TranslateXCBFloat(rawAxisValues[1]);
 
-   //  Non-raw axisvalues gives us the accelerated delta.
-   auto axisValues = xcb_input_raw_button_press_axisvalues((xcb_input_raw_button_press_event_t *)event);
-   MouseDeltaMovementEvent deltaMoveEvent;
-   deltaMoveEvent.deltaX = TranslateXCBFloat(axisValues[0]);
-   deltaMoveEvent.deltaY = TranslateXCBFloat(axisValues[1]);
-
-   return std::make_pair(rawDeltaMoveEvent, deltaMoveEvent);
+   return rawDeltaMoveEvent;
 }
