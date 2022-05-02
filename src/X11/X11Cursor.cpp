@@ -89,7 +89,6 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
          xcb_leave_notify_event_t *leaveEvent = reinterpret_cast<xcb_leave_notify_event_t *>(event);
          if (m_boundWindow) {
             if (leaveEvent->mode == XCB_INPUT_NOTIFY_MODE_UNGRAB) {
-               m_boundWindow = 0;
                AttemptSetVisible();
             }
          } else {

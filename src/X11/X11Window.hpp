@@ -34,8 +34,8 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
    void Focus() noexcept override;
    inline bool RequestedClose() const noexcept override { return m_shouldClose; }
    inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
-   unsigned int GetWindowWidth() const noexcept override { return m_width; }
-   unsigned int GetWindowHeight() const noexcept override { return m_height; }
+   unsigned int GetWindowWidth() const noexcept override { return m_windowGeometry.width; }
+   unsigned int GetWindowHeight() const noexcept override { return m_windowGeometry.height; }
 
    X11Window(WindowProperties properties);
    ~X11Window();
@@ -73,8 +73,6 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
    unsigned int m_preferredYCoord {0};
    unsigned int m_preferredWidth {0};
    unsigned int m_preferredHeight {0};
-   unsigned int m_width {0};
-   unsigned int m_height {0};
    bool m_isMapped {false};
    bool m_shouldClose {false};
 

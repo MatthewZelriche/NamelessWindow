@@ -193,6 +193,11 @@ void X11Window::Show() {
                                   xcb_get_input_focus(XConnection::GetConnection()), NULL));
    // Block until we've actually been mapped.
    while (!m_isMapped) { X11EventBus::GetInstance().PollEvents(); }
+
+   // Set requested position and size. 
+   Reposition(m_preferredXCoord, m_preferredYCoord);
+   Resize(m_preferredWidth, m_preferredHeight);
+   xcb_flush(XConnection::GetConnection());
 }
 void X11Window::Hide() {
    xcb_unmap_window(XConnection::GetConnection(), m_x11WindowID);
@@ -222,6 +227,8 @@ void X11Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
    xcb_configure_window(XConnection::GetConnection(), m_x11WindowID,
                         XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, newCoords);
    xcb_flush(XConnection::GetConnection());
+   m_preferredXCoord = newX;
+   m_preferredHeight = newY;
 }
 
 void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
@@ -299,9 +306,6 @@ void X11Window::Resize(uint32_t width, uint32_t height) noexcept {
    m_preferredHeight = height;
    xcb_configure_window(XConnection::GetConnection(), m_x11WindowID,
                         XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, newSize);
-
-   m_width = width;
-   m_height = height;
    xcb_flush(XConnection::GetConnection());
 }
 
@@ -348,12 +352,10 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
          xcb_configure_notify_event_t *notifyEvent = reinterpret_cast<xcb_configure_notify_event_t *>(event);
          if (notifyEvent->window == m_x11WindowID) {
             // Has the window size changed?
-            if (notifyEvent->width != m_width || notifyEvent->height != m_height) {
-               m_width = notifyEvent->width;
-               m_height = notifyEvent->height;
+            if (notifyEvent->width != m_windowGeometry.width || notifyEvent->height != m_windowGeometry.height) {
                WindowResizeEvent resizeEvent;
-               resizeEvent.newWidth = m_width;
-               resizeEvent.newHeight = m_height;
+               resizeEvent.newWidth = notifyEvent->width;
+               resizeEvent.newHeight = notifyEvent->height;
                resizeEvent.sourceWindow = GetGenericID();
                PushEvent(resizeEvent);
                // Set new geometry
