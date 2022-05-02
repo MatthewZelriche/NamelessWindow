@@ -15,8 +15,8 @@ std::shared_ptr<Cursor> Cursor::Create() {
    return std::move(impl);
 }
 
-void W32Cursor::BindToWindow(const Window* const window) noexcept {
-   auto w32Window = reinterpret_cast<const W32Window*>(window);
+void W32Cursor::BindToWindow(Window* window) noexcept {
+   auto w32Window = reinterpret_cast<W32Window*>(window);
 
    // If we are attempting to rebind to the same window, no need to do anything.
    if (w32Window->GetGenericID() != m_boundWindow.first) {
@@ -26,6 +26,7 @@ void W32Cursor::BindToWindow(const Window* const window) noexcept {
       RECT rect;
       GetClientRect(w32Window->GetWin32Handle(), &rect);
       ConfineCursorToRect(w32Window->GetWin32Handle(), rect);
+      w32Window->Focus();
    }
 }
 

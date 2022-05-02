@@ -47,7 +47,8 @@ class NLSWIN_API_PUBLIC Cursor : virtual public InputDevice {
    static std::shared_ptr<Cursor> Create();
 
    /*!
-    * @brief Binds this cursor to a specified window, locking it within that window's bounds.
+    * @brief Binds this cursor to a specified window, locking it within that window's bounds. The window also
+    * becomes focused.
     *
     * After calling this method, the cursor will be confined to the specified window's area. If focus 
     * on that window is lost, the cursor will be temporarily freed, until focus returns to the bound window.
@@ -57,7 +58,7 @@ class NLSWIN_API_PUBLIC Cursor : virtual public InputDevice {
     * method is called before the window has been shown, behavior is undefined.
     * @param window The window to bind to.
     */
-   virtual void BindToWindow(const Window *const window) noexcept = 0;
+   virtual void BindToWindow(Window* window) noexcept = 0;
    /**
     * @brief Frees this cursor from any active window bind.
     *

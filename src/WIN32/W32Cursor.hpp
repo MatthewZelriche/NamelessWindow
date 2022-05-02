@@ -22,7 +22,7 @@ class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32InputDevice, publi
    public:
    W32Cursor() = default;
 
-   void BindToWindow(const Window *const window) noexcept override;
+   void BindToWindow(Window* window) noexcept override;
    void UnbindFromWindows() noexcept override;
    void Show() noexcept override;
    void Hide() noexcept override;
