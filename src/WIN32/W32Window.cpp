@@ -45,22 +45,16 @@ W32Window::W32Window(WindowProperties properties) {
    props.className = m_winClassName;
 
    // Determine where to spawn the window.
+   props.X = properties.xCoordinate;
+   props.Y = properties.yCoordinate;
    if (properties.preferredMonitor.has_value()) {
-      props.X = properties.preferredMonitor.value().screenXCord;
-      props.Y = properties.preferredMonitor.value().screenYCord;
-   } else {
-      props.X = CW_USEDEFAULT;
-      props.Y = CW_USEDEFAULT;
+      props.X += properties.preferredMonitor.value().screenXCord;
+      props.Y += properties.preferredMonitor.value().screenYCord;
    }
    props.nWidth = properties.horzResolution;
    props.nHeight = properties.vertResolution;
 
-   // Determine whether this window is resizable.
    props.dwStyle = WS_OVERLAPPEDWINDOW;
-   if (!properties.isUserResizable) {
-      props.dwStyle = WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX;
-      m_userResizable = true;
-   }
    props.hInstance = win32Class.hInstance;
    if (!properties.windowName.empty()) {
       props.windowName = ConvertToWString(properties.windowName).c_str();
@@ -71,6 +65,12 @@ W32Window::W32Window(WindowProperties properties) {
    if (!m_windowHandle) {
       throw PlatformInitializationException();
    }
+   // Determine whether this window is resizable.
+   if (!properties.isUserResizable) {
+      SetWindowLongPtr(m_windowHandle, GWL_STYLE, props.dwStyle & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
+   }
+
+   Reposition(props.X, props.Y);
 
    if (properties.mode == WindowMode::FULLSCREEN) {
       Show();
@@ -86,6 +86,8 @@ W32Window::W32Window(WindowProperties properties) {
    m_deviceContext = GetDC(m_windowHandle);
    m_formatID = ChoosePixelFormat(m_deviceContext, &pixelFormatDesc);
    SetPixelFormat(m_deviceContext, m_formatID, &pixelFormatDesc);
+
+   Reposition(props.X, props.Y);
 
    // Store size & pos, in case windows couldnt construct our desired size & pos.
    UpdateRectProperties();
