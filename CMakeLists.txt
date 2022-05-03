@@ -71,3 +71,7 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 if (${BUILD_NLSWIN_EXAMPLES})
    add_subdirectory("${PROJECT_SOURCE_DIR}/examples/")
 endif()
+
+if (${BUILD_NLSWIN_TESTS})
+    add_subdirectory("${PROJECT_SOURCE_DIR}/manual_tests")
+endif()
