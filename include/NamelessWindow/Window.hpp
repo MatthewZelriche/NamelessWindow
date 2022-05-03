@@ -190,13 +190,14 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     */
    virtual void Reposition(uint32_t newX, uint32_t newY) noexcept = 0;
    /*!
-    * @brief Request that the window be drawn with new dimensions.
+    * @brief Request that the window's client area be drawn with new dimensions.
     *
     * Note that some platforms will ignore this if they handle window sizing in a specific fashion (eg, tiling
     * window managers).
     * If the window is true fullscreen, this method will attempt to set a new video mode matching the given width and height for
     * the monitor that the window is currently residing in. If no suitable videomode is found, an exception is thrown.
     * Must be called while the window is shown, else undefined behavior occurs.
+    * This resizes the window's client area. The total size of the window, including the non-client area, may be larger.
     *
     * @param width The new width of the monitor.
     * @param height The new height of the monitor.

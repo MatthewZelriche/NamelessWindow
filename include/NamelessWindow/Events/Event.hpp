@@ -136,12 +136,18 @@ struct NLSWIN_API_PUBLIC WindowResizeEvent {
    WindowID sourceWindow; /*!< The window that was resized. */
 };
 
+struct NLSWIN_API_PUBLIC WindowRepositionEvent {
+   int newX;          /*!< The new width of the application window. */
+   int newY;         /*!< The new height of the application window. */
+   WindowID sourceWindow; /*!< The window that was resized. */
+};
+
 /*! Generic NLSWIN Event. */
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
 using Event =
    std::variant<std::monostate, KeyEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent,
                 RawMouseButtonEvent, MouseScrollEvent, RawMouseScrollEvent, MouseMovementEvent,
-                MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent>;
+                MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent, WindowRepositionEvent>;
 
 }  // namespace NLSWIN

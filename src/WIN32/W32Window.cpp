@@ -122,7 +122,8 @@ void W32Window::Hide() {
 
 void W32Window::DisableUserResizing() {
    m_userResizable = false;
-   SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX);
+   SetWindowLongPtr(m_windowHandle, GWL_STYLE,
+                    GetWindowLongPtr(m_windowHandle, GWL_STYLE) & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
    SetWindowPos(
       m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
       SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
@@ -216,7 +217,16 @@ void W32Window::SetNewVideoMode(int width, int height, int bitsPerPixel) {
 }
 
 void W32Window::Resize(uint32_t width, uint32_t height) noexcept {
-   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height,
+   RECT desiredClientSize;
+   desiredClientSize.left = m_xPos;
+   desiredClientSize.top = m_yPos;
+   desiredClientSize.right = m_xPos + width;
+   desiredClientSize.bottom = m_yPos + height;
+   AdjustWindowRect(&desiredClientSize, GetWindowLong(m_windowHandle, GWL_STYLE), false);
+   auto a = desiredClientSize.right - desiredClientSize.left;
+   auto b = desiredClientSize.bottom - desiredClientSize.top;
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, desiredClientSize
+       .right - desiredClientSize.left, desiredClientSize.bottom - desiredClientSize.top,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
 
    if (m_windowMode == WindowMode::FULLSCREEN) {
@@ -256,6 +266,11 @@ void W32Window::ProcessGenericEvent(MSG event) {
          case WM_MOVE: {
             m_xPos = LOWORD(event.lParam);
             m_yPos = HIWORD(event.lParam);
+            WindowRepositionEvent repositionEvent;
+            repositionEvent.newX = m_xPos;
+            repositionEvent.newY = m_yPos;
+            repositionEvent.sourceWindow = GetGenericID();
+            PushEvent(repositionEvent);
             break;
          }
          case WM_SETFOCUS: {
