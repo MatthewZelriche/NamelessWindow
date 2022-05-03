@@ -52,6 +52,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    private:
    void SetNewVideoMode(int width, int height, int bitsPerPixel);
    void UpdateRectProperties();
+   std::pair<long, long> GetWindowSizeFromClientSize(int width, int height);
    int m_width {0};
    int m_height {0};
    int m_xPos {0};

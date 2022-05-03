@@ -169,7 +169,9 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    /*!
     * @brief Request that the window be drawn fullscreen.
     * 
-    * Must be called while the window is shown, else undefined behavior occurs.
+    * Must be called while the window is shown, else undefined behavior occurs. This call will set
+    * the window to be the resolution of the monitor it was made fullscreen on. To change the fullscreen resolution,
+    * call Resize() after setting the window to fullscreen.
     * @param borderless Whether the window should be drawn in borderless fullscreen. This does not impact
     * whether windows in the WINDOWMODE::Windowed state are drawn with borders.
     */
