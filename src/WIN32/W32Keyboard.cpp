@@ -132,16 +132,16 @@ Event W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
 
 KeyModifiers W32Keyboard::ParseModifierState() {
    KeyModifiers modifiers {false};
-   if (m_InternalKeyState[VK_LCONTROL] || m_InternalKeyState[VK_RCONTROL]) {
+   if (m_InternalKeyState[KEY_LCTRL] || m_InternalKeyState[KEY_RCTRL]) {
       modifiers.ctrl = true;
    }
-   if (m_InternalKeyState[VK_LWIN] || m_InternalKeyState[VK_RWIN]) {
+   if (m_InternalKeyState[KEY_LSUPER] || m_InternalKeyState[KEY_RSUPER]) {
       modifiers.super = true;
    }
-   if (m_InternalKeyState[VK_LMENU] || m_InternalKeyState[VK_RMENU]) {
+   if (m_InternalKeyState[KEY_LALT] || m_InternalKeyState[KEY_RALT]) {
       modifiers.alt = true;
    }
-   if (m_InternalKeyState[VK_LSHIFT] || m_InternalKeyState[VK_RSHIFT]) {
+   if (m_InternalKeyState[KEY_LSHIFT] || m_InternalKeyState[KEY_RSHIFT]) {
       modifiers.shift = true;
    }
    if (capsLockOn) {
