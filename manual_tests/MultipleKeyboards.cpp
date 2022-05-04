@@ -21,6 +21,9 @@ int main() {
    for (auto keyboard: keyboards) {
       std::cout << keyboard.name << ", " << keyboard.platformSpecificIdentifier << std::endl;
    }
+
+   // Selected keyboards will be dependent on OS ordering, in production code
+   // you would probably require prompting the end-user to select a keyboard.
    auto kb = Keyboard::Create(keyboards[0]);
    auto kb2 = Keyboard::Create(keyboards[1]);
    kb->SubscribeToWindow(standardWindow);
