@@ -205,7 +205,7 @@ std::pair<long, long> W32Window::GetWindowSizeFromClientSize(int width, int heig
 
 void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
    SetWindowPos(m_windowHandle, 0, newX, newY, m_width, m_height,
-                SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+                SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
    UpdateRectProperties();
 }
 
