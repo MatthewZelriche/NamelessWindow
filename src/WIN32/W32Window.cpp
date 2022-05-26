@@ -35,6 +35,8 @@ W32Window::W32Window(WindowProperties properties) {
       win32Class.hInstance = NLSWIN::GetDLLInstanceHandle();
       win32Class.lpszClassName = m_winClassName.c_str();
       win32Class.style = CS_OWNDC;
+      win32Class.hCursor = (HCURSOR)LoadImageW(nullptr, MAKEINTRESOURCEW(OCR_NORMAL), IMAGE_CURSOR, 0, 0,
+                                               LR_SHARED | LR_DEFAULTSIZE);
       if (!RegisterClassW(&win32Class)) {
          throw PlatformInitializationException();
       }

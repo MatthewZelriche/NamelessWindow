@@ -10,6 +10,7 @@
 
 #pragma once
 // clang-format off
+#define OEMRESOURCE
 #include <windows.h>
 #include <WinUser.h>
 // clang-format on
