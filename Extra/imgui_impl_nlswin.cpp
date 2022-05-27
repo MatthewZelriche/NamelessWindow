@@ -13,6 +13,21 @@ bool ImGui_ImplNLSWin_Init(std::weak_ptr<NLSWIN::Window> window) {
 }
 
 void ImGui_ImplNLSWin_NewFrame() {
+   ImGuiIO &io = ImGui::GetIO();
+   ImGui_ImplNLSWin_Data *data = (ImGui_ImplNLSWin_Data *)(io.BackendPlatformUserData);
+   IM_ASSERT(data != nullptr && !data->window.expired());
+   auto ptr = data->window.lock();
+   io.DisplaySize = {(float)ptr->GetWindowWidth(), (float)ptr->GetWindowHeight()};
+
+   if (data->lastFrameTime != nullLastFrame) {
+      auto currentFrameTime = std::chrono::steady_clock::now();
+      double deltaTimeUs =
+         std::chrono::duration_cast<std::chrono::microseconds>(currentFrameTime - data->lastFrameTime)
+            .count();
+      io.DeltaTime = deltaTimeUs * 1000000;
+   } else {
+      io.DeltaTime = 1.0f / 60.0f;
+   }
 }
 
 void ImGui_ImplNLSWin_HandleEvent(NLSWIN::Event ev) {

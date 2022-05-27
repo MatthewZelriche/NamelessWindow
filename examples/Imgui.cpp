@@ -1,5 +1,6 @@
 
 #define GLAD_GL_IMPLEMENTATION
+#define NOMINMAX        // Needed so gl.h doesnt start messing up the imgui backend.
 #include <gl.h>
 
 #include <NamelessWindow/Cursor.hpp>
@@ -40,8 +41,16 @@ int main() {
       while (win && win->HasEvent()) { auto evt = win->GetNextEvent(); }
       while (cursor->HasEvent()) { auto evt = cursor->GetNextEvent(); }
 
+      ImGui_ImplOpenGL3_NewFrame();
+      ImGui_ImplNLSWin_NewFrame();
+      ImGui::NewFrame();
+      bool showDemo = true;
+      ImGui::ShowDemoWindow(&showDemo);
+
+      ImGui::Render();
       glad_glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glad_glClearColor(0, 1, 0, 1);
+      ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
       context->SwapContextBuffers();
    }
 
