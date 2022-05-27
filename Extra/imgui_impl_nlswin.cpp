@@ -58,6 +58,8 @@ void ImGui_ImplNLSWin_HandleEvent(NLSWIN::Event ev) {
       io.AddKeyEvent(ImGuiKey_ModAlt, event->code.modifiers.alt);
       io.AddKeyEvent(ImGuiKey_ModCtrl, event->code.modifiers.ctrl);
       io.AddKeyEvent(ImGuiKey_ModSuper, event->code.modifiers.super);
+   } else if (auto event = std::get_if<NLSWIN::CharacterEvent>(&ev)) {
+      io.AddInputCharacter(event->character);
    }
 }
 

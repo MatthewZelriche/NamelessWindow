@@ -27,14 +27,14 @@ using WindowID = uint32_t;
 /*! Generated whenever the user interacts with the keyboard. */
 struct NLSWIN_API_PUBLIC KeyEvent {
    std::string keyName {"NULL"}; /*!< The human-readable name of the keyboard key that generated the event. */
-   KeyCode code;             /*!< Keycode information for the event. @see KeyCode */
-   KeyPressType pressType {KeyPressType::UNKNOWN};   /*!< Whether this event was a press, release or repeat. */
-   WindowID sourceWindow {0};    /*!< The ID of the window that this event came from. */
+   KeyCode code;                 /*!< Keycode information for the event. @see KeyCode */
+   KeyPressType pressType {KeyPressType::UNKNOWN}; /*!< Whether this event was a press, release or repeat. */
+   WindowID sourceWindow {0};                      /*!< The ID of the window that this event came from. */
 };
 
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-/*! Generated whenever the user interacts with a mouse button. 
+/*! Generated whenever the user interacts with a mouse button.
     Does not include button events on window border/title.*/
 struct NLSWIN_API_PUBLIC MouseButtonEvent {
    ButtonValue button;    /*!< Which button was pressed. @see ButtonValue */
@@ -72,7 +72,7 @@ struct NLSWIN_API_PUBLIC RawMouseScrollEvent {
 
 /*!
  * @brief Generated whenever a cursor is moved to a new position inside a client window.
- * 
+ *
  * Does not include button events on window border/title.
  * @todo Should window need to be focused to get this event?
  * @see Cursor
@@ -137,9 +137,14 @@ struct NLSWIN_API_PUBLIC WindowResizeEvent {
 };
 
 struct NLSWIN_API_PUBLIC WindowRepositionEvent {
-   int newX;          /*!< The new width of the application window. */
-   int newY;         /*!< The new height of the application window. */
+   int newX;              /*!< The new width of the application window. */
+   int newY;              /*!< The new height of the application window. */
    WindowID sourceWindow; /*!< The window that was resized. */
+};
+
+struct NLSWIN_API_PUBLIC CharacterEvent {
+   char character;        /*!< The ASCII character that was pressed on the keyboard. */
+   WindowID sourceWindow; /*!< The window that received this character. */
 };
 
 /*! Generic NLSWIN Event. */
@@ -148,6 +153,7 @@ struct NLSWIN_API_PUBLIC WindowRepositionEvent {
 using Event =
    std::variant<std::monostate, KeyEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent,
                 RawMouseButtonEvent, MouseScrollEvent, RawMouseScrollEvent, MouseMovementEvent,
-                MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent, WindowRepositionEvent>;
+                           MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent,
+                           WindowRepositionEvent, CharacterEvent>;
 
 }  // namespace NLSWIN

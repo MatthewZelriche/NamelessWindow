@@ -89,6 +89,12 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
          }
          break;
       }
+      case NLSWIN_ASCII_CHAR: {
+         char character = (char)wParam->wParam;
+         if (GetSubscribedWindows().count(keyboardFocusedWindow) && isprint(character)) {
+            PushEvent(CharacterEvent{character, W32Window::IDFromHWND(wParam->sourceWindow)});
+         }
+      }
    }
 }
 

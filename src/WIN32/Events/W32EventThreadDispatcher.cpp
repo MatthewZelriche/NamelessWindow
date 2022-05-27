@@ -100,6 +100,10 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
          PostThreadEvent(Window, Message, WParam, (LPARAM)inputStructBuf);
          break;
       }
+      case WM_CHAR: {
+         PostThreadEvent(Window, NLSWIN_ASCII_CHAR, WParam, LParam);
+         break;
+      }
       case WM_SETFOCUS:
       case WM_NCMOUSEMOVE:
       case WM_MOVE:

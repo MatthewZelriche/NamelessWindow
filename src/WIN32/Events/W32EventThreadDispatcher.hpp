@@ -62,6 +62,7 @@ const unsigned int CREATE_NLSWIN_WINDOW = WM_USER + 0x1000;
 const unsigned int DESTROY_NLSWIN_WINDOW = WM_USER + 0x1001;
 const unsigned int CURSOR_VISIBILITY = WM_USER + 0x1002;
 const unsigned int USER_FOCUS_WINDOW = WM_USER + 0x1003;
+const unsigned int NLSWIN_ASCII_CHAR = WM_USER + 0x1004;
 
 class NLSWIN_API_PRIVATE W32EventThreadDispatcher {
    public:
