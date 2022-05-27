@@ -46,6 +46,10 @@ int main() {
          auto evt = cursor->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
       }
+      while (kb->HasEvent()) {
+         auto evt = kb->GetNextEvent();
+         ImGui_ImplNLSWin_HandleEvent(evt);
+      }
 
       ImGui_ImplOpenGL3_NewFrame();
       ImGui_ImplNLSWin_NewFrame();

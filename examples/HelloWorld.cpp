@@ -1,3 +1,6 @@
+#include <Windows.h>
+#include <gl/GL.h>
+
 #include <iostream>
 
 #include "NamelessWindow/Cursor.hpp"
@@ -5,64 +8,87 @@
 #include "NamelessWindow/Events/EventBus.hpp"
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/RawMouse.hpp"
+#include "NamelessWindow/Rendering/GLContext.hpp"
 #include "NamelessWindow/Window.hpp"
 
 int main() {
    auto infos = NLSWIN::Keyboard::EnumerateKeyboards();
    auto mouseInfos = NLSWIN::RawMouse::EnumeratePointers();
-   auto kb = NLSWIN::Keyboard::Create(infos[0]);
-   auto kb2 = NLSWIN::Keyboard::Create(infos[1]);
-   auto rawMouse = NLSWIN::RawMouse::Create(mouseInfos[0]);
+   auto kb = NLSWIN::Keyboard::Create();
+   // auto kb2 = NLSWIN::Keyboard::Create(infos[1]);
+   //  auto rawMouse = NLSWIN::RawMouse::Create(mouseInfos[0]);
+   auto cursor = NLSWIN::Cursor::Create();
 
    NLSWIN::WindowProperties props;
    props.windowName = "Hello world!";
-   //props.mode = NLSWIN::WindowMode::FULLSCREEN;
+   // props.mode = NLSWIN::WindowMode::FULLSCREEN;
    auto window = NLSWIN::Window::Create(props);
    window->Show();
-  // auto win2 = NLSWIN::Window::Create();
-   //win2->Show();
+   auto win2 = NLSWIN::Window::Create();
+   win2->Show();
+
+   auto context = NLSWIN::GLContext::Create(window);
 
    kb->SubscribeToWindow(window);
-   kb2->SubscribeToWindow(window);
+   kb->SubscribeToWindow(win2);
+   // kb2->SubscribeToWindow(window);
+
+   // cursor->Hide();
+   cursor->BindToWindow(win2.get());
+
    while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
 
-      while (window->HasEvent()) {
+      if (win2 && win2->RequestedClose()) {
+         win2.reset();
+      }
+
+      while (window && window->HasEvent()) {
          auto event = window->GetNextEvent();
+         if (auto eventt = std::get_if<NLSWIN::WindowFocusedEvent>(&event)) {
+            std::cout << "grub" << std::endl;
+         }
+      }
+
+      while (win2 && win2->HasEvent()) {
+         auto event = win2->GetNextEvent();
 
          if (auto resizeEvent = std::get_if<NLSWIN::WindowResizeEvent>(&event)) {
-            std::cout << resizeEvent->newWidth << ", " << resizeEvent->newHeight
-                      << ", Window: " << resizeEvent->sourceWindow << std::endl;
+            // std::cout << resizeEvent->newWidth << ", " << resizeEvent->newHeight
+            //           << ", Window: " << resizeEvent->sourceWindow << std::endl;
+         } else if (auto focusEvent = std::get_if<NLSWIN::WindowFocusedEvent>(&event)) {
+            // std::cout << "Focused on: " << focusEvent->sourceWindow << std::endl;
          }
       }
       while (kb->HasEvent()) {
-          auto event = kb->GetNextEvent();
+         auto event = kb->GetNextEvent();
          if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&event)) {
-             if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {
-               //window->SetFullscreen(false);
-               //window->Resize(1920, 1080);
-             } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
-                //window->SetWindowed();
-                //window->Resize(680, 480);
-             }
+            if (keyEvent->pressType == NLSWIN::KeyPressType::PRESSED) {
+               // window->SetFullscreen(false);
+               // window->Resize(1920, 1080);
+               window->Focus();
+            } else if (keyEvent->pressType == NLSWIN::KeyPressType::RELEASED) {
+               // window->SetWindowed();
+               // window->Resize(680, 480);
+            }
             std::cout << "Hello from keyboard one: " << keyEvent->keyName << std::endl;
+            std::cout << keyEvent->sourceWindow << std::endl;
          }
       }
+      context->MakeContextCurrent();
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      glClearColor(1, 0, 0, 1);
+      context->SwapContextBuffers();
 
-      
-      while (rawMouse->HasEvent()) { 
-          auto event = rawMouse->GetNextEvent();
-         if (auto rawMoveEvent = std::get_if<NLSWIN::RawMouseScrollEvent>(&event)) {
-             std::cout << "bub" << std::endl;
+      /*
+      while (cursor->HasEvent()) {
+         auto event = cursor->GetNextEvent();
+         if (auto enterEvent = std::get_if<NLSWIN::MouseEnterEvent>(&event)) {
+            std::cout << "Entered: " << (int)enterEvent->sourceWindow << std::endl;
+         } else if (auto leaveEvent = std::get_if<NLSWIN::MouseLeaveEvent>(&event)) {
+            std::cout << "Left: " << (int)leaveEvent->sourceWindow << std::endl;
          }
       }
-      
-      while (kb2->HasEvent()) {
-          auto event = kb2->GetNextEvent();
-         if (auto keyEvent = std::get_if<NLSWIN::KeyEvent>(&event)) {
-            std::cout << "Hello from keyboard two: " << keyEvent->keyName << std::endl;
-         }
-      }
-      
+      */
    }
 }
