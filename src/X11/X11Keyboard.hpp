@@ -10,11 +10,11 @@
 #pragma once
 
 #include <xcb/xinput.h>
-#include <unordered_map>
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon-x11.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include <unordered_map>
 
 #include "NamelessWindow/Events/Key.hpp"
 #include "NamelessWindow/Keyboard.hpp"
@@ -35,11 +35,16 @@ class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
 
    [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
    [[nodiscard]] xkb_keysym_t GetSymFromKeyCode(unsigned int keycode);
-   [[nodiscard]] KeyModifiers ParseModifierState(uint32_t mods);
+   [[nodiscard]] KeyModifiers ParseModifierState(uint32_t mods, NLSWIN::KeyValue value, bool pressed);
    std::array<bool, 512> m_InternalKeyState;
    xkb_context *m_keyboardContext {nullptr};
    xkb_state *m_KeyboardState {nullptr};
    xkb_keymap *m_keymap;
+
+   bool m_ShiftModifier {false};
+   bool m_AltModifier {false};
+   bool m_SuperModifier {false};
+   bool m_CtrlModifier {false};
 
    const xcb_input_xi_event_mask_t m_inputEventMask {
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE)};
@@ -161,7 +166,7 @@ class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
       {XKB_KEY_KP_Home, KEY_HOME},
       {XKB_KEY_KP_Up, KEY_UP},
       {XKB_KEY_KP_Page_Up, KEY_PAGEUP},
-      {XKB_KEY_KP_Begin, KEY_CLEAR}       // Weird case on linux, this key doesnt seem to be universally defined.
+      {XKB_KEY_KP_Begin, KEY_CLEAR}  // Weird case on linux, this key doesnt seem to be universally defined.
    };
 };
 }  // namespace NLSWIN

@@ -1,14 +1,17 @@
 #include "X11Keyboard.hpp"
+
 #include <X11/Xlib.h>
 #include <xcb/xproto.h>
 #include <xkbcommon/xkbcommon-compat.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include <cmath>
+
+#include "MagicEnum/magic_enum.hpp"
 #include "NamelessWindow/Events/Event.hpp"
 #include "NamelessWindow/Events/Key.hpp"
 #include "X11EventBus.hpp"
 #include "XConnection.h"
-#include "MagicEnum/magic_enum.hpp"
 
 using namespace NLSWIN;
 
@@ -89,7 +92,7 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          }
 
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
-         keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.effective);
+         keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.effective, keyEvent.code.value, true);
          keyEvent.sourceWindow = GetSubscribedWindows().at(pressEvent->event).lock()->GetGenericID();
          if (m_InternalKeyState[pressEvent->detail] == true) {
             keyEvent.pressType = KeyPressType::REPEAT;
@@ -116,7 +119,8 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
          }
 
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
-         keyEvent.code.modifiers = ParseModifierState(releaseEvent->mods.effective);
+         keyEvent.code.modifiers =
+            ParseModifierState(releaseEvent->mods.effective, keyEvent.code.value, false);
          keyEvent.pressType = KeyPressType::RELEASED;
          keyEvent.sourceWindow = GetSubscribedWindows().at(releaseEvent->event).lock()->GetGenericID();
          m_InternalKeyState[releaseEvent->detail] = false;
@@ -126,20 +130,8 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    return keyEvent;
 }
 
-KeyModifiers X11Keyboard::ParseModifierState(uint32_t mods) {
+KeyModifiers X11Keyboard::ParseModifierState(uint32_t mods, NLSWIN::KeyValue value, bool pressed) {
    KeyModifiers modifiers {false};
-   if ((mods & XCB_MOD_MASK_CONTROL)) {
-      modifiers.ctrl = true;
-   }
-   if (mods & XCB_MOD_MASK_4) {
-      modifiers.super = true;
-   }
-   if (mods & XCB_MOD_MASK_1) {
-      modifiers.alt = true;
-   }
-   if (mods & XCB_MOD_MASK_SHIFT) {
-      modifiers.shift = true;
-   }
    if (mods & XCB_MOD_MASK_LOCK) {
       modifiers.capsLock = true;
    }
@@ -149,6 +141,22 @@ KeyModifiers X11Keyboard::ParseModifierState(uint32_t mods) {
    if (mods & XCB_MOD_MASK_2) {
       modifiers.numLock = true;
    }
+
+   if (value == NLSWIN::KEY_LSHIFT || value == NLSWIN::KEY_RSHIFT) {
+      m_ShiftModifier = pressed;
+   } else if (value == NLSWIN::KEY_LALT || value == NLSWIN::KEY_RALT) {
+      m_AltModifier = pressed;
+   } else if (value == NLSWIN::KEY_LSUPER || value == NLSWIN::KEY_RSUPER) {
+      m_SuperModifier = pressed;
+   } else if (value == NLSWIN::KEY_LCTRL || value == NLSWIN::KEY_RCTRL) {
+      m_CtrlModifier = pressed;
+   }
+
+   modifiers.shift = m_ShiftModifier;
+   modifiers.alt = m_AltModifier;
+   modifiers.super = m_SuperModifier;
+   modifiers.ctrl = m_CtrlModifier;
+
    return modifiers;
 }
 
