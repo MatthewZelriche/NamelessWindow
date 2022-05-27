@@ -1,6 +1,6 @@
 
 #define GLAD_GL_IMPLEMENTATION
-#define NOMINMAX        // Needed so gl.h doesnt start messing up the imgui backend.
+#define NOMINMAX  // Needed so gl.h doesnt start messing up the imgui backend.
 #include <gl.h>
 
 #include <NamelessWindow/Cursor.hpp>

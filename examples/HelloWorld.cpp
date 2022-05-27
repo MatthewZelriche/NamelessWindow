@@ -1,6 +1,3 @@
-#include <Windows.h>
-#include <gl/GL.h>
-
 #include <iostream>
 
 #include "NamelessWindow/Cursor.hpp"
@@ -75,20 +72,5 @@ int main() {
             std::cout << keyEvent->sourceWindow << std::endl;
          }
       }
-      context->MakeContextCurrent();
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glClearColor(1, 0, 0, 1);
-      context->SwapContextBuffers();
-
-      /*
-      while (cursor->HasEvent()) {
-         auto event = cursor->GetNextEvent();
-         if (auto enterEvent = std::get_if<NLSWIN::MouseEnterEvent>(&event)) {
-            std::cout << "Entered: " << (int)enterEvent->sourceWindow << std::endl;
-         } else if (auto leaveEvent = std::get_if<NLSWIN::MouseLeaveEvent>(&event)) {
-            std::cout << "Left: " << (int)leaveEvent->sourceWindow << std::endl;
-         }
-      }
-      */
    }
 }

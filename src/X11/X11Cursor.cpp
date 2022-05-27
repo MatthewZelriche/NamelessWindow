@@ -1,4 +1,5 @@
 #include "X11Cursor.hpp"
+
 #include <X11/X.h>
 #include <xcb/xcb.h>
 #include <xcb/xproto.h>
@@ -109,11 +110,11 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
       case XCB_FOCUS_IN: {
          xcb_focus_in_event_t *focusInEvent = reinterpret_cast<xcb_focus_in_event_t *>(event);
          if (focusInEvent->event == m_boundWindow && m_isTempUnbound) {
-               auto cookie = xcb_grab_pointer(XConnection::GetConnection(), false, m_boundWindow, m_xcbEventMask,
-                                  XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, m_boundWindow, m_cursor,
-                                  XCB_CURRENT_TIME);
-               xcb_flush(XConnection::GetConnection());
-               m_isTempUnbound = false;
+            auto cookie = xcb_grab_pointer(XConnection::GetConnection(), false, m_boundWindow, m_xcbEventMask,
+                                           XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, m_boundWindow, m_cursor,
+                                           XCB_CURRENT_TIME);
+            xcb_flush(XConnection::GetConnection());
+            m_isTempUnbound = false;
          }
          break;
       }
@@ -158,7 +159,7 @@ void X11Cursor::UnbindFromWindows() noexcept {
    xcb_flush(XConnection::GetConnection());
 }
 
-void X11Cursor::BindToWindow(const Window *const window) noexcept {
+void X11Cursor::BindToWindow(Window *window) noexcept {
    const X11Window *const x11Window = reinterpret_cast<const X11Window *const>(window);
    // Always unbind the cursor first
    UnbindFromWindows();

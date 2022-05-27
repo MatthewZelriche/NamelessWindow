@@ -3,19 +3,19 @@
 #include <X11/X.h>
 #include <X11/Xatom.h>
 #include <X11/Xlib.h>
-#include <X11/extensions/randr.h>
-#include <xcb/randr.h>
 #include <X11/extensions/Xrandr.h>
+#include <X11/extensions/randr.h>
+#include <math.h>
+#include <xcb/randr.h>
 #include <xcb/xcb.h>
 #include <xcb/xcb_icccm.h>
+#include <xcb/xproto.h>
 
 #include <cmath>
 #include <cstring>
 #include <memory>
-#include <unordered_set>
 #include <unordered_map>
-#include <math.h>
-#include <xcb/xproto.h>
+#include <unordered_set>
 
 #include "NamelessWindow/Exceptions.hpp"
 #include "NamelessWindow/Window.hpp"
@@ -64,11 +64,6 @@ X11Window::X11Window(WindowProperties properties) {
 
    m_preferredWidth = properties.horzResolution;
    m_preferredHeight = properties.vertResolution;
-
-   // Set preferred border width for windowed applications
-   if (properties.mode == WindowMode::WINDOWED) {
-      m_preferredBorderWidth = properties.borderWidth;
-   }
 
    // Get preferred visualID
    SelectAppropriateVisualIDForGL(properties.glConfig);
@@ -194,7 +189,7 @@ void X11Window::Show() {
    // Block until we've actually been mapped.
    while (!m_isMapped) { X11EventBus::GetInstance().PollEvents(); }
 
-   // Set requested position and size. 
+   // Set requested position and size.
    Reposition(m_preferredXCoord, m_preferredYCoord);
    Resize(m_preferredWidth, m_preferredHeight);
    xcb_flush(XConnection::GetConnection());
@@ -233,9 +228,10 @@ void X11Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
 
 void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
    std::vector<MonitorInfo> infoVector = EnumerateMonitors();
-   XRRMonitorInfo *currentMonitor = UTIL::GetCurrentMonitor(m_x11WindowID, {m_windowGeometry.x, m_windowGeometry.y});
+   XRRMonitorInfo *currentMonitor =
+      UTIL::GetCurrentMonitor(m_x11WindowID, {m_windowGeometry.x, m_windowGeometry.y});
 
-   XRRScreenResources * resources = XRRGetScreenResources(XConnection::GetDisplay(), m_x11WindowID);
+   XRRScreenResources *resources = XRRGetScreenResources(XConnection::GetDisplay(), m_x11WindowID);
    // TODO: Currently only assuming one output per monitor. Could be problematic?
    XRROutputInfo *info = XRRGetOutputInfo(XConnection::GetDisplay(), resources, currentMonitor->outputs[0]);
    XRRCrtcInfo *crtcInfo = XRRGetCrtcInfo(XConnection::GetDisplay(), resources, info->crtc);
@@ -251,9 +247,9 @@ void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
 
    // We need a list of valid modes and their refresh rates to find a suitable RRMode.
    std::unordered_map<RRMode, float> validModes;
-   for (auto monitor : infoVector) {
+   for (auto monitor: infoVector) {
       if (std::strcmp(monitor.name.c_str(), info->name) == 0) {
-         for (auto mode : monitor.modes) {
+         for (auto mode: monitor.modes) {
             validModes.insert({mode.platformSpecificIdentifier, mode.refreshRate});
          }
       }
@@ -265,15 +261,19 @@ void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
    for (int i = 0; i < resources->nmode; i++) {
       XRRModeInfo modeInfo = resources->modes[i];
       // Calculate refresh rate of the queried mode.
-      float refresh = (float) modeInfo.dotClock / (modeInfo.hTotal * modeInfo.vTotal);
+      float refresh = (float)modeInfo.dotClock / (modeInfo.hTotal * modeInfo.vTotal);
       float truncatedRefresh = std::round(refresh * 100.0) / 100.0;
 
-      if (validModes.count(modeInfo.id) && modeInfo.height == height && modeInfo.width == width && validModes[modeInfo.id] == truncatedRefresh) {
-         // The user-requested resolution has a mode with the same refresh rate as now, we've found a perfect match.
+      if (validModes.count(modeInfo.id) && modeInfo.height == height && modeInfo.width == width &&
+          validModes[modeInfo.id] == truncatedRefresh) {
+         // The user-requested resolution has a mode with the same refresh rate as now, we've found a perfect
+         // match.
          exactMatch = &modeInfo;
          break;
-      } else if (validModes.count(modeInfo.id) && modeInfo.height == height && modeInfo.width == width && truncatedRefresh > highestRefreshRate) {
-         // We found a mode with a matching resolution, but it will require changing the refresh rate, so it is not preferable.
+      } else if (validModes.count(modeInfo.id) && modeInfo.height == height && modeInfo.width == width &&
+                 truncatedRefresh > highestRefreshRate) {
+         // We found a mode with a matching resolution, but it will require changing the refresh rate, so it
+         // is not preferable.
          highestRefreshRate = truncatedRefresh;
          highestRefreshRateMode = &modeInfo;
       }
@@ -288,7 +288,9 @@ void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
 
    if (finalRRMode) {
       // Actually apply the new video mode.
-      XRRSetCrtcConfig(XConnection::GetDisplay(), resources, info->crtc, CurrentTime, crtcInfo->x, crtcInfo->y, finalRRMode->id, crtcInfo->rotation, crtcInfo->outputs, crtcInfo->noutput);
+      XRRSetCrtcConfig(XConnection::GetDisplay(), resources, info->crtc, CurrentTime, crtcInfo->x,
+                       crtcInfo->y, finalRRMode->id, crtcInfo->rotation, crtcInfo->outputs,
+                       crtcInfo->noutput);
       XFlush(XConnection::GetDisplay());
    } else {
       // We could find a matching resolution anywhere
@@ -299,7 +301,7 @@ void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
 void X11Window::Resize(uint32_t width, uint32_t height) noexcept {
    if (m_windowMode == WindowMode::FULLSCREEN) {
       SetVideoMode(width, height);
-   } 
+   }
    uint32_t newSize[] = {width, height};
    // Set the new desired width and height in case the wm doesn't respect it.
    m_preferredWidth = width;
@@ -329,15 +331,15 @@ void X11Window::ToggleFullscreen() noexcept {
    message.window = m_x11WindowID;
    message.type = stateAtom;
    message.format = 32;
-   message.data.data32[0] = 2; // 2 is the atom value for toggling.
+   message.data.data32[0] = 2;  // 2 is the atom value for toggling.
    message.data.data32[1] = fullscreenAtom;
-   message.data.data32[2] = 0; // Unused
-   message.data.data32[3] = 1; // App event
-   message.data.data32[4] = 0; // Unused?
+   message.data.data32[2] = 0;  // Unused
+   message.data.data32[3] = 1;  // App event
+   message.data.data32[4] = 0;  // Unused?
 
-   xcb_send_event(XConnection::GetConnection(), false, UTIL::GetRootWindow(), 
-                     XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT, 
-                     (const char *)&message);
+   xcb_send_event(XConnection::GetConnection(), false, UTIL::GetRootWindow(),
+                  XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY | XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT,
+                  (const char *)&message);
    xcb_flush(XConnection::GetConnection());
 }
 
@@ -352,7 +354,8 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
          xcb_configure_notify_event_t *notifyEvent = reinterpret_cast<xcb_configure_notify_event_t *>(event);
          if (notifyEvent->window == m_x11WindowID) {
             // Has the window size changed?
-            if (notifyEvent->width != m_windowGeometry.width || notifyEvent->height != m_windowGeometry.height) {
+            if (notifyEvent->width != m_windowGeometry.width ||
+                notifyEvent->height != m_windowGeometry.height) {
                WindowResizeEvent resizeEvent;
                resizeEvent.newWidth = notifyEvent->width;
                resizeEvent.newHeight = notifyEvent->height;
@@ -420,19 +423,15 @@ Rect X11Window::GetNewGeometry() {
    auto geomCookie = xcb_get_geometry(XConnection::GetConnection(), m_x11WindowID);
    auto geomReply = xcb_get_geometry_reply(XConnection::GetConnection(), geomCookie, nullptr);
 
-   // We have to translate to root window coordinates. 
-   xcb_query_tree_cookie_t queryTreeCookie = xcb_query_tree(XConnection::GetConnection(),
-                                                  m_x11WindowID);
-   xcb_query_tree_reply_t *queryTree = xcb_query_tree_reply(XConnection::GetConnection(),
-                                                  queryTreeCookie, nullptr);
+   // We have to translate to root window coordinates.
+   xcb_query_tree_cookie_t queryTreeCookie = xcb_query_tree(XConnection::GetConnection(), m_x11WindowID);
+   xcb_query_tree_reply_t *queryTree =
+      xcb_query_tree_reply(XConnection::GetConnection(), queryTreeCookie, nullptr);
 
-   auto translateCookie = xcb_translate_coordinates(XConnection::GetConnection(),
-                                                      m_x11WindowID,
-                                                      m_rootWindow,
-                                                      geomReply->x, geomReply->y );
-   auto translatedCoordinates = xcb_translate_coordinates_reply(XConnection::GetConnection(), 
-                                                                  translateCookie,
-                                                                  nullptr);
+   auto translateCookie = xcb_translate_coordinates(XConnection::GetConnection(), m_x11WindowID, m_rootWindow,
+                                                    geomReply->x, geomReply->y);
+   auto translatedCoordinates =
+      xcb_translate_coordinates_reply(XConnection::GetConnection(), translateCookie, nullptr);
    return {translatedCoordinates->dst_x, translatedCoordinates->dst_y, geomReply->width, geomReply->height};
 }
 
@@ -442,20 +441,19 @@ std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
    if (!defaultScreen) {
       return {};
    }
-   XRRScreenResources * resources = XRRGetScreenResources(XConnection::GetDisplay(), UTIL::GetRootWindow());
+   XRRScreenResources *resources = XRRGetScreenResources(XConnection::GetDisplay(), UTIL::GetRootWindow());
 
    int numMonitors = 0;
-   XRRMonitorInfo *monitorInfos = XRRGetMonitors(XConnection::GetDisplay(), UTIL::GetRootWindow(), true, &numMonitors);
+   XRRMonitorInfo *monitorInfos =
+      XRRGetMonitors(XConnection::GetDisplay(), UTIL::GetRootWindow(), true, &numMonitors);
    for (int i = 0; i < numMonitors; i++) {
-      
       // TODO: Currently only assuming one output per monitor. Could be problematic?
-      XRROutputInfo *info = XRRGetOutputInfo(XConnection::GetDisplay(), resources, monitorInfos[i].outputs[0]);
+      XRROutputInfo *info =
+         XRRGetOutputInfo(XConnection::GetDisplay(), resources, monitorInfos[i].outputs[0]);
 
       std::unordered_set<XID> supportedOutputModeIDs;
       // Get mode IDs supported by this monitor.
-      for (int j = 0; j < info->nmode; j++) {
-         supportedOutputModeIDs.emplace(info->modes[j]);
-      }
+      for (int j = 0; j < info->nmode; j++) { supportedOutputModeIDs.emplace(info->modes[j]); }
 
       std::vector<VideoMode> modes;
       // Contrast supported ID's with known modes
@@ -468,18 +466,23 @@ std::vector<MonitorInfo> NLSWIN::Window::EnumerateMonitors() {
                modeInfo.vTotal = modeInfo.vTotal * 2;
             }
             // Calculate refresh rate.
-            float refresh = (float) modeInfo.dotClock / (modeInfo.hTotal * modeInfo.vTotal);
+            float refresh = (float)modeInfo.dotClock / (modeInfo.hTotal * modeInfo.vTotal);
             float truncatedRefresh = std::round(refresh * 100.0) / 100.0;
 
             // Construct and store the supported video mode information.
-            VideoMode processedMode {static_cast<int>(modeInfo.width), static_cast<int>(modeInfo.height), truncatedRefresh, static_cast<unsigned int>(modeInfo.id)};
+            VideoMode processedMode {static_cast<int>(modeInfo.width), static_cast<int>(modeInfo.height),
+                                     truncatedRefresh, static_cast<unsigned int>(modeInfo.id)};
             modes.emplace_back(processedMode);
          }
       }
 
       // We are done processing one monitor.
-      MonitorInfo monitor {monitorInfos[i].width, monitorInfos[i].height, monitorInfos[i].x,
-                           monitorInfos[i].y, info->name, modes};
+      MonitorInfo monitor {monitorInfos[i].width,
+                           monitorInfos[i].height,
+                           monitorInfos[i].x,
+                           monitorInfos[i].y,
+                           info->name,
+                           modes};
       platIndependentMonitorInfos.emplace_back(monitor);
    }
 
