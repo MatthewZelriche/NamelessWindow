@@ -3,9 +3,8 @@
 #include <X11/Xlib.h>
 #include <xcb/xproto.h>
 #include <xkbcommon/xkbcommon-compat.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
-
-#include <cmath>
 
 #include "MagicEnum/magic_enum.hpp"
 #include "NamelessWindow/Events/Event.hpp"
@@ -85,20 +84,23 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
             // Return null key event.
             return KeyEvent();
          }
-
-         // Special case: If we've pressed numlock, update the state.
-         if (keyEvent.code.value == KEY_NUMLOCK) {
-            xkb_state_update_key(m_KeyboardState, pressEvent->detail, XKB_KEY_DOWN);
-         }
+         keyEvent.code.modifiers =
+            ParseModifierState(pressEvent->mods.effective, pressEvent->detail, keyEvent.code.value, true);
 
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
-         keyEvent.code.modifiers = ParseModifierState(pressEvent->mods.effective, keyEvent.code.value, true);
          keyEvent.sourceWindow = GetSubscribedWindows().at(pressEvent->event).lock()->GetGenericID();
          if (m_InternalKeyState[pressEvent->detail] == true) {
             keyEvent.pressType = KeyPressType::REPEAT;
          } else {
             keyEvent.pressType = KeyPressType::PRESSED;
             m_InternalKeyState[pressEvent->detail] = true;
+         }
+
+         // Handle CharacterEvents last.
+         char character = (char)xkb_state_key_get_utf32(m_KeyboardState, pressEvent->detail);
+         if (isprint(character)) {
+            PushEvent(NLSWIN::CharacterEvent {
+               character, GetSubscribedWindows().at(pressEvent->event).lock()->GetGenericID()});
          }
          break;
       }
@@ -112,15 +114,10 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
             // Return null key event.
             return KeyEvent();
          }
-
-         // Special case: If we've pressed numlock, update the state.
-         if (keyEvent.code.value == KEY_NUMLOCK) {
-            xkb_state_update_key(m_KeyboardState, releaseEvent->detail, XKB_KEY_UP);
-         }
+         keyEvent.code.modifiers = ParseModifierState(releaseEvent->mods.effective, releaseEvent->detail,
+                                                      keyEvent.code.value, false);
 
          keyEvent.keyName = magic_enum::enum_name(keyEvent.code.value);
-         keyEvent.code.modifiers =
-            ParseModifierState(releaseEvent->mods.effective, keyEvent.code.value, false);
          keyEvent.pressType = KeyPressType::RELEASED;
          keyEvent.sourceWindow = GetSubscribedWindows().at(releaseEvent->event).lock()->GetGenericID();
          m_InternalKeyState[releaseEvent->detail] = false;
@@ -130,34 +127,33 @@ Event X11Keyboard::ProcessKeyEvent(xcb_ge_generic_event_t *event) {
    return keyEvent;
 }
 
-KeyModifiers X11Keyboard::ParseModifierState(uint32_t mods, NLSWIN::KeyValue value, bool pressed) {
-   KeyModifiers modifiers {false};
-   if (mods & XCB_MOD_MASK_LOCK) {
-      modifiers.capsLock = true;
-   }
-   if (mods & XCB_MOD_MASK_5) {
-      modifiers.scrollLock = true;
-   }
-   if (mods & XCB_MOD_MASK_2) {
-      modifiers.numLock = true;
-   }
-
+KeyModifiers X11Keyboard::ParseModifierState(uint32_t mods, xkb_keycode_t code, NLSWIN::KeyValue value,
+                                             bool pressed) {
    if (value == NLSWIN::KEY_LSHIFT || value == NLSWIN::KEY_RSHIFT) {
-      m_ShiftModifier = pressed;
+      m_Mods.shift = pressed;
+      xkb_state_update_key(m_KeyboardState, code, m_Mods.shift ? XKB_KEY_DOWN : XKB_KEY_UP);
+      std::cout << pressed << std::endl;
    } else if (value == NLSWIN::KEY_LALT || value == NLSWIN::KEY_RALT) {
-      m_AltModifier = pressed;
+      m_Mods.alt = pressed;
+      xkb_state_update_key(m_KeyboardState, code, m_Mods.alt ? XKB_KEY_DOWN : XKB_KEY_UP);
    } else if (value == NLSWIN::KEY_LSUPER || value == NLSWIN::KEY_RSUPER) {
-      m_SuperModifier = pressed;
+      m_Mods.super = pressed;
+      xkb_state_update_key(m_KeyboardState, code, m_Mods.super ? XKB_KEY_DOWN : XKB_KEY_UP);
    } else if (value == NLSWIN::KEY_LCTRL || value == NLSWIN::KEY_RCTRL) {
-      m_CtrlModifier = pressed;
+      m_Mods.ctrl = pressed;
+      xkb_state_update_key(m_KeyboardState, code, m_Mods.ctrl ? XKB_KEY_DOWN : XKB_KEY_UP);
+   } else if (value == NLSWIN::KeyValue::KEY_CAPSLOCK) {
+      m_Mods.capsLock = !m_Mods.capsLock;
+      xkb_state_update_key(m_KeyboardState, code, m_Mods.capsLock ? XKB_KEY_DOWN : XKB_KEY_UP);
+   } else if (value == NLSWIN::KeyValue::KEY_SCROLL_LOCK) {
+      m_Mods.scrollLock = !m_Mods.scrollLock;
+      xkb_state_update_key(m_KeyboardState, code, m_Mods.scrollLock ? XKB_KEY_DOWN : XKB_KEY_UP);
+   } else if (value == NLSWIN::KeyValue::KEY_NUMLOCK) {
+      m_Mods.numLock = !m_Mods.numLock;
+      xkb_state_update_key(m_KeyboardState, code, m_Mods.numLock ? XKB_KEY_DOWN : XKB_KEY_UP);
    }
 
-   modifiers.shift = m_ShiftModifier;
-   modifiers.alt = m_AltModifier;
-   modifiers.super = m_SuperModifier;
-   modifiers.ctrl = m_CtrlModifier;
-
-   return modifiers;
+   return m_Mods;
 }
 
 xkb_keysym_t X11Keyboard::GetSymFromKeyCode(unsigned int keycode) {

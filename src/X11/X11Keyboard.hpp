@@ -35,16 +35,14 @@ class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
 
    [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
    [[nodiscard]] xkb_keysym_t GetSymFromKeyCode(unsigned int keycode);
-   [[nodiscard]] KeyModifiers ParseModifierState(uint32_t mods, NLSWIN::KeyValue value, bool pressed);
+   [[nodiscard]] KeyModifiers ParseModifierState(uint32_t mods, xkb_keycode_t code, NLSWIN::KeyValue value,
+                                                 bool pressed);
    std::array<bool, 512> m_InternalKeyState;
    xkb_context *m_keyboardContext {nullptr};
    xkb_state *m_KeyboardState {nullptr};
    xkb_keymap *m_keymap;
 
-   bool m_ShiftModifier {false};
-   bool m_AltModifier {false};
-   bool m_SuperModifier {false};
-   bool m_CtrlModifier {false};
+   KeyModifiers m_Mods {false};
 
    const xcb_input_xi_event_mask_t m_inputEventMask {
       (xcb_input_xi_event_mask_t)(XCB_INPUT_XI_EVENT_MASK_KEY_PRESS | XCB_INPUT_XI_EVENT_MASK_KEY_RELEASE)};
@@ -86,6 +84,32 @@ class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
       {XKB_KEY_x, KEY_X},
       {XKB_KEY_y, KEY_Y},
       {XKB_KEY_z, KEY_Z},
+      {XKB_KEY_A, KEY_A},
+      {XKB_KEY_B, KEY_B},
+      {XKB_KEY_C, KEY_C},
+      {XKB_KEY_D, KEY_D},
+      {XKB_KEY_E, KEY_E},
+      {XKB_KEY_F, KEY_F},
+      {XKB_KEY_G, KEY_G},
+      {XKB_KEY_H, KEY_H},
+      {XKB_KEY_I, KEY_I},
+      {XKB_KEY_J, KEY_J},
+      {XKB_KEY_K, KEY_K},
+      {XKB_KEY_L, KEY_L},
+      {XKB_KEY_M, KEY_M},
+      {XKB_KEY_N, KEY_N},
+      {XKB_KEY_O, KEY_O},
+      {XKB_KEY_P, KEY_P},
+      {XKB_KEY_Q, KEY_Q},
+      {XKB_KEY_R, KEY_R},
+      {XKB_KEY_S, KEY_S},
+      {XKB_KEY_T, KEY_T},
+      {XKB_KEY_U, KEY_U},
+      {XKB_KEY_V, KEY_V},
+      {XKB_KEY_W, KEY_W},
+      {XKB_KEY_X, KEY_X},
+      {XKB_KEY_Y, KEY_Y},
+      {XKB_KEY_Z, KEY_Z},
       {XKB_KEY_Escape, KEY_ESC},
       {XKB_KEY_Shift_L, KEY_LSHIFT},
       {XKB_KEY_Shift_R, KEY_RSHIFT},
@@ -154,8 +178,6 @@ class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
       {XKB_KEY_KP_Subtract, KEY_NUMPAD_SUBTRACT},
       {XKB_KEY_KP_Add, KEY_NUMPAD_ADD},
       {XKB_KEY_KP_Enter, KEY_NUMPAD_ENTER},
-      // Linux uses different sym values for kp keys when numlock is off.
-      // For now we map them to the same regular keys they are meant to represent.
       {XKB_KEY_KP_Insert, KEY_INSERT},
       {XKB_KEY_KP_Delete, KEY_DELETE},
       {XKB_KEY_KP_End, KEY_END},

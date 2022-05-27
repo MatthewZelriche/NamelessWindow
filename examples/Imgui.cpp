@@ -49,6 +49,9 @@ int main() {
       while (kb->HasEvent()) {
          auto evt = kb->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
+         if (auto event = std::get_if<NLSWIN::CharacterEvent>(&evt)) {
+            std::cout << event->character;
+         }
       }
 
       ImGui_ImplOpenGL3_NewFrame();

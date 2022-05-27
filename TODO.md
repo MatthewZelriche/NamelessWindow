@@ -21,3 +21,5 @@
 20. Better GL Context creation on WIN32.<br />
 21. Bug on i3 where cursor isn't rebound on focus via keyboard shortcut.<br />
 22. ~~On Win32, BindToWindow() doesn't automatically switch focus, but it does on linux. Which behavior should be kept?~~<br />
+23. ~~Implement ImGui character input on Linux.~~<br />
+24. ~~Fix ImGui modifiers being incorrect.~~<br />
