@@ -54,6 +54,10 @@ void ImGui_ImplNLSWin_HandleEvent(NLSWIN::Event ev) {
       } else if (event->pressType == NLSWIN::KeyPressType::RELEASED) {
          io.AddKeyEvent(TranslateKey(event->code.value), false);
       }
+      io.AddKeyEvent(ImGuiKey_ModShift, event->code.modifiers.shift);
+      io.AddKeyEvent(ImGuiKey_ModAlt, event->code.modifiers.alt);
+      io.AddKeyEvent(ImGuiKey_ModCtrl, event->code.modifiers.ctrl);
+      io.AddKeyEvent(ImGuiKey_ModSuper, event->code.modifiers.super);
    }
 }
 
