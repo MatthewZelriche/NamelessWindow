@@ -38,8 +38,14 @@ int main() {
    while (!win->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();
 
-      while (win && win->HasEvent()) { auto evt = win->GetNextEvent(); }
-      while (cursor->HasEvent()) { auto evt = cursor->GetNextEvent(); }
+      while (win && win->HasEvent()) {
+         auto evt = win->GetNextEvent();
+         ImGui_ImplNLSWin_HandleEvent(evt);
+      }
+      while (cursor->HasEvent()) {
+         auto evt = cursor->GetNextEvent();
+         ImGui_ImplNLSWin_HandleEvent(evt);
+      }
 
       ImGui_ImplOpenGL3_NewFrame();
       ImGui_ImplNLSWin_NewFrame();
