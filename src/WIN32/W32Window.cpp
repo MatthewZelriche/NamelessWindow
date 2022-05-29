@@ -62,6 +62,14 @@ W32Window::W32Window(WindowProperties properties) {
       props.windowName = ConvertToWString(properties.windowName).c_str();
    }
 
+   // CreateWindow requires the size of the window, including the non-client area.
+   // But the user passes in the desired client area. We must determine the correct
+   // size to pass into CreateWindow based on the desired client area.
+   RECT clientArea {props.X, props.Y, props.X + props.nWidth, props.Y + props.nHeight};
+   AdjustWindowRect(&clientArea, WS_TILED | WS_CAPTION, false);
+   props.nWidth = clientArea.right - clientArea.left;
+   props.nHeight = clientArea.bottom - clientArea.top;
+
    m_windowHandle = (HWND)SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CREATE_NLSWIN_WINDOW,
                                        (WPARAM)&props, 0);
    if (!m_windowHandle) {
