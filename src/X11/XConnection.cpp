@@ -1,5 +1,6 @@
 #include "XConnection.h"
 
+#include <xcb/xcb.h>
 #include <xcb/xfixes.h>
 #define explicit explicit_
 #include <xcb/xkb.h>
@@ -12,6 +13,7 @@ using namespace NLSWIN;
 
 xcb_connection_t* XConnection::m_xServerConnection = nullptr;
 Display* XConnection::m_Display = nullptr;
+uint8_t XConnection::m_xkbBaseEvent = 0;
 
 void XConnection::CreateConnection() {
    if (!m_xServerConnection) {
@@ -19,7 +21,8 @@ void XConnection::CreateConnection() {
       m_xServerConnection = XGetXCBConnection(m_Display);
       XSetEventQueueOwner(m_Display, XCBOwnsEventQueue);
       xkb_x11_setup_xkb_extension(m_xServerConnection, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION,
-                                  XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, nullptr, nullptr);
+                                  XKB_X11_SETUP_XKB_EXTENSION_NO_FLAGS, nullptr, nullptr, &m_xkbBaseEvent,
+                                  nullptr);
       auto cookie =
          xcb_xfixes_query_version(m_xServerConnection, XCB_XFIXES_MAJOR_VERSION, XCB_XFIXES_MINOR_VERSION);
       auto reply = xcb_xfixes_query_version_reply(m_xServerConnection, cookie, nullptr);

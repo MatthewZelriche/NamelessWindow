@@ -13,6 +13,9 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon-x11.h>
 #include <xkbcommon/xkbcommon.h>
+#define explicit _explicit
+#include <xcb/xkb.h>
+#undef explicit
 
 #include <unordered_map>
 
@@ -27,7 +30,7 @@ namespace NLSWIN {
  */
 class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
    public:
-   X11Keyboard();
+   X11Keyboard() = default;
    X11Keyboard(KeyboardDeviceInfo info);
 
    private:
@@ -35,13 +38,23 @@ class NLSWIN_API_PRIVATE X11Keyboard : public X11InputDevice, public Keyboard {
 
    [[nodiscard]] Event ProcessKeyEvent(xcb_ge_generic_event_t *event);
    [[nodiscard]] xkb_keysym_t GetSymFromKeyCode(unsigned int keycode);
-   [[nodiscard]] KeyModifiers ParseModifierState(uint32_t mods, xkb_keycode_t code, NLSWIN::KeyValue value,
-                                                 bool pressed);
+   void UpdateLockedModifiers(xcb_xkb_state_notify_event_t *stateNotify);
+   void UpdateDepressedModifiers(NLSWIN::KeyValue val, bool pressed);
    std::array<bool, 512> m_InternalKeyState;
    xkb_context *m_keyboardContext {nullptr};
-   xkb_state *m_KeyboardState {nullptr};
    xkb_keymap *m_keymap;
 
+   // We use two seperate state objects for the keyboard.
+   // DummyState: This state always has most modifiers always disabled, regardless of the real state of the
+   // keyboard. The only modifier that it reflects correctly is NumLock. DummyState is used when determining
+   // KeyValues. This means if the end-user wants to explicitly check for things like !, capital letters, etc,
+   // when handling key events, they must do so themselves with the KeyEvent modifiers.
+   //
+   // RealState: Tracks the actual modifier state of the keyboard. This state will properly reflect Sym
+   // Transformations beyond just the NumLock key. It's primarily used for setting the modifier state in
+   // KeyEvents and in determining CharacterEvent values.
+   xkb_state *m_dummyState {nullptr};
+   xkb_state *m_realState {nullptr};
    KeyModifiers m_Mods {false};
 
    const xcb_input_xi_event_mask_t m_inputEventMask {
