@@ -90,6 +90,8 @@ W32Window::W32Window(WindowProperties properties) {
       Show();
       SetFullscreen(true);
       Hide();
+   } else {
+      m_windowMode = WindowMode::WINDOWED;
    }
 
    // Set up pixel format for OGL.
@@ -148,9 +150,7 @@ void W32Window::EnableUserResizing() {
 }
 
 void W32Window::SetFullscreen(bool borderless) noexcept {
-   if (m_windowMode == WindowMode::WINDOWED) {
-      return;
-   } else if (m_windowMode == WindowMode::FULLSCREEN && !borderless) {
+   if (m_windowMode == WindowMode::FULLSCREEN && !borderless) {
       return;
    } else if (m_windowMode == WindowMode::BORDERLESS && borderless) {
       return;
@@ -172,6 +172,7 @@ void W32Window::SetFullscreen(bool borderless) noexcept {
       m_windowMode = WindowMode::BORDERLESS;
    } else {
       m_windowMode = WindowMode::FULLSCREEN;
+      SetNewVideoMode(m_width, m_height, 32);
    }
    UpdateRectProperties();
 }
@@ -198,6 +199,7 @@ void W32Window::SetWindowed() noexcept {
    SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, adjustedSize.first, adjustedSize.second,
                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
    UpdateRectProperties();
+   m_windowMode = NLSWIN::WindowMode::WINDOWED;
 }
 
 std::pair<long, long> W32Window::GetWindowSizeFromClientSize(int width, int height) {
