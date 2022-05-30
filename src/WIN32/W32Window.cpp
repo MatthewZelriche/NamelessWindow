@@ -78,13 +78,13 @@ W32Window::W32Window(WindowProperties properties) {
 
    Reposition(props.X, props.Y);
 
+   if (properties.startBorderless) {
+      EnableBorderless();
+   }
+
    if (properties.mode == WindowMode::FULLSCREEN) {
       Show();
-      SetFullscreen(false);
-      Hide();
-   } else if (properties.mode == WindowMode::BORDERLESS) {
-      Show();
-      SetFullscreen(true);
+      SetFullscreen();
       Hide();
    } else {
       m_windowMode = WindowMode::WINDOWED;
@@ -136,6 +136,7 @@ void W32Window::DisableUserResizing() {
    SetWindowPos(
       m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
       SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+   UpdateRectProperties();
 }
 
 void W32Window::EnableUserResizing() {
@@ -144,36 +145,52 @@ void W32Window::EnableUserResizing() {
    SetWindowPos(
       m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
       SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+   UpdateRectProperties();
 }
 
-void W32Window::SetFullscreen(bool borderless) {
-   if (m_windowMode == WindowMode::FULLSCREEN && !borderless) {
-      return;
-   } else if (m_windowMode == WindowMode::BORDERLESS && borderless) {
+void W32Window::EnableBorderless() {
+   if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
       return;
    }
+   SetWindowLongPtrW(m_windowHandle, GWL_STYLE,
+                     GetWindowLongW(m_windowHandle, GWL_STYLE) & ~(WS_CAPTION | WS_THICKFRAME));
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
+                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+   UpdateRectProperties();
+   m_borderless = true;
+}
 
-   if (!borderless) {
-      SetNewVideoMode(m_width, m_height, 32);
+void W32Window::DisableBorderless() {
+   if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
+      return;
    }
+   SetWindowLongPtrW(m_windowHandle, GWL_STYLE,
+                    GetWindowLongW(m_windowHandle, GWL_STYLE) | WS_CAPTION | WS_THICKFRAME);
+   auto newSize = GetWindowSizeFromClientSize(m_width, m_height);
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, newSize.first, newSize.second,
+                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+   UpdateRectProperties();
+   m_borderless = false;
+}
 
+void W32Window::SetFullscreen() {
+   if (m_windowMode == WindowMode::FULLSCREEN) {
+      return;
+   }
+   SetNewVideoMode(m_width, m_height, 32);
    HMONITOR monitor = MonitorFromWindow(m_windowHandle, MONITOR_DEFAULTTONEAREST);
    MONITORINFO info;
    info.cbSize = sizeof(MONITORINFO);
    GetMonitorInfo(monitor, &info);
    SetWindowLong(
       m_windowHandle, GWL_STYLE,
-      GetWindowLong(m_windowHandle, GWL_STYLE) & WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
+                 GetWindowLong(m_windowHandle, GWL_STYLE) & ~(WS_CAPTION | WS_THICKFRAME));
    int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
    int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
    SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, resX, resY,
                 SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 
-   if (borderless) {
-      m_windowMode = WindowMode::BORDERLESS;
-   } else {
-      m_windowMode = WindowMode::FULLSCREEN;
-   }
+   m_windowMode = WindowMode::FULLSCREEN;
    UpdateRectProperties();
 }
 
@@ -192,18 +209,17 @@ void W32Window::SetWindowed() noexcept {
       ChangeDisplaySettingsW(nullptr, 0);
    }
 
-   // Set correct window style.
-   if (m_userResizable) {
-      SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW ^ WS_THICKFRAME ^ WS_MAXIMIZEBOX);
-   } else {
-      SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-   }
+   SetWindowLongPtr(m_windowHandle, GWL_STYLE,
+                    GetWindowLong(m_windowHandle, GWL_STYLE) | WS_CAPTION | WS_THICKFRAME);
 
    auto adjustedSize = GetWindowSizeFromClientSize(resX, resY);
    SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, adjustedSize.first,
                 adjustedSize.second, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
    UpdateRectProperties();
    m_windowMode = NLSWIN::WindowMode::WINDOWED;
+   if (m_borderless) {
+      EnableBorderless();
+   }
 }
 
 std::pair<long, long> W32Window::GetWindowSizeFromClientSize(int width, int height) {

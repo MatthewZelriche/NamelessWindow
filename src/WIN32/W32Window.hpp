@@ -34,15 +34,18 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    void Hide() override;
    void DisableUserResizing() override;
    void EnableUserResizing() override;
-   void SetFullscreen(bool borderless = true) override;
+   void SetFullscreen() override;
    void SetWindowed() noexcept override;
    void Reposition(uint32_t newX, uint32_t newY) noexcept override;
    void Resize(uint32_t width, uint32_t height) override;
    void Focus() noexcept override;
+   void EnableBorderless() override;
+   void DisableBorderless() override;
    [[nodiscard]] inline bool RequestedClose() const noexcept override { return m_shouldClose; }
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
    [[nodiscard]] unsigned int GetWindowWidth() const noexcept override { return m_width; }
    [[nodiscard]] unsigned int GetWindowHeight() const noexcept override { return m_height; }
+   [[nodiscard]] bool IsBorderless() const noexcept override { return m_borderless; }
    [[nodiscard]] HDC GetDeviceContext() const noexcept { return m_deviceContext; }
 
    void ProcessGenericEvent(MSG event) override;
@@ -60,6 +63,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    int m_yPos {0};
    WindowMode m_windowMode;
    bool m_shouldClose {false};
+   bool m_borderless {false};
 
    std::wstring m_winClassName = L"NLSWINCLASS";
    HWND m_windowHandle {nullptr};

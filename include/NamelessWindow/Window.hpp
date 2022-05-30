@@ -21,7 +21,7 @@
 namespace NLSWIN {
 
 /*! @ingroup Common */
-enum class WindowMode { FULLSCREEN = 0, BORDERLESS = 1, WINDOWED = 2 };
+enum class WindowMode { FULLSCREEN = 0, WINDOWED = 1 };
 
 struct Rect {
    int x {0};
@@ -92,6 +92,7 @@ struct NLSWIN_API_PUBLIC WindowProperties {
    bool isUserResizable {true};                 /*!< Whether the application user should be allowed to
                                                  * manually resize the window. Note that the application
                                                  * itself is still free to resize the window. */
+   bool startBorderless {false};                /*!< Whether a titlebar/border should be drawn around the window.*/
    WindowMode mode {WindowMode::WINDOWED};      /*!< The window mode to start in. */
    std::string windowName;                      /*!< The name to be displayed in the window's titlebar. */
    std::optional<GLConfiguration> glConfig;     /*! A custom OpenGL configuration that this window should
@@ -166,6 +167,10 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * Behavior is undefined when this method is called while a window has been drawn to the screen.
     */
    virtual void EnableUserResizing() = 0;
+
+   virtual void EnableBorderless() = 0;
+   virtual void DisableBorderless() = 0;
+   [[nodiscard]] virtual bool IsBorderless() const noexcept = 0;
    /*!
     * @brief Request that the window be drawn fullscreen.
     *
@@ -175,7 +180,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * @param borderless Whether the window should be drawn in borderless fullscreen. This does not impact
     * whether windows in the WINDOWMODE::Windowed state are drawn with borders.
     */
-   virtual void SetFullscreen(bool borderless = true) = 0;
+   virtual void SetFullscreen() = 0;
    /*! @brief Request that the window be drawn as a regular window, not in fullscreen.
     *
     * Must be called while the window is shown, else undefined behavior occurs.
