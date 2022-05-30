@@ -214,8 +214,22 @@ std::pair<long, long> W32Window::GetWindowSizeFromClientSize(int width, int heig
 }
 
 void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
-   SetWindowPos(m_windowHandle, 0, newX, newY, m_width, m_height,
-                SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
+   if (!m_borderless) {
+      TITLEBARINFO info;
+      info.cbSize = sizeof(TITLEBARINFO);
+      GetTitleBarInfo(m_windowHandle, &info);
+      int titleBarHeight = info.rcTitleBar.bottom - info.rcTitleBar.top;
+
+      RECT windowArea;
+      GetWindowRect(m_windowHandle, &windowArea);
+      // Assuming all four borders are the same thickness - could be incorrect for weird themes.
+      int borderThickness = ((windowArea.right - windowArea.left) - m_width) / 2;
+      SetWindowPos(m_windowHandle, 0, newX - borderThickness, newY - titleBarHeight - borderThickness,
+                   m_width, m_height, SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
+   } else {
+      SetWindowPos(m_windowHandle, 0, newX, newY, m_width, m_height,
+                   SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
+   }
    UpdateRectProperties();
 }
 

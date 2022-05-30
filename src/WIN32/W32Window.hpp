@@ -40,6 +40,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    void EnableBorderless() override;
    void DisableBorderless() override;
    [[nodiscard]] inline bool RequestedClose() const noexcept override { return m_shouldClose; }
+   [[nodiscard]] inline Point GetWindowPos() const noexcept override { return {m_xPos, m_yPos}; }
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
    [[nodiscard]] unsigned int GetWindowWidth() const noexcept override { return m_width; }
    [[nodiscard]] unsigned int GetWindowHeight() const noexcept override { return m_height; }
@@ -91,14 +92,13 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
       0,
       0,
       0,
-      24, 
-      8, 
-      0,
-      0, 
+      24,
+      8,
       0,
       0,
       0,
-      0
-   };
+      0,
+      0,
+      0};
 };
 }  // namespace NLSWIN

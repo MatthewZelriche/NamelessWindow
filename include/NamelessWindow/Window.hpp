@@ -180,6 +180,7 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * @param newY The new Y coordinate for the top-left hand of the window.
     */
    virtual void Reposition(uint32_t newX, uint32_t newY) noexcept = 0;
+   virtual Point GetWindowPos() const noexcept = 0;
    /*!
     * @brief Request that the window's client area be drawn with new dimensions.
     *
