@@ -18,8 +18,8 @@ int main() {
    NLSWIN::WindowProperties props {0};
    props.horzResolution = 1280;
    props.vertResolution = 768;
+   props.yCoordinate = 50;
    props.windowName = "Interactive Demo";
-   props.startBorderless = true;
 
    auto kb = NLSWIN::Keyboard::Create();
    auto win = NLSWIN::Window::Create(props);
@@ -56,40 +56,41 @@ int main() {
       while (cursor->HasEvent()) {
          auto evt = cursor->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
-         if (auto event = std::get_if<NLSWIN::MouseMovementEvent>(&evt)) {
-
-         }
       }
       while (kb->HasEvent()) {
          auto evt = kb->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
-         if (auto event = std::get_if<NLSWIN::CharacterEvent>(&evt)) {
-            std::cout << event->character;
-         }
       }
-
-      int horz = win->GetWindowWidth();
-      int vert = win->GetWindowHeight();
 
       ImGui_ImplOpenGL3_NewFrame();
       ImGui_ImplNLSWin_NewFrame();
       ImGui::NewFrame();
-      ImGui::ShowDemoWindow(nullptr);
 
       ImGui::SetNextWindowPos(ImVec2 {0, 0});
-      ImGui::SetNextWindowSize(ImVec2 {350, 700});
-      ImGui::Begin("Interactive NLSWIN Demo");
-      bool horzChanged = false;
-      bool vertChanged = false;
+      ImGui::SetNextWindowSize(ImVec2 {350, (float)win->GetWindowHeight()});
+      ImGui::Begin("Interactive NLSWIN Demo", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+      bool resChanged = false;
       if (ImGui::CollapsingHeader("Primary Window Information:", ImGuiTreeNodeFlags_DefaultOpen)) {
+         ImGui::Text("Generic Window ID: %d", win->GetGenericID());
          ImGui::Text("Frametime: %fms", io.DeltaTime);
-         ImGui::InputInt("Vertical Resolution", &horz);
-         horzChanged = ImGui::IsItemDeactivatedAfterEdit();
-         ImGui::InputInt("Horizontal Resolution", &vert);
-         vertChanged = ImGui::IsItemDeactivatedAfterEdit();
-         if (horzChanged || vertChanged) {
+         ImGui::Separator();
+         int pos[2];
+         NLSWIN::Point windowPos = win->GetWindowPos();
+
+         pos[0] = windowPos.x;
+         pos[1] = windowPos.y;
+         ImGui::InputInt2("Position", pos);
+         if (ImGui::IsItemDeactivatedAfterEdit()) {
+            win->Reposition(pos[0], pos[1]);
+         }
+         int res[2];
+         res[0] = win->GetWindowWidth();
+         res[1] = win->GetWindowHeight();
+         ImGui::InputInt2("Resolution", res);
+         resChanged = ImGui::IsItemDeactivatedAfterEdit();
+         if (resChanged) {
             try {
-               win->Resize(horz, vert);
+               win->Resize(res[0], res[1]);
             } catch (NLSWIN::InvalidVideoModeException e) { ImGui::OpenPopup("Invalid Video Mode"); }
          }
          bool isBorderless = win->IsBorderless();
@@ -128,7 +129,6 @@ int main() {
          ImGui::EndPopup();
       }
 
-      ImGui::Text("");
       if (ImGui::CollapsingHeader("Secondary Window")) {}
 
       ImGui::End();
