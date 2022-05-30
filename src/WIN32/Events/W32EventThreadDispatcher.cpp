@@ -160,6 +160,10 @@ LRESULT CALLBACK W32EventThreadDispatcher::WindowBuilder(HWND Window, UINT Messa
          DestroyWindow((HWND)WParam);
          break;
       }
+      case NLSWIN_REQUEST_FOCUSED: {
+         PostThreadEvent(Window, Message, WParam, (LPARAM)GetFocus());
+         break;
+      }
       case CURSOR_VISIBILITY: {
          bool shouldBeVisible = (bool)WParam;
          if (!shouldBeVisible) {

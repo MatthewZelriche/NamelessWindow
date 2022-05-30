@@ -33,6 +33,9 @@ W32Keyboard::W32Keyboard(KeyboardDeviceInfo device) {
    // Update the toggle status on first construction, in case we've constructed 
    // a keyboard while a key was already toggled. 
    UpdateToggleKeyStatus();
+
+   HWND dispatcher = W32EventThreadDispatcher::GetDispatcherHandle();
+   SendMessageW(dispatcher, NLSWIN_REQUEST_FOCUSED, (WPARAM)this, 0);
 }
 
 void W32Keyboard::UpdateToggleKeyStatus() {
@@ -89,11 +92,11 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
          }
          break;
       }
-      case NLSWIN_ASCII_CHAR: {
-         char character = (char)wParam->wParam;
-         if (GetSubscribedWindows().count(keyboardFocusedWindow) && isprint(character)) {
-            PushEvent(CharacterEvent{character, W32Window::IDFromHWND(wParam->sourceWindow)});
+      case NLSWIN_REQUEST_FOCUSED: {
+         if ((W32Keyboard*)(wParam->wParam) == this) {
+            keyboardFocusedWindow = (HWND)event.lParam;
          }
+         break;
       }
    }
 }
