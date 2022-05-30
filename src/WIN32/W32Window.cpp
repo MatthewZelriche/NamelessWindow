@@ -67,17 +67,21 @@ W32Window::W32Window(WindowProperties properties) {
    props.nHeight = newSizes.second;
    m_windowHandle = (HWND)SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CREATE_NLSWIN_WINDOW,
                                        (WPARAM)&props, 0);
+   UpdateRectProperties();
+
    if (!m_windowHandle) {
       throw PlatformInitializationException();
    }
-
-   Reposition(props.X, props.Y);
 
    if (properties.startBorderless) {
       EnableBorderless();
    }
 
    if (properties.mode == WindowMode::FULLSCREEN) {
+      // Temporarily set our width and height to the desired, to avoid issues with setting video mode.
+      // They will later be updated to the correct values at the end of the constructor.
+      m_width = properties.horzResolution;
+      m_height = properties.vertResolution;
       Show();
       SetFullscreen();
       Hide();
@@ -140,7 +144,7 @@ void W32Window::DisableBorderless() {
       return;
    }
    SetWindowLongPtrW(m_windowHandle, GWL_STYLE,
-                    GetWindowLongW(m_windowHandle, GWL_STYLE) | WS_CAPTION | WS_THICKFRAME);
+                     GetWindowLongW(m_windowHandle, GWL_STYLE) | WS_CAPTION | WS_THICKFRAME);
    auto newSize = GetWindowSizeFromClientSize(m_width, m_height);
    SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, newSize.first, newSize.second,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
@@ -157,8 +161,7 @@ void W32Window::SetFullscreen() {
    MONITORINFO info;
    info.cbSize = sizeof(MONITORINFO);
    GetMonitorInfo(monitor, &info);
-   SetWindowLong(
-      m_windowHandle, GWL_STYLE,
+   SetWindowLong(m_windowHandle, GWL_STYLE,
                  GetWindowLong(m_windowHandle, GWL_STYLE) & ~(WS_CAPTION | WS_THICKFRAME));
    int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
    int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);

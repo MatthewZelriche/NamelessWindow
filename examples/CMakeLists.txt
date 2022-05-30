@@ -18,3 +18,15 @@ add_executable(Imgui "Imgui.cpp"
 target_include_directories(Imgui PUBLIC "${PROJECT_SOURCE_DIR}/Vendor/imgui" "${PROJECT_SOURCE_DIR}/Vendor/glad")
 target_include_directories(Imgui PUBLIC "${PROJECT_SOURCE_DIR}/include/" ${NLSWIN_THIRDPARTY_INCLUDES})
 target_link_libraries(Imgui NamelessWindow)
+
+add_executable(InteractiveDemo "demo.cpp"
+					 "${PROJECT_SOURCE_DIR}/Vendor/imgui/imgui.cpp"
+					 "${PROJECT_SOURCE_DIR}/Vendor/imgui/imgui_demo.cpp"
+					 "${PROJECT_SOURCE_DIR}/Vendor/imgui/imgui_draw.cpp"
+					 "${PROJECT_SOURCE_DIR}/Vendor/imgui/imgui_tables.cpp"
+					 "${PROJECT_SOURCE_DIR}/Vendor/imgui/imgui_widgets.cpp"
+					 "../Extra/imgui_impl_nlswin.cpp"
+					 "${PROJECT_SOURCE_DIR}/Vendor/imgui/backends/imgui_impl_opengl3.cpp")
+target_include_directories(InteractiveDemo PUBLIC "${PROJECT_SOURCE_DIR}/Vendor/imgui" "${PROJECT_SOURCE_DIR}/Vendor/glad")
+target_include_directories(InteractiveDemo PUBLIC "${PROJECT_SOURCE_DIR}/include/" ${NLSWIN_THIRDPARTY_INCLUDES})
+target_link_libraries(InteractiveDemo NamelessWindow)

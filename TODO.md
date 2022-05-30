@@ -23,3 +23,5 @@
 22. ~~On Win32, BindToWindow() doesn't automatically switch focus, but it does on linux. Which behavior should be kept?~~<br />
 23. ~~Implement ImGui character input on Linux.~~<br />
 24. ~~Fix ImGui modifiers being incorrect.~~<br />
+25. Currently, CDS_FULLSCREEN is used for reverting video mode changes on windows. This functionality, as far as I can tell, does not exist in X11. Consider a way to do this that works for both platforms.<br />
+26. Modify public API so that fullscreen and borderless are independent of each other.<br />
