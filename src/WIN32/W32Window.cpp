@@ -149,7 +149,7 @@ void W32Window::EnableUserResizing() {
       SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
-void W32Window::SetFullscreen(bool borderless) noexcept {
+void W32Window::SetFullscreen(bool borderless) {
    if (m_windowMode == WindowMode::FULLSCREEN && !borderless) {
       return;
    } else if (m_windowMode == WindowMode::BORDERLESS && borderless) {
@@ -246,7 +246,7 @@ void W32Window::SetNewVideoMode(int width, int height, int bitsPerPixel) {
    ChangeDisplaySettingsEx(infoWithName.szDevice, &mode, nullptr, CDS_FULLSCREEN, nullptr);
 }
 
-void W32Window::Resize(uint32_t width, uint32_t height) noexcept {
+void W32Window::Resize(uint32_t width, uint32_t height) {
    auto adjustedSize = GetWindowSizeFromClientSize(width, height);
    SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);

@@ -47,18 +47,18 @@ struct NLSWIN_API_PUBLIC VideoMode {
 /*! Information about a physical monitor connected to the system. */
 /*! @ingroup Common */
 struct NLSWIN_API_PUBLIC MonitorInfo {
-   const int horzResolution {0};               /*!< The horizontal pixel resolution of the monitor */
-   const int verticalResolution {0};           /*!< The vertical pixel resolution of the monitor */
-   const long int screenXCord {0};             /*!< X Coordinate location of the top-left hand corner of this
-                                               * monitor. Each monitor exists in a "virtual screen" that
-                                               * contains within it all monitors. This is relevant only
-                                               * for multi-monitor setups.*/
-   const long int screenYCord {0};             /*!< Y Coordinate location of the top-left hand corner of this
-                                               * monitor. Each monitor exists in a "virtual screen" that
-                                               * contains within it all monitors. This is relevant only
-                                               * for multi-monitor setups.*/
-   const std::string name {""};                /*!< Platform-specific name of the monitor. */
-   const std::vector<VideoMode> modes;         /*!< A list of video modes supported by this monitor. */
+   const int horzResolution {0};       /*!< The horizontal pixel resolution of the monitor */
+   const int verticalResolution {0};   /*!< The vertical pixel resolution of the monitor */
+   const long int screenXCord {0};     /*!< X Coordinate location of the top-left hand corner of this
+                                        * monitor. Each monitor exists in a "virtual screen" that
+                                        * contains within it all monitors. This is relevant only
+                                        * for multi-monitor setups.*/
+   const long int screenYCord {0};     /*!< Y Coordinate location of the top-left hand corner of this
+                                        * monitor. Each monitor exists in a "virtual screen" that
+                                        * contains within it all monitors. This is relevant only
+                                        * for multi-monitor setups.*/
+   const std::string name {""};        /*!< Platform-specific name of the monitor. */
+   const std::vector<VideoMode> modes; /*!< A list of video modes supported by this monitor. */
 };
 
 /**
@@ -168,16 +168,16 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
    virtual void EnableUserResizing() = 0;
    /*!
     * @brief Request that the window be drawn fullscreen.
-    * 
+    *
     * Must be called while the window is shown, else undefined behavior occurs. This call will set
-    * the window to be the resolution of the monitor it was made fullscreen on. To change the fullscreen resolution,
-    * call Resize() after setting the window to fullscreen.
+    * the window to be the resolution of the monitor it was made fullscreen on. To change the fullscreen
+    * resolution, call Resize() after setting the window to fullscreen.
     * @param borderless Whether the window should be drawn in borderless fullscreen. This does not impact
     * whether windows in the WINDOWMODE::Windowed state are drawn with borders.
     */
-   virtual void SetFullscreen(bool borderless = true) noexcept = 0;
-   /*! @brief Request that the window be drawn as a regular window, not in fullscreen. 
-    * 
+   virtual void SetFullscreen(bool borderless = true) = 0;
+   /*! @brief Request that the window be drawn as a regular window, not in fullscreen.
+    *
     * Must be called while the window is shown, else undefined behavior occurs.
     */
    virtual void SetWindowed() noexcept = 0;
@@ -196,17 +196,18 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     *
     * Note that some platforms will ignore this if they handle window sizing in a specific fashion (eg, tiling
     * window managers).
-    * If the window is true fullscreen, this method will attempt to set a new video mode matching the given width and height for
-    * the monitor that the window is currently residing in. If no suitable videomode is found, an exception is thrown.
-    * Must be called while the window is shown, else undefined behavior occurs.
-    * This resizes the window's client area. The total size of the window, including the non-client area, may be larger.
+    * If the window is true fullscreen, this method will attempt to set a new video mode matching the given
+    * width and height for the monitor that the window is currently residing in. If no suitable videomode is
+    * found, an exception is thrown. Must be called while the window is shown, else undefined behavior occurs.
+    * This resizes the window's client area. The total size of the window, including the non-client area, may
+    * be larger.
     *
     * @param width The new width of the monitor.
     * @param height The new height of the monitor.
-    * @throws InvalidVideoModeException If an attempt is made to change the video mode for a fullscreen window, but no suitable
-    * video mode is found.
+    * @throws InvalidVideoModeException If an attempt is made to change the video mode for a fullscreen
+    * window, but no suitable video mode is found.
     */
-   virtual void Resize(uint32_t width, uint32_t height) noexcept = 0;
+   virtual void Resize(uint32_t width, uint32_t height) = 0;
 
    /*! @brief Sets this window as the active window. */
    virtual void Focus() noexcept = 0;
