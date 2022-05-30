@@ -189,7 +189,7 @@ void W32Window::SetWindowed() noexcept {
    int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
    int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
    if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
-      SetNewVideoMode(resX, resY, 32);
+      ChangeDisplaySettingsW(nullptr, 0);
    }
 
    // Set correct window style.
