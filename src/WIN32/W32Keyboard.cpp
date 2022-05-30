@@ -1,7 +1,7 @@
 #include "W32Keyboard.hpp"
 
-#include "NamelessWindow/Exceptions.hpp"
 #include "Events/W32EventBus.hpp"
+#include "NamelessWindow/Exceptions.hpp"
 #include "W32Util.hpp"
 
 using namespace NLSWIN;
@@ -30,12 +30,15 @@ W32Keyboard::W32Keyboard(KeyboardDeviceInfo device) {
       throw PlatformInitializationException();
    }
 
-   // Update the toggle status on first construction, in case we've constructed 
-   // a keyboard while a key was already toggled. 
+   // Update the toggle status on first construction, in case we've constructed
+   // a keyboard while a key was already toggled.
    UpdateToggleKeyStatus();
 
    HWND dispatcher = W32EventThreadDispatcher::GetDispatcherHandle();
    SendMessageW(dispatcher, NLSWIN_REQUEST_FOCUSED, (WPARAM)this, 0);
+
+   m_InternalKeyState.fill(false);
+   m_win32KeyboardState.fill(0);
 }
 
 void W32Keyboard::UpdateToggleKeyStatus() {
@@ -82,11 +85,21 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
             RAWINPUT* inputStruct = reinterpret_cast<RAWINPUT*>(event.lParam);
             if (inputStruct->header.dwType == RIM_TYPEKEYBOARD) {
                // Only process if we are specifically interested in this device, or its a master device.
-               // We additionally ignore inputs of 255/0xff, because windows sends fake input events with 
+               // We additionally ignore inputs of 255/0xff, because windows sends fake input events with
                // this value for certain keys.
                if ((((uint64_t)inputStruct->header.hDevice == deviceSpecifier) || deviceSpecifier == 0) &&
-               inputStruct->data.keyboard.VKey != 0xff) {
-                  PushEvent(ProcessKeyEvent(inputStruct->data.keyboard, keyboardFocusedWindow));
+                   inputStruct->data.keyboard.VKey != 0xff) {
+                  KeyEvent event = ProcessKeyEvent(inputStruct->data.keyboard, keyboardFocusedWindow);
+                  PushEvent(event);
+                  
+                  if (event.pressType != NLSWIN::KeyPressType::RELEASED) {
+                     uint32_t test = 0;
+                     ToUnicode(inputStruct->data.keyboard.VKey, inputStruct->data.keyboard.MakeCode,
+                               m_win32KeyboardState.data(),
+                               (LPWSTR)&test, 2, 0);
+                     PushEvent(CharacterEvent {
+                        (char)test, GetSubscribedWindows().at(keyboardFocusedWindow).lock()->GetGenericID()});
+                  }
                }
             }
          }
@@ -101,10 +114,9 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
    }
 }
 
-Event W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
+KeyEvent W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
    KeyEvent keyEvent;
    USHORT finalVKey = DeobfuscateWindowsVKey(event);
-   //keyEvent.code.value = (KeyValue)finalVKey;
    if (m_translationTable.count(finalVKey)) {
       keyEvent.code.value = m_translationTable[finalVKey];
    } else {
@@ -116,6 +128,7 @@ Event W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
    // Determine press type
    if (event.Flags & RI_KEY_BREAK) {
       m_InternalKeyState[keyEvent.code.value] = false;
+      m_win32KeyboardState[event.VKey] = 0;
       keyEvent.pressType = KeyPressType::RELEASED;
    } else {
       if (m_InternalKeyState[keyEvent.code.value] == true) {
@@ -123,6 +136,7 @@ Event W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
       } else {
          keyEvent.pressType = KeyPressType::PRESSED;
          m_InternalKeyState[keyEvent.code.value] = true;
+         m_win32KeyboardState[event.VKey] = 0b11111111;
       }
    }
 
@@ -158,7 +172,7 @@ KeyModifiers W32Keyboard::ParseModifierState() {
    }
    if (scrollLockOn) {
       modifiers.scrollLock = true;
-   } 
+   }
    if (numLockOn) {
       modifiers.numLock = true;
    }

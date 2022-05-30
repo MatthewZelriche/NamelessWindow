@@ -24,7 +24,7 @@ class NLSWIN_API_PRIVATE W32Keyboard : virtual public Keyboard, public W32InputD
     * @param window The source window for this event.
     * @return Event A processed, platform-agnostic event.
     */
-   Event ProcessKeyEvent(RAWKEYBOARD event, HWND window);
+   KeyEvent ProcessKeyEvent(RAWKEYBOARD event, HWND window);
    /**
     * @brief Handle certain windows peculiarities regarding the virtual keycode.
     *
@@ -48,6 +48,7 @@ class NLSWIN_API_PRIVATE W32Keyboard : virtual public Keyboard, public W32InputD
     */
    KeyModifiers ParseModifierState();
    std::array<bool, 512> m_InternalKeyState {false};
+   std::array<uint8_t, 256> m_win32KeyboardState {false};
    uint64_t deviceSpecifier {0};
    HWND keyboardFocusedWindow {nullptr};
    bool capsLockOn {false};
