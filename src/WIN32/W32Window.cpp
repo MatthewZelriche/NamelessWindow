@@ -62,14 +62,9 @@ W32Window::W32Window(WindowProperties properties) {
       props.windowName = ConvertToWString(properties.windowName).c_str();
    }
 
-   // CreateWindow requires the size of the window, including the non-client area.
-   // But the user passes in the desired client area. We must determine the correct
-   // size to pass into CreateWindow based on the desired client area.
-   RECT clientArea {props.X, props.Y, props.X + props.nWidth, props.Y + props.nHeight};
-   AdjustWindowRect(&clientArea, WS_TILED | WS_CAPTION, false);
-   props.nWidth = clientArea.right - clientArea.left;
-   props.nHeight = clientArea.bottom - clientArea.top;
-
+   auto newSizes = GetWindowSizeFromClientSize(props.nWidth, props.nHeight);
+   props.nWidth = newSizes.first;
+   props.nHeight = newSizes.second;
    m_windowHandle = (HWND)SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), CREATE_NLSWIN_WINDOW,
                                        (WPARAM)&props, 0);
    if (!m_windowHandle) {
@@ -77,7 +72,8 @@ W32Window::W32Window(WindowProperties properties) {
    }
    // Determine whether this window is resizable.
    if (!properties.isUserResizable) {
-      SetWindowLongPtr(m_windowHandle, GWL_STYLE, props.dwStyle & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
+      SetWindowLongPtr(m_windowHandle, GWL_STYLE,
+                       props.dwStyle & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
    }
 
    Reposition(props.X, props.Y);
@@ -134,8 +130,9 @@ void W32Window::Hide() {
 
 void W32Window::DisableUserResizing() {
    m_userResizable = false;
-   SetWindowLongPtr(m_windowHandle, GWL_STYLE,
-                    GetWindowLongPtr(m_windowHandle, GWL_STYLE) & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
+   SetWindowLongPtr(
+      m_windowHandle, GWL_STYLE,
+      GetWindowLongPtr(m_windowHandle, GWL_STYLE) & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
    SetWindowPos(
       m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
       SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
@@ -156,6 +153,10 @@ void W32Window::SetFullscreen(bool borderless) {
       return;
    }
 
+   if (!borderless) {
+      SetNewVideoMode(m_width, m_height, 32);
+   }
+
    HMONITOR monitor = MonitorFromWindow(m_windowHandle, MONITOR_DEFAULTTONEAREST);
    MONITORINFO info;
    info.cbSize = sizeof(MONITORINFO);
@@ -172,7 +173,6 @@ void W32Window::SetFullscreen(bool borderless) {
       m_windowMode = WindowMode::BORDERLESS;
    } else {
       m_windowMode = WindowMode::FULLSCREEN;
-      SetNewVideoMode(m_width, m_height, 32);
    }
    UpdateRectProperties();
 }
@@ -186,6 +186,11 @@ void W32Window::SetWindowed() noexcept {
    MONITORINFO info;
    info.cbSize = sizeof(MONITORINFO);
    GetMonitorInfo(monitor, &info);
+   int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
+   int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
+   if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
+      SetNewVideoMode(resX, resY, 32);
+   }
 
    // Set correct window style.
    if (m_userResizable) {
@@ -193,11 +198,10 @@ void W32Window::SetWindowed() noexcept {
    } else {
       SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
    }
-   int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
-   int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
+
    auto adjustedSize = GetWindowSizeFromClientSize(resX, resY);
-   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, adjustedSize.first, adjustedSize.second,
-                SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, adjustedSize.first,
+                adjustedSize.second, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
    UpdateRectProperties();
    m_windowMode = NLSWIN::WindowMode::WINDOWED;
 }
@@ -208,7 +212,7 @@ std::pair<long, long> W32Window::GetWindowSizeFromClientSize(int width, int heig
    desiredClientSize.top = m_yPos;
    desiredClientSize.right = m_xPos + width;
    desiredClientSize.bottom = m_yPos + height;
-   AdjustWindowRect(&desiredClientSize, GetWindowLong(m_windowHandle, GWL_STYLE), false);
+   AdjustWindowRect(&desiredClientSize, GetWindowLong(m_windowHandle, GWL_STYLE) | WS_CAPTION, false);
    long adjustedWidth = desiredClientSize.right - desiredClientSize.left;
    long adjustedHeight = desiredClientSize.bottom - desiredClientSize.top;
 
@@ -248,12 +252,12 @@ void W32Window::SetNewVideoMode(int width, int height, int bitsPerPixel) {
 
 void W32Window::Resize(uint32_t width, uint32_t height) {
    auto adjustedSize = GetWindowSizeFromClientSize(width, height);
-   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second,
-                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
-
    if (m_windowMode == WindowMode::FULLSCREEN) {
       SetNewVideoMode(width, height, 32);
    }
+
+   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second,
+                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
 
    UpdateRectProperties();
 }
