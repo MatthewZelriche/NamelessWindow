@@ -137,8 +137,11 @@ void W32Window::EnableBorderless() {
                      GetWindowLongW(m_windowHandle, GWL_STYLE) & ~(WS_CAPTION | WS_THICKFRAME));
    SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
-   UpdateRectProperties();
    m_borderless = true;
+   // Perform a custom reposition - otherwise windows will attempt to place the top-left of the 
+   //client area at the top-left of the window decorations.
+   Reposition(m_xPos, m_yPos);
+   UpdateRectProperties();
 }
 
 void W32Window::DisableBorderless() {
@@ -150,8 +153,9 @@ void W32Window::DisableBorderless() {
    auto newSize = GetWindowSizeFromClientSize(m_width, m_height);
    SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, newSize.first, newSize.second,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
-   UpdateRectProperties();
    m_borderless = false;
+   Reposition(m_xPos, m_yPos);
+   UpdateRectProperties();
 }
 
 void W32Window::SetFullscreen() {
