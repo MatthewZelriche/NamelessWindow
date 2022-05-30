@@ -131,6 +131,8 @@ void W32Keyboard::UpdateWin32KeyboardState(USHORT vKey, KeyValue value, KeyPress
    } else if (type == KeyPressType::RELEASED) {
       m_win32KeyboardState[vKey] &= ~(0b10000000);
    }
+   // Ctrl + key prints symbols, ignore.
+   m_win32KeyboardState[VK_CONTROL] = 0;
 }
 
 KeyEvent W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
