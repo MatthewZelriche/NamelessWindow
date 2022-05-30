@@ -1,5 +1,7 @@
 #pragma once
 
+#include <unordered_set>
+
 #include "NamelessWindow/Keyboard.hpp"
 #include "NamelessWindow/NLSAPI.hpp"
 #include "W32InputDevice.hpp"
@@ -47,6 +49,7 @@ class NLSWIN_API_PRIVATE W32Keyboard : virtual public Keyboard, public W32InputD
     * @return KeyModifiers Which modifiers are currently active at the time of this method call.
     */
    KeyModifiers ParseModifierState();
+   void UpdateWin32KeyboardState(USHORT vKey, KeyValue value, KeyPressType type);
    std::array<bool, 512> m_InternalKeyState {false};
    std::array<uint8_t, 256> m_win32KeyboardState {false};
    uint64_t deviceSpecifier {0};
@@ -55,6 +58,7 @@ class NLSWIN_API_PRIVATE W32Keyboard : virtual public Keyboard, public W32InputD
    bool scrollLockOn {false};
    bool numLockOn {false};
 
+   const std::unordered_set<KeyValue> m_lockMods = {KEY_CAPSLOCK, KEY_NUMLOCK, KEY_SCROLL_LOCK};
    std::unordered_map<unsigned int, KeyValue> m_translationTable = {{0x30, KEY_0},
                                                                     {0x31, KEY_1},
                                                                     {0x32, KEY_2},

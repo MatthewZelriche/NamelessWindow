@@ -91,12 +91,11 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
                    inputStruct->data.keyboard.VKey != 0xff) {
                   KeyEvent event = ProcessKeyEvent(inputStruct->data.keyboard, keyboardFocusedWindow);
                   PushEvent(event);
-                  
+
                   if (event.pressType != NLSWIN::KeyPressType::RELEASED) {
                      uint32_t test = 0;
                      ToUnicode(inputStruct->data.keyboard.VKey, inputStruct->data.keyboard.MakeCode,
-                               m_win32KeyboardState.data(),
-                               (LPWSTR)&test, 2, 0);
+                               m_win32KeyboardState.data(), (LPWSTR)&test, 2, 0);
                      PushEvent(CharacterEvent {
                         (char)test, GetSubscribedWindows().at(keyboardFocusedWindow).lock()->GetGenericID()});
                   }
@@ -114,6 +113,26 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
    }
 }
 
+void W32Keyboard::UpdateWin32KeyboardState(USHORT vKey, KeyValue value, KeyPressType type) {
+   // This attempts to correctly replicate the functionality described at
+   // https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getkeyboardstate
+   // so that we can use GetKeyboardState with a specific physical device, instead of just
+   // the master device.
+   if (type == KeyPressType::PRESSED) {
+      if (m_lockMods.count(value)) {
+         if (m_win32KeyboardState[vKey] & 1) {
+            m_win32KeyboardState[vKey] &= ~1;
+         } else {
+            m_win32KeyboardState[vKey] |= 1;
+         }
+      } else {
+         m_win32KeyboardState[vKey] |= 0b10000000;
+      }
+   } else if (type == KeyPressType::RELEASED) {
+      m_win32KeyboardState[vKey] &= ~(0b10000000);
+   }
+}
+
 KeyEvent W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
    KeyEvent keyEvent;
    USHORT finalVKey = DeobfuscateWindowsVKey(event);
@@ -128,7 +147,6 @@ KeyEvent W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
    // Determine press type
    if (event.Flags & RI_KEY_BREAK) {
       m_InternalKeyState[keyEvent.code.value] = false;
-      m_win32KeyboardState[event.VKey] = 0;
       keyEvent.pressType = KeyPressType::RELEASED;
    } else {
       if (m_InternalKeyState[keyEvent.code.value] == true) {
@@ -136,10 +154,9 @@ KeyEvent W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
       } else {
          keyEvent.pressType = KeyPressType::PRESSED;
          m_InternalKeyState[keyEvent.code.value] = true;
-         m_win32KeyboardState[event.VKey] = 0b11111111;
       }
    }
-
+   UpdateWin32KeyboardState(event.VKey, keyEvent.code.value, keyEvent.pressType);
    // Get Window ID
    auto win = GetSubscribedWindows().at(keyboardFocusedWindow);
    if (!win.expired()) {
