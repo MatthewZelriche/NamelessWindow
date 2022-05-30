@@ -32,8 +32,6 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    ~W32Window();
    void Show() override;
    void Hide() override;
-   void DisableUserResizing() override;
-   void EnableUserResizing() override;
    void SetFullscreen() override;
    void SetWindowed() noexcept override;
    void Reposition(uint32_t newX, uint32_t newY) noexcept override;
@@ -70,8 +68,6 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    WNDCLASSW win32Class {0};
    WNDPROC m_messageFuncPtr;
    HDC m_deviceContext {0};
-
-   bool m_userResizable {false};
 
    static std::unordered_map<HWND, WindowID> m_handleMap;
 

@@ -89,9 +89,6 @@ struct NLSWIN_API_PUBLIC WindowProperties {
                                                  * relative to the given monitor's global space coordinates. */
    unsigned int yCoordinate {0};                /*!< The Y coordinate for the top-right corner of the window,
                                                  * relative to the given monitor's global space coordinates. */
-   bool isUserResizable {true};                 /*!< Whether the application user should be allowed to
-                                                 * manually resize the window. Note that the application
-                                                 * itself is still free to resize the window. */
    bool startBorderless {false};                /*!< Whether a titlebar/border should be drawn around the window.*/
    WindowMode mode {WindowMode::WINDOWED};      /*!< The window mode to start in. */
    std::string windowName;                      /*!< The name to be displayed in the window's titlebar. */
@@ -154,19 +151,6 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     * events are automatically processed as if the client had called EventBus::PollEvents().
     */
    virtual void Hide() = 0;
-   /**
-    * @brief Disable user-resizing of the window. The window will remain a fixed size unless the application
-    * explicitly chooses to resize the window.
-    * @warning This method should be called while a window has NOT been drawn on the screen with Show().
-    * Behavior is undefined when this method is called while a window has been drawn to the screen.
-    */
-   virtual void DisableUserResizing() = 0;
-   /**
-    * @brief Enable user-resizing of the window. The window may be resized at any time by the user.
-    * @warning This method should be called while a window has NOT been drawn on the screen with Show().
-    * Behavior is undefined when this method is called while a window has been drawn to the screen.
-    */
-   virtual void EnableUserResizing() = 0;
 
    virtual void EnableBorderless() = 0;
    virtual void DisableBorderless() = 0;

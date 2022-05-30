@@ -70,11 +70,6 @@ W32Window::W32Window(WindowProperties properties) {
    if (!m_windowHandle) {
       throw PlatformInitializationException();
    }
-   // Determine whether this window is resizable.
-   if (!properties.isUserResizable) {
-      SetWindowLongPtr(m_windowHandle, GWL_STYLE,
-                       props.dwStyle & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
-   }
 
    Reposition(props.X, props.Y);
 
@@ -126,26 +121,6 @@ void W32Window::Show() {
 
 void W32Window::Hide() {
    ShowWindow(m_windowHandle, SW_HIDE);
-}
-
-void W32Window::DisableUserResizing() {
-   m_userResizable = false;
-   SetWindowLongPtr(
-      m_windowHandle, GWL_STYLE,
-      GetWindowLongPtr(m_windowHandle, GWL_STYLE) & ~(WS_BORDER | WS_THICKFRAME | WS_MAXIMIZEBOX));
-   SetWindowPos(
-      m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
-      SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
-   UpdateRectProperties();
-}
-
-void W32Window::EnableUserResizing() {
-   m_userResizable = true;
-   SetWindowLongPtr(m_windowHandle, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-   SetWindowPos(
-      m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
-      SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
-   UpdateRectProperties();
 }
 
 void W32Window::EnableBorderless() {
