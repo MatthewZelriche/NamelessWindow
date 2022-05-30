@@ -114,8 +114,10 @@ void W32Window::UpdateRectProperties() {
    GetClientRect(m_windowHandle, &rect);
    m_width = rect.right - rect.left;
    m_height = rect.bottom - rect.top;
-   m_xPos = rect.left;
-   m_yPos = rect.top;
+   POINT clientPoint = {rect.left, rect.top};
+   ClientToScreen(m_windowHandle, &clientPoint);
+   m_xPos = clientPoint.x;
+   m_yPos = clientPoint.y;
 }
 
 void W32Window::Show() {
