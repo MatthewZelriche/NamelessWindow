@@ -107,6 +107,16 @@ int main() {
    int lastVert = win->GetWindowHeight();
    bool borderlessChange = false;
    std::string selectedKB = "Master";
+   int cursorX = 0;
+   int cursorY = 0;
+   bool m1Down = false;
+   bool m2Down = false;
+   bool m3Down = false;
+   bool m4Down = false;
+   bool m5Down = false;
+   NLSWIN::ScrollType lastScrollDir = (NLSWIN::ScrollType)-1;
+   bool cursorWithinWindow = false;
+   NLSWIN::WindowID inWindow = 0;
 
    while (!win->RequestedClose()) {
       std::vector<NLSWIN::KeyEvent> keyEventsThisFrame;
@@ -125,14 +135,68 @@ int main() {
          auto evt = win->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
       }
+
+      int deltaX = 0;
+      int deltaY = 0;
       while (cursor->HasEvent()) {
          auto evt = cursor->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
+         if (auto event = std::get_if<NLSWIN::MouseMovementEvent>(&evt)) {
+            cursorX = event->newXPos;
+            cursorY = event->newYPos;
+         }
+         if (auto event = std::get_if<NLSWIN::RawMouseDeltaMovementEvent>(&evt)) {
+            deltaX = event->deltaX;
+            deltaY = event->deltaY;
+         }
+         if (auto event = std::get_if<NLSWIN::MouseButtonEvent>(&evt)) {
+            switch (event->button) {
+               case NLSWIN::ButtonValue::LEFTCLICK: {
+                  m1Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::RIGHTCLICK: {
+                  m2Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::MIDDLECLICK: {
+                  m3Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::MB_4: {
+                  m4Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::MB_5: {
+                  m5Down = !(bool)event->type;
+                  break;
+               }
+            }
+         }
+         if (auto event = std::get_if<NLSWIN::MouseScrollEvent>(&evt)) {
+            lastScrollDir = event->scrollType;
+         }
+         if (auto event = std::get_if<NLSWIN::MouseEnterEvent>(&evt)) {
+            cursorWithinWindow = true;
+            inWindow = event->sourceWindow;
+         }
+         if (auto event = std::get_if<NLSWIN::MouseLeaveEvent>(&evt)) {
+            cursorWithinWindow = false;
+            inWindow = 0;
+         }
       }
       while (kb->HasEvent()) {
          auto evt = kb->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
          if (auto event = std::get_if<NLSWIN::KeyEvent>(&evt)) {
+            if ((event->code.value == NLSWIN::KeyValue::KEY_S && event->code.modifiers.ctrl &&
+                 (event->pressType == NLSWIN::KeyPressType::PRESSED))) {
+               cursor->Show();
+            }
+            if ((event->code.value == NLSWIN::KeyValue::KEY_L && event->code.modifiers.ctrl &&
+                 (event->pressType == NLSWIN::KeyPressType::PRESSED))) {
+               cursor->BindToWindow(win.get());
+            }
             keyEventsThisFrame.push_back(*event);
          }
       }
@@ -224,15 +288,73 @@ int main() {
             }
             NLSWIN::KeyModifiers mods = evt.code.modifiers;
             const char *skip = &(evt.keyName.c_str()[4]);
-            log.AddLog("%-13s | %-8s | {Ctrl:%d, Shift:%d, Alt:%d, Super:%d, Caps:%d, Num:%d}\n",
-                       skip, pressType.c_str(), mods.ctrl, mods.shift, mods.alt, mods.super,
-                       mods.capsLock, mods.numLock);
+            log.AddLog("%-13s | %-8s | {Ctrl:%d, Shift:%d, Alt:%d, Super:%d, Caps:%d, Num:%d}\n", skip,
+                       pressType.c_str(), mods.ctrl, mods.shift, mods.alt, mods.super, mods.capsLock,
+                       mods.numLock);
          }
          log.Draw();
          keyEventsThisFrame.clear();
       }
 
-      if (ImGui::CollapsingHeader("Cursor Info: ")) {}
+      if (ImGui::CollapsingHeader("Cursor Info: ")) {
+         ImGui::Text("Cursor Visibility (Ctrl + S to Undo Hide)");
+         if (ImGui::Button("Show", {150, 25})) {
+            cursor->Show();
+         }
+         ImGui::SameLine();
+         if (ImGui::Button("Hide", {150, 25})) {
+            cursor->Hide();
+         }
+         ImGui::Separator();
+         ImGui::Text("Window confining (Ctrl + L to Confine)");
+         if (ImGui::Button("Confine", {150, 25})) {
+            cursor->BindToWindow(win.get());
+         }
+         ImGui::SameLine();
+         if (ImGui::Button("Free", {150, 25})) {
+            cursor->UnbindFromWindows();
+         }
+         ImGui::Separator();
+         ImGui::Text("XPos: %d, YPos: %d", cursorX, cursorY);
+         ImGui::Text("deltaX: %d, deltaY: %d", deltaX, deltaY);
+         ImGui::Separator();
+         ImGui::Text("Left MouseButton: %d", m1Down);
+         ImGui::Text("Right MouseButton: %d", m2Down);
+         ImGui::Text("Middle MouseButton: %d", m3Down);
+         ImGui::Text("MB4: %d", m4Down);
+         ImGui::Text("MB5: %d", m5Down);
+         std::string dir;
+         switch (lastScrollDir) {
+            case NLSWIN::ScrollType::DOWN: {
+               dir = "DOWN";
+               break;
+            }
+            case NLSWIN::ScrollType::UP: {
+               dir = "UP";
+               break;
+            }
+            case NLSWIN::ScrollType::LEFT: {
+               dir = "LEFT";
+               break;
+            }
+            case NLSWIN::ScrollType::RIGHT: {
+               dir = "RIGHT";
+               break;
+            }
+            default: {
+               dir = "";
+               break;
+            }
+         }
+         ImGui::Text("Last Scroll Dir: %s", dir.c_str());
+         ImGui::Separator();
+         ImGui::BeginDisabled(true);
+         ImGui::Checkbox("Is mouse in window?", &cursorWithinWindow);
+         ImGui::EndDisabled();
+         if (inWindow) {
+            ImGui::Text("Cursor inside window %d", inWindow);
+         }
+      }
 
       ImVec2 clientAreaCenter = ImGui::GetMainViewport()->GetCenter();
       ImGui::SetNextWindowPos(clientAreaCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
