@@ -129,6 +129,10 @@ void W32Window::Hide() {
    ShowWindow(m_windowHandle, SW_HIDE);
 }
 
+void W32Window::UpdateWindowData() {
+   SetWindowPos(m_windowHandle, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+}
+
 void W32Window::EnableBorderless() {
    if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
       return;
@@ -138,8 +142,8 @@ void W32Window::EnableBorderless() {
    SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, m_width, m_height,
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
    m_borderless = true;
-   // Perform a custom reposition - otherwise windows will attempt to place the top-left of the 
-   //client area at the top-left of the window decorations.
+   // Perform a custom reposition - otherwise windows will attempt to place the top-left of the
+   // client area at the top-left of the window decorations.
    Reposition(m_xPos, m_yPos);
    UpdateRectProperties();
 }
@@ -162,17 +166,24 @@ void W32Window::SetFullscreen() {
    if (m_windowMode == WindowMode::FULLSCREEN) {
       return;
    }
-   SetNewVideoMode(m_width, m_height, 32);
    HMONITOR monitor = MonitorFromWindow(m_windowHandle, MONITOR_DEFAULTTONEAREST);
    MONITORINFO info;
    info.cbSize = sizeof(MONITORINFO);
    GetMonitorInfo(monitor, &info);
+
+   SetNewVideoMode(m_width, m_height, 32);
+
+   // Temporary removal of window decorations, will be reverted upon the next call to SetWindowed()
    SetWindowLong(m_windowHandle, GWL_STYLE,
                  GetWindowLong(m_windowHandle, GWL_STYLE) & ~(WS_CAPTION | WS_THICKFRAME));
+   UpdateWindowData();
+
+   // Get the topleft corner of the monitor we are fullscreening on.
    int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
    int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
-   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, resX, resY,
-                SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+
+   Reposition(info.rcMonitor.left, info.rcMonitor.top);
+   Resize(resX, resY);
 
    m_windowMode = WindowMode::FULLSCREEN;
    UpdateRectProperties();
@@ -183,27 +194,20 @@ void W32Window::SetWindowed() noexcept {
       return;
    }
 
-   HMONITOR monitor = MonitorFromWindow(m_windowHandle, MONITOR_DEFAULTTONEAREST);
-   MONITORINFO info;
-   info.cbSize = sizeof(MONITORINFO);
-   GetMonitorInfo(monitor, &info);
-   int resX = abs(info.rcMonitor.left - info.rcMonitor.right);
-   int resY = abs(info.rcMonitor.top - info.rcMonitor.bottom);
-   if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
-      ChangeDisplaySettingsW(nullptr, 0);
+   // Revert display settings to those stored in registry.
+   ChangeDisplaySettingsW(nullptr, 0);
+
+   // Restore window decorations, if needed.
+   if (!m_borderless) {
+      SetWindowLongPtr(m_windowHandle, GWL_STYLE,
+                       GetWindowLong(m_windowHandle, GWL_STYLE) | WS_CAPTION | WS_THICKFRAME);
+      UpdateWindowData();
    }
-
-   SetWindowLongPtr(m_windowHandle, GWL_STYLE,
-                    GetWindowLong(m_windowHandle, GWL_STYLE) | WS_CAPTION | WS_THICKFRAME);
-
-   auto adjustedSize = GetWindowSizeFromClientSize(resX, resY);
-   SetWindowPos(m_windowHandle, 0, info.rcMonitor.left, info.rcMonitor.top, adjustedSize.first,
-                adjustedSize.second, SWP_FRAMECHANGED | SWP_SHOWWINDOW);
-   UpdateRectProperties();
    m_windowMode = NLSWIN::WindowMode::WINDOWED;
-   if (m_borderless) {
-      EnableBorderless();
-   }
+   Resize(m_width, m_height);
+   Reposition(m_xPos, m_yPos);
+
+   UpdateRectProperties();
 }
 
 std::pair<long, long> W32Window::GetWindowSizeFromClientSize(int width, int height) {
@@ -231,9 +235,9 @@ void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
       // Assuming all four borders are the same thickness - could be incorrect for weird themes.
       int borderThickness = ((windowArea.right - windowArea.left) - m_width) / 2;
       SetWindowPos(m_windowHandle, 0, newX - borderThickness, newY - titleBarHeight - borderThickness,
-                   m_width, m_height, SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
+                   0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
    } else {
-      SetWindowPos(m_windowHandle, 0, newX, newY, m_width, m_height,
+      SetWindowPos(m_windowHandle, 0, newX, newY, 0, 0,
                    SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
    }
    UpdateRectProperties();
@@ -265,17 +269,19 @@ void W32Window::SetNewVideoMode(int width, int height, int bitsPerPixel) {
 }
 
 void W32Window::Resize(uint32_t width, uint32_t height) {
-   auto adjustedSize = GetWindowSizeFromClientSize(width, height);
    if (m_windowMode == WindowMode::FULLSCREEN) {
       SetNewVideoMode(width, height, 32);
    }
 
-   if (m_borderless || (m_windowMode == WindowMode::FULLSCREEN)) {
-      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height,
-                   SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
-   } else {
+   // Check if we currently have border decorations or not.
+   // SetWindowPos seems to always assume decorations exist, even when we have them off.
+   if (GetWindowLongW(m_windowHandle, GWL_STYLE) & (WS_CAPTION | WS_THICKFRAME)) {
+      auto adjustedSize = GetWindowSizeFromClientSize(width, height);
       SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second,
-                   SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+                   SWP_NOMOVE);
+   } else {
+      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height,
+                   SWP_NOMOVE);
    }
 
    UpdateRectProperties();
