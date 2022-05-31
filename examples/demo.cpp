@@ -1,6 +1,8 @@
 
 #define GLAD_GL_IMPLEMENTATION
 #define NOMINMAX  // Needed so gl.h doesnt start messing up the imgui backend.
+#include "demo.hpp"
+
 #include <gl.h>
 
 #include <NamelessWindow/Cursor.hpp>
@@ -75,12 +77,14 @@ int main() {
    props.yCoordinate = 50;
    props.windowName = "Interactive Demo";
 
-   auto kb = NLSWIN::Keyboard::Create();
    auto win = NLSWIN::Window::Create(props);
+   auto kb = NLSWIN::Keyboard::Create();
    auto cursor = NLSWIN::Cursor::Create();
    auto context = NLSWIN::GLContext::Create(win);
    win->Show();
    kb->SubscribeToWindow(win);
+
+   auto keyboardInfos = NLSWIN::Keyboard::EnumerateKeyboards();
 
    std::shared_ptr<NLSWIN::Window> win2 = nullptr;
    std::shared_ptr<NLSWIN::GLContext> context2 = nullptr;
@@ -102,8 +106,10 @@ int main() {
    int lastHorz = win->GetWindowWidth();
    int lastVert = win->GetWindowHeight();
    bool borderlessChange = false;
+   std::string selectedKB = "Master";
 
    while (!win->RequestedClose()) {
+      std::vector<NLSWIN::KeyEvent> keyEventsThisFrame;
       NLSWIN::EventBus::PollEvents();
 
       if (win2 && win2->RequestedClose()) {
@@ -126,6 +132,9 @@ int main() {
       while (kb->HasEvent()) {
          auto evt = kb->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
+         if (auto event = std::get_if<NLSWIN::KeyEvent>(&evt)) {
+            keyEventsThisFrame.push_back(*event);
+         }
       }
 
       ImGui_ImplOpenGL3_NewFrame();
@@ -133,7 +142,7 @@ int main() {
       ImGui::NewFrame();
 
       ImGui::SetNextWindowPos(ImVec2 {0, 0});
-      ImGui::SetNextWindowSize(ImVec2 {350, (float)win->GetWindowHeight()});
+      ImGui::SetNextWindowSize(ImVec2 {450, (float)win->GetWindowHeight()});
       ImGui::Begin("Interactive NLSWIN Demo", nullptr,
                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
@@ -141,7 +150,7 @@ int main() {
          WindowHeader(win, 1);
       }
 
-      if (ImGui::CollapsingHeader("Secondary Window: ", ImGuiTreeNodeFlags_DefaultOpen)) {
+      if (ImGui::CollapsingHeader("Secondary Window: ")) {
          if (ImGui::Button("Create", {150, 25})) {
             if (win2) {
                ImGui::OpenPopup("Already Created");
@@ -170,6 +179,60 @@ int main() {
             }
          }
       }
+
+      if (ImGui::CollapsingHeader("Keyboard Input: ")) {
+         if (ImGui::BeginCombo("Selected Device", selectedKB.c_str())) {
+            bool selected = false;
+            if (ImGui::Selectable("Master", &selected)) {
+               selectedKB = "Master";
+               kb = NLSWIN::Keyboard::Create();
+               kb->SubscribeToWindow(win);
+            }
+            for (auto kbInfo: keyboardInfos) {
+               if (ImGui::Selectable(kbInfo.name.c_str(), &selected)) {
+                  selectedKB = kbInfo.name;
+                  kb = NLSWIN::Keyboard::Create(kbInfo);
+                  kb->SubscribeToWindow(win);
+               }
+            }
+            ImGui::EndCombo();
+         }
+         char buf[1024] {0};
+         ImGui::InputTextMultiline("Text Input", buf, 1024, {0, 70});
+         ImGui::Text("Key events: ");
+         ImGui::Separator();
+         static ExampleAppLog log;
+         std::string pressType;
+         for (int i = 0; i < keyEventsThisFrame.size(); i++) {
+            NLSWIN::KeyEvent evt = keyEventsThisFrame[i];
+            switch (evt.pressType) {
+               case NLSWIN::KeyPressType::PRESSED: {
+                  pressType = "Pressed";
+                  break;
+               }
+               case NLSWIN::KeyPressType::REPEAT: {
+                  pressType = "Repeat";
+                  break;
+               }
+               case NLSWIN::KeyPressType::RELEASED: {
+                  pressType = "Released";
+                  break;
+               }
+               default:
+                  pressType = "Unknown";
+                  break;
+            }
+            NLSWIN::KeyModifiers mods = evt.code.modifiers;
+            const char *skip = &(evt.keyName.c_str()[4]);
+            log.AddLog("%-13s | %-8s | {Ctrl:%d, Shift:%d, Alt:%d, Super:%d, Caps:%d, Num:%d}\n",
+                       skip, pressType.c_str(), mods.ctrl, mods.shift, mods.alt, mods.super,
+                       mods.capsLock, mods.numLock);
+         }
+         log.Draw();
+         keyEventsThisFrame.clear();
+      }
+
+      if (ImGui::CollapsingHeader("Cursor Info: ")) {}
 
       ImVec2 clientAreaCenter = ImGui::GetMainViewport()->GetCenter();
       ImGui::SetNextWindowPos(clientAreaCenter, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
