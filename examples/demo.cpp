@@ -9,6 +9,7 @@
 #include <NamelessWindow/Events/EventBus.hpp>
 #include <NamelessWindow/Exceptions.hpp>
 #include <NamelessWindow/Keyboard.hpp>
+#include <NamelessWindow/RawMouse.hpp>
 #include <NamelessWindow/Rendering/GLContext.hpp>
 #include <NamelessWindow/Window.hpp>
 #include <iostream>
@@ -84,7 +85,10 @@ int main() {
    win->Show();
    kb->SubscribeToWindow(win);
 
+   std::shared_ptr<NLSWIN::RawMouse> rawMouse = nullptr;
+
    auto keyboardInfos = NLSWIN::Keyboard::EnumerateKeyboards();
+   auto mouseInfos = NLSWIN::RawMouse::EnumeratePointers();
 
    std::shared_ptr<NLSWIN::Window> win2 = nullptr;
    std::shared_ptr<NLSWIN::GLContext> context2 = nullptr;
@@ -107,6 +111,7 @@ int main() {
    int lastVert = win->GetWindowHeight();
    bool borderlessChange = false;
    std::string selectedKB = "Master";
+   std::string selectedMouse = "";
    int cursorX = 0;
    int cursorY = 0;
    bool m1Down = false;
@@ -117,6 +122,13 @@ int main() {
    NLSWIN::ScrollType lastScrollDir = (NLSWIN::ScrollType)-1;
    bool cursorWithinWindow = false;
    NLSWIN::WindowID inWindow = 0;
+
+   bool rm1Down = false;
+   bool rm2Down = false;
+   bool rm3Down = false;
+   bool rm4Down = false;
+   bool rm5Down = false;
+   NLSWIN::ScrollType rmLastScrollDir = (NLSWIN::ScrollType)-1;
 
    while (!win->RequestedClose()) {
       std::vector<NLSWIN::KeyEvent> keyEventsThisFrame;
@@ -185,6 +197,43 @@ int main() {
             inWindow = 0;
          }
       }
+      int rmDeltaX = 0;
+      int rmDeltaY = 0;
+      while (rawMouse && rawMouse->HasEvent()) {
+         auto evt = rawMouse->GetNextEvent();
+         if (auto event = std::get_if<NLSWIN::RawMouseDeltaMovementEvent>(&evt)) {
+            rmDeltaX = event->deltaX;
+            rmDeltaY = event->deltaY;
+         }
+         if (auto event = std::get_if<NLSWIN::RawMouseButtonEvent>(&evt)) {
+            switch (event->button) {
+               case NLSWIN::ButtonValue::LEFTCLICK: {
+                  rm1Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::RIGHTCLICK: {
+                  rm2Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::MIDDLECLICK: {
+                  rm3Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::MB_4: {
+                  rm4Down = !(bool)event->type;
+                  break;
+               }
+               case NLSWIN::ButtonValue::MB_5: {
+                  rm5Down = !(bool)event->type;
+                  break;
+               }
+            }
+         }
+         if (auto event = std::get_if<NLSWIN::RawMouseScrollEvent>(&evt)) {
+            rmLastScrollDir = event->scrollType;
+         }
+      }
+
       while (kb->HasEvent()) {
          auto evt = kb->GetNextEvent();
          ImGui_ImplNLSWin_HandleEvent(evt);
@@ -353,6 +402,60 @@ int main() {
          ImGui::EndDisabled();
          if (inWindow) {
             ImGui::Text("Cursor inside window %d", inWindow);
+         }
+      }
+
+      if (ImGui::CollapsingHeader("Raw Mouse: ")) {
+         if (ImGui::BeginCombo("Selected Device", selectedMouse.c_str())) {
+            ImGui::PushID(100);
+            bool selected = false;
+            if (ImGui::Selectable("", &selected)) {
+               selectedMouse = "";
+               rawMouse = nullptr;
+            }
+            ImGui::PopID();
+            for (auto mouseInfo: mouseInfos) {
+               if (ImGui::Selectable(mouseInfo.name.c_str(), &selected)) {
+                  selectedMouse = mouseInfo.name;
+                  rawMouse = NLSWIN::RawMouse::Create(mouseInfo);
+               }
+            }
+            ImGui::EndCombo();
+         }
+         if (rawMouse) {
+            ImGui::Separator();
+            ImGui::Text("deltaX: %d, deltaY: %d", rmDeltaX, rmDeltaY);
+            ImGui::Separator();
+            ImGui::Text("Left MouseButton: %d", rm1Down);
+            ImGui::Text("Right MouseButton: %d", rm2Down);
+            ImGui::Text("Middle MouseButton: %d", rm3Down);
+            ImGui::Text("MB4: %d", rm4Down);
+            ImGui::Text("MB5: %d", rm5Down);
+            std::string dir;
+            switch (rmLastScrollDir) {
+               case NLSWIN::ScrollType::DOWN: {
+                  dir = "DOWN";
+                  break;
+               }
+               case NLSWIN::ScrollType::UP: {
+                  dir = "UP";
+                  break;
+               }
+               case NLSWIN::ScrollType::LEFT: {
+                  dir = "LEFT";
+                  break;
+               }
+               case NLSWIN::ScrollType::RIGHT: {
+                  dir = "RIGHT";
+                  break;
+               }
+               default: {
+                  dir = "";
+                  break;
+               }
+            }
+            ImGui::Text("Last Scroll Dir: %s", dir.c_str());
+            ImGui::Separator();
          }
       }
 
