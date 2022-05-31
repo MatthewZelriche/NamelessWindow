@@ -270,8 +270,13 @@ void W32Window::Resize(uint32_t width, uint32_t height) {
       SetNewVideoMode(width, height, 32);
    }
 
-   SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second,
-                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+   if (m_borderless || (m_windowMode == WindowMode::FULLSCREEN)) {
+      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height,
+                   SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+   } else {
+      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second,
+                   SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_SHOWWINDOW);
+   }
 
    UpdateRectProperties();
 }
