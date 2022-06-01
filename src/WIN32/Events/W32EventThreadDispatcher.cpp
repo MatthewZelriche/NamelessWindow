@@ -105,6 +105,7 @@ LRESULT CALLBACK W32EventThreadDispatcher::DispatchProc(HWND Window, UINT Messag
          break;
       }
       case WM_SETFOCUS:
+      case WM_SYSCOMMAND:
       case WM_NCMOUSEMOVE:
       case WM_MOVE:
       case WM_SIZE:

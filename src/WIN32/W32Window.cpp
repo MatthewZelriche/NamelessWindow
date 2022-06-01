@@ -297,6 +297,7 @@ void W32Window::Minimize(bool restoreVideoMode) {
       m_cachedVideoMode = Win32VidMode {m_width, m_height, 32};
    }
    ShowWindow(m_windowHandle, SW_MINIMIZE);
+   m_minimized = true;
 }
 
 void W32Window::ProcessGenericEvent(MSG event) {
@@ -332,9 +333,10 @@ void W32Window::ProcessGenericEvent(MSG event) {
          case WM_SETFOCUS: {
             if (wParam->sourceWindow == m_windowHandle) {
                PushEvent(WindowFocusedEvent {GetGenericID()});
-               if (m_windowMode == WindowMode::FULLSCREEN) {
+               if ((m_windowMode == WindowMode::FULLSCREEN) && m_minimized) {
                   SetNewVideoMode(m_cachedVideoMode.resX, m_cachedVideoMode.resY, m_cachedVideoMode.bits);
                }
+               m_minimized = false;
             }
             break;
          }
@@ -343,6 +345,13 @@ void W32Window::ProcessGenericEvent(MSG event) {
                PushEvent(WindowFocusLostEvent {GetGenericID()});
             }
             break;
+         }
+         case WM_SYSCOMMAND: {
+            if (wParam->sourceWindow == m_windowHandle) {
+                if (wParam->wParam == SC_MINIMIZE) {
+                  m_minimized = true;
+               }
+            }
          }
       }
    }
