@@ -104,6 +104,12 @@ void W32Keyboard::ProcessGenericEvent(MSG event) {
          }
          break;
       }
+      case WM_KILLFOCUS: {
+         if (!GetSubscribedWindows().count((HWND)wParam->wParam)) {
+            m_InternalKeyState.fill(false);
+         }
+         break;
+      }
       case NLSWIN_REQUEST_FOCUSED: {
          if ((W32Keyboard*)(wParam->wParam) == this) {
             keyboardFocusedWindow = (HWND)event.lParam;
