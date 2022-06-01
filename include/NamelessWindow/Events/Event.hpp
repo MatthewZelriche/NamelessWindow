@@ -127,6 +127,13 @@ struct NLSWIN_API_PUBLIC WindowFocusedEvent {
    WindowID sourceWindow; /*!< The window that was focused. */
 };
 
+/*! Generated whenever an application window loses focus. */
+/*! @ingroup Common */
+/*! @headerfile "Events/Event.hpp" */
+struct NLSWIN_API_PUBLIC WindowFocusLostEvent {
+   WindowID sourceWindow; /*!< The window whose focus has just been lost. */
+};
+
 /*! Generated whenever an application window is resized. */
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
@@ -150,10 +157,9 @@ struct NLSWIN_API_PUBLIC CharacterEvent {
 /*! Generic NLSWIN Event. */
 /*! @ingroup Common */
 /*! @headerfile "Events/Event.hpp" */
-using Event =
-   std::variant<std::monostate, KeyEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent,
-                RawMouseButtonEvent, MouseScrollEvent, RawMouseScrollEvent, MouseMovementEvent,
+using Event = std::variant<std::monostate, KeyEvent, WindowFocusedEvent, WindowResizeEvent, MouseButtonEvent,
+                           RawMouseButtonEvent, MouseScrollEvent, RawMouseScrollEvent, MouseMovementEvent,
                            MouseEnterEvent, MouseLeaveEvent, RawMouseDeltaMovementEvent,
-                           WindowRepositionEvent, CharacterEvent>;
+                           WindowRepositionEvent, CharacterEvent, WindowFocusLostEvent>;
 
 }  // namespace NLSWIN

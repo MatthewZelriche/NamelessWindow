@@ -199,6 +199,8 @@ class NLSWIN_API_PUBLIC Window : virtual public EventListener {
     */
    virtual void Resize(uint32_t width, uint32_t height) = 0;
 
+   virtual void Minimize(bool restoreVideoMode = false) = 0;
+
    /*! @brief Sets this window as the active window. */
    virtual void Focus() noexcept = 0;
 

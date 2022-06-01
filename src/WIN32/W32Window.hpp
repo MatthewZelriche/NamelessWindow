@@ -20,6 +20,12 @@
 #include "NamelessWindow/NLSAPI.hpp"
 #include "NamelessWindow/Window.hpp"
 
+struct Win32VidMode {
+   int resX;
+   int resY;
+   int bits;
+};
+
 namespace NLSWIN {
 /*!
  * @brief Represents a single Win32 window.
@@ -39,6 +45,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    void Focus() noexcept override;
    void EnableBorderless() override;
    void DisableBorderless() override;
+   void Minimize(bool restoreVideoMode = false) override;
    [[nodiscard]] inline bool RequestedClose() const noexcept override { return m_shouldClose; }
    [[nodiscard]] inline Point GetWindowPos() const noexcept override { return {m_xPos, m_yPos}; }
    [[nodiscard]] inline WindowMode GetWindowMode() const noexcept override { return m_windowMode; }
@@ -70,6 +77,7 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    WNDCLASSW win32Class {0};
    WNDPROC m_messageFuncPtr;
    HDC m_deviceContext {0};
+   Win32VidMode m_cachedVideoMode;
 
    static std::unordered_map<HWND, WindowID> m_handleMap;
 

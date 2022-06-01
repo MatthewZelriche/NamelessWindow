@@ -234,11 +234,10 @@ void W32Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
       GetWindowRect(m_windowHandle, &windowArea);
       // Assuming all four borders are the same thickness - could be incorrect for weird themes.
       int borderThickness = ((windowArea.right - windowArea.left) - m_width) / 2;
-      SetWindowPos(m_windowHandle, 0, newX - borderThickness, newY - titleBarHeight - borderThickness,
-                   0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
-   } else {
-      SetWindowPos(m_windowHandle, 0, newX, newY, 0, 0,
+      SetWindowPos(m_windowHandle, 0, newX - borderThickness, newY - titleBarHeight - borderThickness, 0, 0,
                    SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
+   } else {
+      SetWindowPos(m_windowHandle, 0, newX, newY, 0, 0, SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
    }
    UpdateRectProperties();
 }
@@ -277,11 +276,9 @@ void W32Window::Resize(uint32_t width, uint32_t height) {
    // SetWindowPos seems to always assume decorations exist, even when we have them off.
    if (GetWindowLongW(m_windowHandle, GWL_STYLE) & (WS_CAPTION | WS_THICKFRAME)) {
       auto adjustedSize = GetWindowSizeFromClientSize(width, height);
-      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second,
-                   SWP_NOMOVE);
+      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, adjustedSize.first, adjustedSize.second, SWP_NOMOVE);
    } else {
-      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height,
-                   SWP_NOMOVE);
+      SetWindowPos(m_windowHandle, 0, m_xPos, m_yPos, width, height, SWP_NOMOVE);
    }
 
    UpdateRectProperties();
@@ -292,6 +289,14 @@ void W32Window::Focus() noexcept {
    // So we must pass this message to our message thread.
    SendMessageW(W32EventThreadDispatcher::GetDispatcherHandle(), USER_FOCUS_WINDOW, (WPARAM)m_windowHandle,
                 0);
+}
+
+void W32Window::Minimize(bool restoreVideoMode) {
+   if (restoreVideoMode) {
+      ChangeDisplaySettingsW(nullptr, 0);
+      m_cachedVideoMode = Win32VidMode {m_width, m_height, 32};
+   }
+   ShowWindow(m_windowHandle, SW_MINIMIZE);
 }
 
 void W32Window::ProcessGenericEvent(MSG event) {
@@ -327,6 +332,15 @@ void W32Window::ProcessGenericEvent(MSG event) {
          case WM_SETFOCUS: {
             if (wParam->sourceWindow == m_windowHandle) {
                PushEvent(WindowFocusedEvent {GetGenericID()});
+               if (m_windowMode == WindowMode::FULLSCREEN) {
+                  SetNewVideoMode(m_cachedVideoMode.resX, m_cachedVideoMode.resY, m_cachedVideoMode.bits);
+               }
+            }
+            break;
+         }
+         case WM_KILLFOCUS: {
+            if (wParam->sourceWindow == m_windowHandle) {
+               PushEvent(WindowFocusLostEvent {GetGenericID()});
             }
             break;
          }
