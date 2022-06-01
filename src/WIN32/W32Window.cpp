@@ -90,6 +90,7 @@ W32Window::W32Window(WindowProperties properties) {
    }
 
    // Set up pixel format for OGL.
+   // TODO: Lock guard around this?
    m_deviceContext = GetDC(m_windowHandle);
    m_formatID = ChoosePixelFormat(m_deviceContext, &pixelFormatDesc);
    SetPixelFormat(m_deviceContext, m_formatID, &pixelFormatDesc);
@@ -133,7 +134,7 @@ void W32Window::UpdateWindowData() {
    SetWindowPos(m_windowHandle, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 }
 
-void W32Window::EnableBorderless() {
+void W32Window::EnableBorderless() noexcept {
    if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
       return;
    }
@@ -148,7 +149,7 @@ void W32Window::EnableBorderless() {
    UpdateRectProperties();
 }
 
-void W32Window::DisableBorderless() {
+void W32Window::DisableBorderless() noexcept {
    if (m_windowMode == NLSWIN::WindowMode::FULLSCREEN) {
       return;
    }

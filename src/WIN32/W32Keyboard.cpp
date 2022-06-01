@@ -148,14 +148,14 @@ KeyEvent W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
 
    // Determine press type
    if (event.Flags & RI_KEY_BREAK) {
-      m_InternalKeyState[keyEvent.code.value] = false;
+      m_InternalKeyState[(int)keyEvent.code.value] = false;
       keyEvent.pressType = KeyPressType::RELEASED;
    } else {
-      if (m_InternalKeyState[keyEvent.code.value] == true) {
+      if (m_InternalKeyState[(int)keyEvent.code.value] == true) {
          keyEvent.pressType = KeyPressType::REPEAT;
       } else {
          keyEvent.pressType = KeyPressType::PRESSED;
-         m_InternalKeyState[keyEvent.code.value] = true;
+         m_InternalKeyState[(int)keyEvent.code.value] = true;
       }
    }
    UpdateWin32KeyboardState(event.VKey, keyEvent.code.value, keyEvent.pressType);
@@ -174,16 +174,16 @@ KeyEvent W32Keyboard::ProcessKeyEvent(RAWKEYBOARD event, HWND window) {
 
 KeyModifiers W32Keyboard::ParseModifierState() {
    KeyModifiers modifiers {false};
-   if (m_InternalKeyState[KEY_LCTRL] || m_InternalKeyState[KEY_RCTRL]) {
+   if (m_InternalKeyState[(int)KeyValue::KEY_LCTRL] || m_InternalKeyState[(int)KeyValue::KEY_RCTRL]) {
       modifiers.ctrl = true;
    }
-   if (m_InternalKeyState[KEY_LSUPER] || m_InternalKeyState[KEY_RSUPER]) {
+   if (m_InternalKeyState[(int)KeyValue::KEY_LSUPER] || m_InternalKeyState[(int)KeyValue::KEY_RSUPER]) {
       modifiers.super = true;
    }
-   if (m_InternalKeyState[KEY_LALT] || m_InternalKeyState[KEY_RALT]) {
+   if (m_InternalKeyState[(int)KeyValue::KEY_LALT] || m_InternalKeyState[(int)KeyValue::KEY_RALT]) {
       modifiers.alt = true;
    }
-   if (m_InternalKeyState[KEY_LSHIFT] || m_InternalKeyState[KEY_RSHIFT]) {
+   if (m_InternalKeyState[(int)KeyValue::KEY_LSHIFT] || m_InternalKeyState[(int)KeyValue::KEY_RSHIFT]) {
       modifiers.shift = true;
    }
    if (capsLockOn) {

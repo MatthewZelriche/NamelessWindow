@@ -15,7 +15,7 @@ std::shared_ptr<Cursor> Cursor::Create() {
    return std::move(impl);
 }
 
-void W32Cursor::BindToWindow(Window* window) noexcept {
+void W32Cursor::Confine(Window* window) noexcept {
    auto w32Window = reinterpret_cast<W32Window*>(window);
 
    // If we are attempting to rebind to the same window, no need to do anything.
@@ -45,7 +45,7 @@ void W32Cursor::ConfineCursorToRect(HWND handle, RECT rect) {
    ClipCursor(&screenRect);
 }
 
-void W32Cursor::UnbindFromWindows() noexcept {
+void W32Cursor::Free() noexcept {
    if (m_boundWindow.first) {
       ClipCursor(nullptr);
       m_boundWindow = {0, 0};
@@ -281,7 +281,7 @@ void W32Cursor::ProcessGenericEvent(MSG event) {
          // Windows unlocks the cursor for us when the window is destroyed, but we need
          // to reset our internal tracking as well.
          if (wParam->sourceWindow == m_boundWindow.second) {
-            UnbindFromWindows();
+            Free();
          }
          break;
       }

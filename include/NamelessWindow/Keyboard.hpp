@@ -12,8 +12,8 @@
 #include <memory>
 #include <string>
 
-#include "InputDevice.hpp"
 #include "NLSAPI.hpp"
+#include "SubscribableInputDevice.hpp"
 
 namespace NLSWIN {
 /*! Contains information about a specific keyboard device. */
@@ -29,10 +29,11 @@ struct NLSWIN_API_PUBLIC KeyboardDeviceInfo {
  * @ingroup Common
  * @brief Represents one or many physical keyboards.
  *
- * This interface defines how the client interacts with physical keyboard devices connected to the system.
- * Construction of these objects is done through the Create factory methods.
+ * Defines how the client interacts with physical keyboard devices connected to the system.
+ * Capable of receiving the following events: KeyEvent, CharacterEvent.
+ * @todo Handle device connect/disconnect events. 
  */
-class NLSWIN_API_PUBLIC Keyboard : virtual public InputDevice {
+class NLSWIN_API_PUBLIC Keyboard : virtual public SubscribableInputDevice {
    public:
    /**
     * @brief Construct a new instance of a "master" Keyboard that will listen for events from all connected
@@ -44,7 +45,6 @@ class NLSWIN_API_PUBLIC Keyboard : virtual public InputDevice {
     * @throws PlatformInitializationException
     * @return A shared pointer to the newly constructed Keyboard. Caller owns this resource and is expected to
     * manage its lifetime.
-    * @see EventDispatcher
     */
    static std::shared_ptr<Keyboard> Create();
    /**
@@ -58,12 +58,11 @@ class NLSWIN_API_PUBLIC Keyboard : virtual public InputDevice {
     * @throws PlatformInitializationException
     * @return A shared pointer to the newly constructed Keyboard. Caller owns this resource and is expected to
     * manage its lifetime.
-    * @see EventDispatcher
     */
    static std::shared_ptr<Keyboard> Create(KeyboardDeviceInfo device);
 
    /**
-    * @brief Gets a list of all detected keyboard devices.
+    * @brief Gets a list of all currently detected keyboard devices.
     *
     * @return A vector of KeyboardDeviceInfos, each elementing containing information on a single keyboard
     * device.

@@ -21,13 +21,6 @@ namespace NLSWIN {
 enum class KeyPressType { UNKNOWN = -1, PRESSED = 0, RELEASED = 1, REPEAT = 2 };
 
 /*!
- * @brief Defines the state of a pointer button at the moment the event was generated.
- * @ingroup Common
- * @headerfile "Events/Key.hpp"
- */
-enum class ButtonPressType { UNKNOWN = -1, PRESSED = 0, RELEASED = 1 };
-
-/*!
  * Defines which modifier keys were active during a KeyEvent
  * @ingroup Common
  * @headerfile "Events/Key.hpp"
@@ -42,8 +35,12 @@ struct NLSWIN_API_PUBLIC KeyModifiers {
    bool numLock : 1;
 };
 
-
-enum KeyValue : int {
+/*!
+ * Defines the keyboard keys that are supported for KeyEvents.
+ * @ingroup Common
+ * @headerfile "Events/Key.hpp"
+ */
+enum class KeyValue : int {
    KEY_NULL = -1,
    KEY_0,
    KEY_1,
@@ -152,13 +149,16 @@ enum KeyValue : int {
 };
 
 /*!
- * Represents the physical state of the keyboard at the time of the key event.
+ * Represents the state of the keyboard at the time of the key event.
  * @ingroup Common
  * @headerfile "Events/Key.hpp"
  */
 struct NLSWIN_API_PUBLIC KeyCode {
-   KeyValue value {KeyValue::KEY_NULL};         /*! The keyboard key that resulted in this event. */
-   KeyModifiers modifiers {false}; /*! State of modifier keys at time of event generation */
+   KeyValue value {KeyValue::KEY_NULL}; /*! The keyboard key that resulted in this event. This takes into
+                                           account the numlock modifier, but no other modifiers. This value
+                                           contains the "translated" OS mapping for a specified key, and not
+                                           the vendor-specific scancode. */
+   KeyModifiers modifiers {false};      /*! State of modifier keys at time of event generation */
 };
 
 }  // namespace NLSWIN

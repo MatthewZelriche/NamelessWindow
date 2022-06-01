@@ -4,13 +4,14 @@
 #include <unordered_map>
 
 #include "Events/W32EventListener.hpp"
-#include "NamelessWindow/InputDevice.hpp"
 #include "NamelessWindow/NLSAPI.hpp"
+#include "NamelessWindow/SubscribableInputDevice.hpp"
 #include "W32Window.hpp"
 
-
 namespace NLSWIN {
-class NLSWIN_API_PRIVATE W32InputDevice : virtual public InputDevice, virtual public W32EventListener {
+class NLSWIN_API_PRIVATE W32InputDevice :
+   virtual public SubscribableInputDevice,
+   virtual public W32EventListener {
    public:
    void SubscribeToWindow(const std::weak_ptr<Window> window) override;
    void UnsubscribeFromWindow(const std::weak_ptr<Window> window) override;

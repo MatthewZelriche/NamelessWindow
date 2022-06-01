@@ -43,8 +43,8 @@ class NLSWIN_API_PRIVATE W32Window : public Window, public W32EventListener {
    void Reposition(uint32_t newX, uint32_t newY) noexcept override;
    void Resize(uint32_t width, uint32_t height) override;
    void Focus() noexcept override;
-   void EnableBorderless() override;
-   void DisableBorderless() override;
+   void EnableBorderless() noexcept override;
+   void DisableBorderless() noexcept override;
    void Minimize(bool restoreVideoMode = false) override;
    [[nodiscard]] inline bool RequestedClose() const noexcept override { return m_shouldClose; }
    [[nodiscard]] inline Point GetWindowPos() const noexcept override { return {m_xPos, m_yPos}; }

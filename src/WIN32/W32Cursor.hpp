@@ -18,12 +18,12 @@
 
 namespace NLSWIN {
 /*! @ingroup WIN32 */
-class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32InputDevice, public W32BaseMouse {
+class NLSWIN_API_PRIVATE W32Cursor : public Cursor, public W32EventListener, public W32BaseMouse {
    public:
    W32Cursor() = default;
 
-   void BindToWindow(Window* window) noexcept override;
-   void UnbindFromWindows() noexcept override;
+   void Confine(Window* window) noexcept override;
+   void Free() noexcept override;
    void Show() noexcept override;
    void Hide() noexcept override;
    void ProcessGenericEvent(MSG event) override;

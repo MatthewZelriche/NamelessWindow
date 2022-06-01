@@ -29,7 +29,7 @@ class NLSWIN_API_PUBLIC BadMonitorException : public std::exception {
 
 /*!
  * @ingroup Common
- * @brief Nonspecific error that indicates an OS platform error occured. For example, if a cpecific library
+ * @brief Nonspecific error that indicates an OS platform error occured. For example, if a specific library
  * extension is not installed or supported.
  */
 class NLSWIN_API_PUBLIC PlatformInitializationException : public std::exception {
@@ -54,7 +54,8 @@ class NLSWIN_API_PUBLIC InputDeviceFailureException : public std::exception {
 
 /*!
  * @ingroup Common
- * @brief Only one Cursor can exist at a time.
+ * @brief Only one Cursor is currently supported. Attempts to construct more than one Cursor will throw this
+ * exception.
  * @see Cursor
  */
 class NLSWIN_API_PUBLIC MultipleCursorException : public std::exception {
@@ -101,7 +102,8 @@ class NLSWIN_API_PUBLIC InvalidRenderContextStateException : public std::excepti
 
 /*!
  * @ingroup Common
- * @brief Thrown when an operation was given a video mode that is considered invalid by the underlying platform.
+ * @brief Thrown when an operation was given a video mode that is considered invalid by the underlying
+ * platform.
  */
 class NLSWIN_API_PUBLIC InvalidVideoModeException : public std::exception {
    public:

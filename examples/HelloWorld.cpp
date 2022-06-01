@@ -31,7 +31,7 @@ int main() {
    // kb2->SubscribeToWindow(window);
 
    // cursor->Hide();
-   cursor->BindToWindow(win2.get());
+   cursor->Confine(win2.get());
 
    while (!window->RequestedClose()) {
       NLSWIN::EventBus::PollEvents();

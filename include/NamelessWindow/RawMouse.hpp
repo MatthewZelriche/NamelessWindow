@@ -18,11 +18,11 @@
 
 namespace NLSWIN {
 
-/*! Contains information about a specific pointer device. */
+/*! Contains information about a specific mouse device. */
 /*! @ingroup Common */
 struct NLSWIN_API_PUBLIC MouseDeviceInfo {
-   const std::string name {""};              /*! The name the OS has given this pointer device. */
-   const uint64_t platformSpecificIdentifier {0}; /*! A platform specific identifier for this pointer device.
+   const std::string name {""};              /*! The name the OS has given this mouse device. */
+   const uint64_t platformSpecificIdentifier {0}; /*! A platform specific identifier for this mouse device.
                                                      This cannot be relied upon to be unique across platforms
                                                      or even across different application launches. */
 };
@@ -49,12 +49,11 @@ class NLSWIN_API_PUBLIC RawMouse : virtual public EventListener {
     * @throws PlatformInitializationException
     * @return A shared pointer to the newly constructed mouse device. Caller owns this resource and is
     * expected to manage its lifetime.
-    * @see EventDispatcher
     */
    static std::shared_ptr<RawMouse> Create(MouseDeviceInfo device);
 
    /**
-    * @brief Gets a list of all detected mice.
+    * @brief Gets a list of all currently detected mice.
     *
     * @return A vector of MouseDeviceInfos, each elementing containing information on a single mouse.
     */

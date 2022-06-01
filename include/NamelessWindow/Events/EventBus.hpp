@@ -18,8 +18,8 @@ namespace NLSWIN {
  * @brief Dispatches platform-specific events to interested listeners.
  *
  * The EventBus is a static class that retrieves the raw, untranslated OS events from the system and
- * dispatches then to all registered listeners so that the listeners may translate these OS Events into
- * platform-independent NLSWIN events.
+ * dispatches then to all registered listeners (windows, input devices, etc) so that the listeners may
+ * translate these OS Events into platform-independent NLSWIN events.
  *
  * @see EventListener
  */
@@ -35,5 +35,4 @@ class NLSWIN_API_PUBLIC EventBus {
     */
    static void PollEvents();
 };
-
 }  // namespace NLSWIN

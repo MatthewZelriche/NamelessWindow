@@ -248,7 +248,7 @@ int main() {
             }
             if ((event->code.value == NLSWIN::KeyValue::KEY_L && event->code.modifiers.ctrl &&
                  (event->pressType == NLSWIN::KeyPressType::PRESSED))) {
-               cursor->BindToWindow(win.get());
+               cursor->Confine(win.get());
             }
             keyEventsThisFrame.push_back(*event);
          }
@@ -363,11 +363,11 @@ int main() {
          ImGui::Separator();
          ImGui::Text("Window confining (Ctrl + L to Confine)");
          if (ImGui::Button("Confine", {150, 25})) {
-            cursor->BindToWindow(win.get());
+            cursor->Confine(win.get());
          }
          ImGui::SameLine();
          if (ImGui::Button("Free", {150, 25})) {
-            cursor->UnbindFromWindows();
+            cursor->Free();
          }
          ImGui::Separator();
          ImGui::Text("XPos: %d, YPos: %d", cursorX, cursorY);

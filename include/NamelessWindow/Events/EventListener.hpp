@@ -22,7 +22,7 @@ namespace NLSWIN {
  * All classes capable of processing OS events implement this interface. Each EventListener maintains its own
  * internal queue of events that the listener has processed. Registration of listeners implemented
  * by this library (eg, Window, Keyboard, etc) occurs automatically on instantiation of the listener. It is
- * currently not possible for the client to register their own custom EventListeners.
+ * not supported for the client to register their own custom EventListeners.
  * @see EventDispatcher
  */
 class NLSWIN_API_PUBLIC EventListener {
@@ -33,7 +33,7 @@ class NLSWIN_API_PUBLIC EventListener {
     */
    [[nodiscard]] virtual bool HasEvent() const noexcept = 0;
    /*!
-    * @brief Pop an event from the listener's queue of pending events.
+    * @brief Pop (remove) an event from the listener's queue of pending events.
     * @post The size of the internal queue is decreased by one.
     * @throws EmptyEventQueueException
     * @returns The next pending event.

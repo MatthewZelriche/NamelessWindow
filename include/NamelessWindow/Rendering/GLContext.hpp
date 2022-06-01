@@ -17,10 +17,11 @@ namespace NLSWIN {
 
 /*!
  * @brief Represents an OpenGL Context
+ * @ingroup Common
+ * @headerfile "Rendering/GLContext.hpp"
  *
  * An OpenGL Context is associated with a particular instance of a window. This window is the window that this
- * context will draw to. The Context must always have a valid Window.
- * @ingroup Common
+ * context will draw to. The Context must always have a valid Window, else undefined behavior occurs.
  * @see Window
  * @see GLConfiguration
  */
@@ -38,7 +39,6 @@ class NLSWIN_API_PUBLIC GLContext {
     * @see EventDispatcher
     */
    static std::unique_ptr<GLContext> Create(const std::shared_ptr<const Window> window);
-   virtual ~GLContext() = default;
 
    /**
     * @brief Set this context to be the currently active context.
@@ -52,6 +52,8 @@ class NLSWIN_API_PUBLIC GLContext {
     * destroyed.
     */
    virtual void SwapContextBuffers() = 0;
+
+   virtual ~GLContext() = default;
 };
 
 }  // namespace NLSWIN
