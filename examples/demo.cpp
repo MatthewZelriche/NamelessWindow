@@ -22,22 +22,21 @@ void WindowHeader(std::shared_ptr<NLSWIN::Window> window, int id) {
    ImGuiIO &io = ImGui::GetIO();
    ImGui::Text("Generic Window ID: %d", window->GetGenericID());
    ImGui::Text("Frametime: %fms", io.DeltaTime);
+   ImGui::Text("Current Position: %d, %d", window->GetWindowPos().x, window->GetWindowPos().y);
+   ImGui::Text("Current Resolution: %d, %d", window->GetWindowWidth(), window->GetWindowHeight());
    ImGui::Separator();
-   int pos[2];
    NLSWIN::Point windowPos = window->GetWindowPos();
+   static int pos[2] {windowPos.x, windowPos.y};
 
-   pos[0] = windowPos.x;
-   pos[1] = windowPos.y;
-   ImGui::InputInt2("Position", pos);
-   if (ImGui::IsItemDeactivatedAfterEdit()) {
+   ImGui::InputInt2("##Pos", pos);
+   ImGui::SameLine();
+   if (ImGui::Button("Set New Position")) {
       window->Reposition(pos[0], pos[1]);
    }
-   int res[2];
-   res[0] = window->GetWindowWidth();
-   res[1] = window->GetWindowHeight();
-   ImGui::InputInt2("Resolution", res);
-   bool resChanged = ImGui::IsItemDeactivatedAfterEdit();
-   if (resChanged) {
+   static int res[2] {window->GetWindowWidth(), window->GetWindowHeight()};
+   ImGui::InputInt2("##Res", res);
+   ImGui::SameLine();
+   if (ImGui::Button("Set New Resolution")) {
       try {
          window->Resize(res[0], res[1]);
       } catch (NLSWIN::InvalidVideoModeException e) { ImGui::OpenPopup("Invalid Video Mode"); }
@@ -129,6 +128,11 @@ int main() {
    bool rm4Down = false;
    bool rm5Down = false;
    NLSWIN::ScrollType rmLastScrollDir = (NLSWIN::ScrollType)-1;
+
+   float bgColor[3];
+   bgColor[0] = 0.4f;
+   bgColor[1] = 0.4f;
+   bgColor[2] = 0.4f;
 
    while (!win->RequestedClose()) {
       std::vector<NLSWIN::KeyEvent> keyEventsThisFrame;
@@ -261,6 +265,8 @@ int main() {
 
       if (ImGui::CollapsingHeader("Primary Window: ", ImGuiTreeNodeFlags_DefaultOpen)) {
          WindowHeader(win, 1);
+         ImGui::Separator();
+         ImGui::SliderFloat3("BG Color", bgColor, 0, 1);
       }
 
       if (ImGui::CollapsingHeader("Secondary Window: ")) {
@@ -480,7 +486,7 @@ int main() {
 
       ImGui::Render();
       glad_glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glad_glClearColor(0.4, 0.4, 0.4, 1);
+      glad_glClearColor(bgColor[0], bgColor[1], bgColor[2], 1);
       ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
       context->SwapContextBuffers();
 
