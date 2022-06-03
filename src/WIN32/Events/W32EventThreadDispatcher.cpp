@@ -30,7 +30,7 @@
 
 using namespace NLSWIN;
 
-HWND W32EventThreadDispatcher::m_dispatcherHandle {nullptr};
+volatile HWND W32EventThreadDispatcher::m_dispatcherHandle {nullptr};
 DWORD W32EventThreadDispatcher::m_mainThreadID {0};
 DWORD W32EventThreadDispatcher::m_eventThreadID {0};
 

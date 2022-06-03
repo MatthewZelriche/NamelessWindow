@@ -76,7 +76,7 @@ class NLSWIN_API_PRIVATE W32EventThreadDispatcher {
    static void PostThreadEvent(HWND Window, UINT Message, WPARAM WParam, LPARAM LParam);
 
    private:
-   static HWND m_dispatcherHandle;
+   static volatile HWND m_dispatcherHandle;
    static DWORD m_mainThreadID;
    static DWORD m_eventThreadID;
 };
