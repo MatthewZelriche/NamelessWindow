@@ -26,7 +26,14 @@ W32GLContext::W32GLContext(std::weak_ptr<const W32Window> window) {
    }
 }
 
-W32GLContext ::~W32GLContext() {
+void W32GLContext::SetVSync(bool state) {
+   if (!swapFunc) {
+      swapFunc = (wglSwapIntervalEXT_PFN)(wglGetProcAddress("wglSwapIntervalEXT"));
+   }
+   swapFunc(state);
+}
+
+W32GLContext::~W32GLContext() {
    if (wglGetCurrentContext() == m_glContext) {
       wglMakeCurrent(nullptr, nullptr);
    }

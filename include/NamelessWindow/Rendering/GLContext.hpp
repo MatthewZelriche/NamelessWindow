@@ -53,6 +53,8 @@ class NLSWIN_API_PUBLIC GLContext {
     */
    virtual void SwapContextBuffers() = 0;
 
+   virtual void SetVSync(bool state) = 0;
+
    virtual ~GLContext() = default;
 };
 

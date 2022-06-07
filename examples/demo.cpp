@@ -98,6 +98,7 @@ int main() {
    if (!success) {
       std::cout << "Failed to load OpenGL" << std::endl;
    }
+   context->SetVSync(true);
 
    // Set up ImGui
    IMGUI_CHECKVERSION();
