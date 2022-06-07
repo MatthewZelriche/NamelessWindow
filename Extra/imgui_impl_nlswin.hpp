@@ -13,5 +13,5 @@ constexpr std::chrono::steady_clock::time_point nullLastFrame = std::chrono::ste
 
 struct ImGui_ImplNLSWin_Data {
    std::weak_ptr<NLSWIN::Window> window;
-   std::chrono::steady_clock::time_point lastFrameTime {nullLastFrame};
+   std::chrono::steady_clock::time_point lastFrameEnd {nullLastFrame};
 };

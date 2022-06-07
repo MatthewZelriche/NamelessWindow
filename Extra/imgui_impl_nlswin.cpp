@@ -24,15 +24,15 @@ void ImGui_ImplNLSWin_NewFrame() {
    auto ptr = data->window.lock();
    io.DisplaySize = {(float)ptr->GetWindowWidth(), (float)ptr->GetWindowHeight()};
 
-   if (data->lastFrameTime != nullLastFrame) {
+   if (data->lastFrameEnd != nullLastFrame) {
       auto currentFrameTime = std::chrono::steady_clock::now();
       double deltaTimeUs =
-         std::chrono::duration_cast<std::chrono::microseconds>(currentFrameTime - data->lastFrameTime)
-            .count();
-      io.DeltaTime = deltaTimeUs * 1000000;
+         std::chrono::duration_cast<std::chrono::microseconds>(currentFrameTime - data->lastFrameEnd).count();
+      io.DeltaTime = deltaTimeUs / 1000000;
    } else {
       io.DeltaTime = 1.0f / 60.0f;
    }
+   data->lastFrameEnd = std::chrono::steady_clock::now();
 }
 
 void ImGui_ImplNLSWin_HandleEvent(NLSWIN::Event ev) {
