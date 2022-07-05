@@ -22,10 +22,10 @@ class NLSWIN_API_PRIVATE X11Cursor : public X11GenericMouse, public X11InputDevi
    public:
    /*! @brief Construct a new X11Cursor object. */
    X11Cursor();
-   void BindToWindow(Window *window) noexcept override;
+   void Confine(Window *window) noexcept override;
    void Show() noexcept override;
    void Hide() noexcept override;
-   void UnbindFromWindows() noexcept override;
+   void Free() noexcept override;
 
    protected:
    void ProcessGenericEvent(xcb_generic_event_t *event) override;

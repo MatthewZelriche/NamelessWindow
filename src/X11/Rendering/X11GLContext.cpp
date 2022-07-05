@@ -61,3 +61,7 @@ void X11GLContext::SwapContextBuffers() {
    }
    glXSwapBuffers(XConnection::GetDisplay(), m_glxWindow);
 }
+
+void X11GLContext::SetVSync(bool state) {
+   // LINUX UPDATE TODO
+}

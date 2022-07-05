@@ -127,7 +127,7 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
          if (m_boundWindow) {
             xcb_destroy_notify_event_t *destroyEvent = reinterpret_cast<xcb_destroy_notify_event_t *>(event);
             if (m_boundWindow == destroyEvent->event) {
-               UnbindFromWindows();
+               Free();
             }
          }
          break;
@@ -152,17 +152,17 @@ void X11Cursor::ProcessGenericEvent(xcb_generic_event_t *event) {
    }
 }
 
-void X11Cursor::UnbindFromWindows() noexcept {
+void X11Cursor::Free() noexcept {
    xcb_ungrab_pointer(XConnection::GetConnection(), XCB_CURRENT_TIME);
    m_boundWindow = 0;
    m_isTempUnbound = false;
    xcb_flush(XConnection::GetConnection());
 }
 
-void X11Cursor::BindToWindow(Window *window) noexcept {
+void X11Cursor::Confine(Window *window) noexcept {
    const X11Window *const x11Window = reinterpret_cast<const X11Window *const>(window);
    // Always unbind the cursor first
-   UnbindFromWindows();
+   Free();
    auto cookie = xcb_grab_pointer(XConnection::GetConnection(), false, x11Window->GetX11ID(), m_xcbEventMask,
                                   XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, x11Window->GetX11ID(), m_cursor,
                                   XCB_CURRENT_TIME);

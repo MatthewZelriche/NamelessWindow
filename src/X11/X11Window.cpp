@@ -86,10 +86,6 @@ X11Window::X11Window(WindowProperties properties) {
       throw PlatformInitializationException();
    }
 
-   if (!properties.isUserResizable) {
-      DisableUserResizing();
-   }
-
    // Set window name if we were given one.
    if (!properties.windowName.empty()) {
       xcb_change_property(XConnection::GetConnection(), XCB_PROP_MODE_REPLACE, m_x11WindowID,
@@ -114,8 +110,6 @@ X11Window::X11Window(WindowProperties properties) {
    // Prep a fullscreen toggle for when we are first mapped.
    if (properties.mode == WindowMode::FULLSCREEN) {
       m_firstMapCachedMode = WindowMode::FULLSCREEN;
-   } else if (properties.mode == WindowMode::BORDERLESS) {
-      m_firstMapCachedMode = WindowMode::BORDERLESS;
    }
 
    m_windowGeometry = GetNewGeometry();
@@ -162,26 +156,6 @@ X11Window::~X11Window() {
    m_handleMap.erase(m_x11WindowID);
 }
 
-void X11Window::DisableUserResizing() {
-   xcb_size_hints_t hints;
-   // Setting the min and max size to the same values ensures the window cant be resized - assuming window
-   // managers respect this.
-   xcb_icccm_size_hints_set_min_size(&hints, m_preferredWidth, m_preferredHeight);
-   xcb_icccm_size_hints_set_max_size(&hints, m_preferredWidth, m_preferredHeight);
-
-   xcb_icccm_set_wm_size_hints(XConnection::GetConnection(), m_x11WindowID, XCB_ATOM_WM_NORMAL_HINTS, &hints);
-}
-void X11Window::EnableUserResizing() {
-   xcb_size_hints_t hints;
-   // Setting the min and max size to the same values ensures the window cant be resized - assuming window
-   // managers respect this.
-   xcb_icccm_size_hints_set_min_size(&hints, 0, 0);
-   xcb_icccm_size_hints_set_max_size(&hints, INT32_MAX, INT32_MAX);  // TODO: What's a good max size thats
-                                                                     // cross-platform?
-
-   xcb_icccm_set_wm_size_hints(XConnection::GetConnection(), m_x11WindowID, XCB_ATOM_WM_NORMAL_HINTS, &hints);
-}
-
 void X11Window::Show() {
    xcb_map_window(XConnection::GetConnection(), m_x11WindowID);
    free(xcb_get_input_focus_reply(XConnection::GetConnection(),
@@ -201,12 +175,12 @@ void X11Window::Hide() {
    while (m_isMapped) { X11EventBus::GetInstance().PollEvents(); }
 }
 
-void X11Window::SetFullscreen(bool borderless) noexcept {
-   if (m_windowMode == WindowMode::FULLSCREEN || m_windowMode == WindowMode::BORDERLESS) {
+void X11Window::SetFullscreen() {
+   if (m_windowMode == WindowMode::FULLSCREEN) {
       return;
    }
    ToggleFullscreen();
-   m_windowMode = borderless ? WindowMode::BORDERLESS : WindowMode::FULLSCREEN;
+   m_windowMode = WindowMode::FULLSCREEN;
 }
 
 void X11Window::SetWindowed() noexcept {
@@ -385,10 +359,6 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
             ToggleFullscreen();
             m_windowMode = WindowMode::FULLSCREEN;
             m_firstMapCachedMode = WindowMode::WINDOWED;
-         } else if (m_firstMapCachedMode == WindowMode::BORDERLESS) {
-            ToggleFullscreen();
-            m_windowMode = WindowMode::BORDERLESS;
-            m_firstMapCachedMode = WindowMode::WINDOWED;
          }
          break;
       }
@@ -417,6 +387,18 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
          break;
       }
    }
+}
+
+void X11Window::EnableBorderless() noexcept {
+   // LINUX UPDATE TODO
+}
+
+void X11Window::DisableBorderless() noexcept {
+   // LINUX UPDATE TODO
+}
+
+void X11Window::Minimize(bool restoreVideoMode) {
+   // LINUX UPDATE TODO
 }
 
 Rect X11Window::GetNewGeometry() {

@@ -15,7 +15,7 @@
 #include <cstring>
 #include <unordered_map>
 
-#include "NamelessWindow/InputDevice.hpp"
+#include "NamelessWindow/SubscribableInputDevice.hpp"
 #include "NamelessWindow/Window.hpp"
 #include "X11EventListener.hpp"
 #include "X11RawInputDevice.hpp"
@@ -25,7 +25,7 @@
 namespace NLSWIN {
 
 /*! @ingroup X11 */
-class NLSWIN_API_PRIVATE X11InputDevice : public X11RawInputDevice, virtual public InputDevice {
+class NLSWIN_API_PRIVATE X11InputDevice : public X11RawInputDevice, virtual public SubscribableInputDevice {
    public:
    /*!
     * @brief Inform the X server that this deviceID wishes to receive input events from a specific window.
@@ -35,8 +35,8 @@ class NLSWIN_API_PRIVATE X11InputDevice : public X11RawInputDevice, virtual publ
     */
    void SubscribeToWindow(const std::weak_ptr<Window> window) override;
    /*!
-    * @brief Inform the X server that this deviceID no longer wishes to receive input events from a specific
-    * window.
+    * @brief Inform the X server that this deviceID no longer wishes to receive input events from a
+    * specific window.
     *
     * @param x11Handle The window to no longer receive events from.
     * @param windowID The NLSWIN unique identifier of the X11 window.

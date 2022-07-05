@@ -13,7 +13,6 @@
 
 #include <cstring>
 
-#include "NamelessWindow/InputDevice.hpp"
 #include "X11EventListener.hpp"
 #include "XConnection.h"
 

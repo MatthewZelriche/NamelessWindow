@@ -2,4 +2,6 @@
 include/
 -I
 Vendor/
+-I 
+Vendor/glad/
 -std=gnu++17

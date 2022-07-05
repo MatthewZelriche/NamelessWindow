@@ -18,7 +18,7 @@
          "type": "gdb",
          "request": "launch",
          "name": "NativeDebug Launch",
-         "target": "./build/Debug/bin/Example_HelloWindow",
+         "target": "./build/Debug/bin/InteractiveDemo",
          "cwd": "${workspaceRoot}",
          "valuesFormatting": "parseText"
       },
