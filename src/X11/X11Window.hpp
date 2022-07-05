@@ -13,6 +13,7 @@
 #include <xcb/xcb.h>
 
 #include <unordered_map>
+#include <array>
 
 #include "NamelessWindow/Window.hpp"
 #include "X11EventListener.hpp"

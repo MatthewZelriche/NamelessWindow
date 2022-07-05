@@ -12,6 +12,7 @@
 #include <xcb/xproto.h>
 
 #include <cmath>
+#include <array>
 #include <cstring>
 #include <memory>
 #include <unordered_map>

@@ -26,7 +26,7 @@
          "name": "(gdb) cpptools Launch",
          "type": "cppdbg",
          "request": "launch",
-         "program": "${workspaceFolder}/build/Debug/bin/TestBed",
+         "program": "${workspaceFolder}/build/Debug/bin/InteractiveDemo",
          "args": [],
          "stopAtEntry": false,
          "cwd": "${fileDirname}",
