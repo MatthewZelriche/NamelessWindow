@@ -198,7 +198,7 @@ void X11Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
                         XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, newCoords);
    xcb_flush(XConnection::GetConnection());
    m_preferredXCoord = newX;
-   m_preferredHeight = newY;
+   m_preferredYCoord = newY;
 }
 
 void X11Window::SetVideoMode(uint32_t width, uint32_t height) {
