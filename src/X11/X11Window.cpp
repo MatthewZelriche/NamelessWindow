@@ -325,6 +325,22 @@ void X11Window::Focus() noexcept {
 
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
+      case XCB_PROPERTY_NOTIFY: {
+         xcb_intern_atom_cookie_t frameCookie =
+            xcb_intern_atom(XConnection::GetConnection(), 1, std::strlen("_NET_FRAME_EXTENTS"), "_NET_FRAME_EXTENTS");
+         xcb_intern_atom_reply_t *frameReply =
+            xcb_intern_atom_reply(XConnection::GetConnection(), frameCookie, nullptr);
+
+         xcb_property_notify_event_t *propEvent = reinterpret_cast<xcb_property_notify_event_t*>(event);
+
+         if (propEvent->atom == frameReply->atom) {
+            auto grub = xcb_get_property(XConnection::GetConnection(), 0, m_x11WindowID, frameReply->atom, XCB_ATOM_CARDINAL, 0, 4);
+            auto reply = xcb_get_property_reply(XConnection::GetConnection(), grub, nullptr);
+            int32_t *data = (int32_t*)xcb_get_property_value(reply);
+            m_decoDimensions = {data[0], data[1], data[2], data[3]};
+         }
+         break;
+      }
       case XCB_CONFIGURE_NOTIFY: {
          xcb_configure_notify_event_t *notifyEvent = reinterpret_cast<xcb_configure_notify_event_t *>(event);
          if (notifyEvent->window == m_x11WindowID) {
