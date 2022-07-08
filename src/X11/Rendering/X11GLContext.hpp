@@ -18,6 +18,8 @@
 
 namespace NLSWIN {
 
+typedef void (*glXSwapIntervalEXT_PFN)(Display*, Drawable, int);
+
 /*! @ingroup X11 */
 class NLSWIN_API_PRIVATE X11GLContext : public GLContext {
    public:
@@ -33,6 +35,8 @@ class NLSWIN_API_PRIVATE X11GLContext : public GLContext {
    GLXContext m_context {nullptr};
    GLXWindow m_glxWindow {0};
    GLXFBConfig m_chosenConfig {nullptr};
+
+   glXSwapIntervalEXT_PFN glXSwapIntervalEXT {nullptr};
 };
 
 }  // namespace NLSWIN

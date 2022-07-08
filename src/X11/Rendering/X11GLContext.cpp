@@ -63,5 +63,9 @@ void X11GLContext::SwapContextBuffers() {
 }
 
 void X11GLContext::SetVSync(bool state) {
-   // LINUX UPDATE TODO
+   if (!glXSwapIntervalEXT) {
+      glXSwapIntervalEXT = (glXSwapIntervalEXT_PFN)glXGetProcAddress((const GLubyte*)"glXSwapIntervalEXT");
+   }
+
+   glXSwapIntervalEXT(XConnection::GetDisplay(), m_glxWindow, state);
 }
