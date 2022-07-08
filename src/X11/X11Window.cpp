@@ -164,9 +164,6 @@ void X11Window::Show() {
    // Block until we've actually been mapped.
    while (!m_isMapped) { X11EventBus::GetInstance().PollEvents(); }
 
-   // Set requested position and size.
-   Reposition(m_preferredXCoord, m_preferredYCoord);
-   Resize(m_preferredWidth, m_preferredHeight);
    xcb_flush(XConnection::GetConnection());
 }
 void X11Window::Hide() {
@@ -193,7 +190,7 @@ void X11Window::SetWindowed() noexcept {
 }
 
 void X11Window::Reposition(uint32_t newX, uint32_t newY) noexcept {
-   uint32_t newCoords[] = {newX, newY};
+   uint32_t newCoords[] = {newX - m_decoDimensions.left, newY - m_decoDimensions.top};
    xcb_configure_window(XConnection::GetConnection(), m_x11WindowID,
                         XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, newCoords);
    xcb_flush(XConnection::GetConnection());
@@ -326,11 +323,11 @@ void X11Window::Focus() noexcept {
 void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
    switch (event->response_type & ~0x80) {
       case XCB_PROPERTY_NOTIFY: {
+         // Update decoration sizes.
          xcb_intern_atom_cookie_t frameCookie =
             xcb_intern_atom(XConnection::GetConnection(), 1, std::strlen("_NET_FRAME_EXTENTS"), "_NET_FRAME_EXTENTS");
          xcb_intern_atom_reply_t *frameReply =
             xcb_intern_atom_reply(XConnection::GetConnection(), frameCookie, nullptr);
-
          xcb_property_notify_event_t *propEvent = reinterpret_cast<xcb_property_notify_event_t*>(event);
 
          if (propEvent->atom == frameReply->atom) {
@@ -338,6 +335,7 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
             auto reply = xcb_get_property_reply(XConnection::GetConnection(), grub, nullptr);
             int32_t *data = (int32_t*)xcb_get_property_value(reply);
             m_decoDimensions = {data[0], data[1], data[2], data[3]};
+            Reposition(m_preferredXCoord, m_preferredYCoord);
          }
          break;
       }
@@ -407,11 +405,38 @@ void X11Window::ProcessGenericEvent(xcb_generic_event_t *event) {
 }
 
 void X11Window::EnableBorderless() noexcept {
-   // LINUX UPDATE TODO
+   if (m_windowMode == WindowMode::FULLSCREEN || m_isBorderless) {
+      return; 
+   }
+   // Use MOTIF instead of EWMH because EWMH never seems to have quite the correct behavior.
+     xcb_intern_atom_cookie_t typeCookie =
+      xcb_intern_atom(XConnection::GetConnection(), 1, std::strlen("_MOTIF_WM_HINTS"), "_MOTIF_WM_HINTS");
+   xcb_intern_atom_reply_t *typeReply =
+      xcb_intern_atom_reply(XConnection::GetConnection(), typeCookie, nullptr);
+
+    unsigned long data[5] {0};
+      data[0] = 2;
+   xcb_change_property(XConnection::GetConnection(), XCB_PROP_MODE_REPLACE, m_x11WindowID, typeReply->atom, typeReply->atom, 32, 5, (unsigned char *)data);
+   m_isBorderless = true;
+   // Reposition will happen on the next PropertyNotify event, to reflect the correct window decoration sizes. 
 }
 
 void X11Window::DisableBorderless() noexcept {
-   // LINUX UPDATE TODO
+   if (m_windowMode == WindowMode::FULLSCREEN || !m_isBorderless) {
+      return; 
+   }
+
+     xcb_intern_atom_cookie_t typeCookie =
+      xcb_intern_atom(XConnection::GetConnection(), 1, std::strlen("_MOTIF_WM_HINTS"), "_MOTIF_WM_HINTS");
+   xcb_intern_atom_reply_t *typeReply =
+      xcb_intern_atom_reply(XConnection::GetConnection(), typeCookie, nullptr);
+
+    unsigned long data[5] {0};
+      data[0] = 2;
+      data[1] = 1;
+   xcb_change_property(XConnection::GetConnection(), XCB_PROP_MODE_REPLACE, m_x11WindowID, typeReply->atom, typeReply->atom, 32, 5, (unsigned char *)data);
+   m_isBorderless = false;
+   // Reposition will happen on the next PropertyNotify event, to reflect the correct window decoration sizes. 
 }
 
 void X11Window::Minimize(bool restoreVideoMode) {

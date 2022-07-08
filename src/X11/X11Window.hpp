@@ -19,6 +19,14 @@
 #include "X11EventListener.hpp"
 
 namespace NLSWIN {
+
+struct DecorationSizes {
+   long left {0};
+   long right {0};
+   long top {0};
+   long bottom {0};
+};
+
 /*!
  * @brief An instance of an X window.
  * @ingroup X11
@@ -83,6 +91,7 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
    bool m_isMapped {false};
    bool m_shouldClose {false};
    bool m_isBorderless {false};
+   DecorationSizes m_decoDimensions;
 
    std::array<int, 21> m_visualAttributesList = {GLX_X_RENDERABLE,
                                                  True,
@@ -110,6 +119,6 @@ class NLSWIN_API_PRIVATE X11Window : public NLSWIN::Window, public X11EventListe
                          XCB_EVENT_MASK_STRUCTURE_NOTIFY | XCB_EVENT_MASK_ENTER_WINDOW |
                          XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_VISIBILITY_CHANGE |
                          XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
-                         XCB_EVENT_MASK_POINTER_MOTION);
+                         XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_PROPERTY_CHANGE);
 };
 }  // namespace NLSWIN
